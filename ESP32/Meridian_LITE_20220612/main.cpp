@@ -78,7 +78,7 @@ bool UDP_RESEIVE = true;                // PCからのデータ受信を行う�
 #define MSG_SIZE 90       // Meridim配列の長さ設定（デフォルトは90）
 #define SEND_PORT 22222   // 送り先のポート番号
 #define RESV_PORT 22224   // このESP32のポート番号
-#define ERR_LED 22        // LED用 処理が時間内に収まっていない場合に点灯
+#define ERR_LED 25        // LED用 処理が時間内に収まっていない場合に点灯
 #define BAUDRATE1 1250000 // サーボの通信速度
 #define TIMEOUT1 2        // サーボ返信エラーをスルーするのに程よい設定が2
 #define EN_PIN_L 33       // サーボL系統のENピン
