@@ -1,11 +1,11 @@
 
 // Meridan Board -LITE-
-// ESP32用スケッチ　20220611版
-#define VERSION "Hello, I am Meridian_LITE_20220611." // バージョン表示用
+// ESP32用スケッチ　20220614版
+#define VERSION "Hello, This is Meridian_LITE_20220614." // バージョン表示
 
 // 100Hz通信で安定動作。
 // 現在使える構成要素は
-// ①　ICSサーボL,R 11個ずつ合計22軸分。
+// ① ICSサーボL,R 11個ずつ合計22軸分。
 // ② リモコン KRC-5FH + KRR-5FH
 // ③ 9軸センサ BNO005
 // ④ SDカード(SPIに接続)
@@ -13,8 +13,6 @@
 // ESP32 DevkitC + PlatformIOで使うことを想定
 // PlatformIO上でのESP32のボードバージョンは3.5.0が良い。（4系はうまく動かないらしい）
 // Serial1を使うには設定を変更する必要あり. 参考 → https://qiita.com/Ninagawa_Izumi/items/8ce2d55728fd5973087d
-// 必要ライブラリ１：近藤科学IcsClass_V210 → https://kondo-robot.com/faq/ics-library-a2 よりDLしてインポート
-// 必要ライブラリ２：Adafruit_BNO055（PlatformIO上で検索、インストール可能）
 
 // サーボ値の返信は取りこぼしなどあるが、取りこぼす直線のデータを使うことで擬似的に安定させている。
 // そのため返信値は参考値であり、基本的にはサーボ値を指示して動作させることが基本的な利用法となる。
@@ -58,11 +56,12 @@
 
 /* 頻繁に変更するであろう変数 #DEFINE */
 #define FRAME_DURATION 10               // 1フレームあたりの単位時間（単位ms）
-#define AP_SSID "xxxxxxxxx"             // アクセスポイントのAP_SSID
-#define AP_PASS "xxxxxxxxx"             // アクセスポイントのパスワード
+#define AP_SSID "xxxxxx"             // アクセスポイントのAP_SSID
+#define AP_PASS "xxxxxx"              // アクセスポイントのパスワード
 #define SEND_IP "192.168.1.xx"          // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）
 #define BT_MAC_ADDR "xx:xx:xx:xx:xx:xx" // ESP32自身のBluetoothMACアドレス（本プログラムを実行しシリアルモニタで確認）
-#define SD_MOUNT 0                      // SDリーダーの搭載 (0:なし、1:あり)
+#define SD_MOUNT 1                      // SDリーダーの搭載 (0:なし, 1:あり)
+#define IMU_MOUNT 1                     // 6軸or9軸センサーの搭載 (0:なし, 1:BNO055, 2:MPU6050(未実装))
 #define JOYPAD_MOUNT 2                  // ジョイパッドの搭載 (現在2のKRC-5FHのみ有効, ジョイパッドを接続しない場合は0)
                                         // 0:なし、1:SBDBT(実), 2:KRC-5FH, 3:PS3(実), 4:PS4(実),5:Wii_yoko(実), 6:Wii+Nun(実), 7:WiiPRO(実), 8:Xbox(実)
 #define JOYPAD_POLLING 4                // ジョイパッドの問い合わせフレーム間隔(推奨値:KRC-5FHは4,PSは10)
@@ -454,15 +453,26 @@ void setup()
   Wire.begin(22, 21);
 
   /* センサの初期化 */
-  if (!bno.begin())
+  if (IMU_MOUNT == 1)
   {
-    Serial.print("No BNO055 detected ... Check your wiring or I2C ADDR!");
-    while (1)
-      ;
+    if (!bno.begin())
+    {
+      Serial.println("No BNO055 detected ... Check your wiring or I2C ADDR!");
+      // while (1)
+      //   ;
+    }
+    else
+    {
+      Serial.println("BNO055 mounted.");
+      delay(50);
+      bno.setExtCrystalUse(false);
+      delay(10);
+    }
   }
-  delay(100);
-  bno.setExtCrystalUse(false);
-  delay(10);
+  else
+  {
+    Serial.println("No IMU/AHRS sensor mounted.");
+  }
 
   /* スレッドの開始 */
   // センサー用スレッド
@@ -476,10 +486,15 @@ void setup()
 
     if (!SD.begin(CHIPSELECT_SD))
     {
-      Serial.println("SD initialization failed!");
-      return;
+      Serial.println(" initialization FALIED!");
+      delay(500);
+      // Serial.println("Retry.");
+      // return;
     }
-    Serial.println("initialization done.");
+    else
+    {
+      Serial.println(" OK.");
+    }
 
     // open the file.
     myFile = SD.open("/test.txt", FILE_WRITE);
@@ -488,34 +503,34 @@ void setup()
     // if the file opened okay, write to it:
     if (myFile)
     {
-      Serial.print("Writing to test.txt...");
-      myFile.println("Meridian Board read write test.");
-
-      randomSeed(analogRead(8) * 10 + analogRead(7) * 2 + analogRead(6));
+      Serial.print("SD card check...");
+      // myFile.println("Meridian Board read write test.");
+      randomSeed(analogRead(34) * 10 + analogRead(35) * 2 + analogRead(36));
       int randNumber = random(1000, 9999); // 0から299の乱数を生成
-      Serial.print("SD writing test code :");
-      Serial.println(randNumber);
-      myFile.print("SD writing test code :");
+      Serial.print(" Writing code ");
+      Serial.print(randNumber);
+      // myFile.println(" Writing code ");
       myFile.println(randNumber);
       delayMicroseconds(1); // SPI安定化検証用
       // close the file:
       myFile.close();
-      Serial.println("done.");
+      Serial.print(" and");
     }
     else
     {
       // if the file didn't open, print an error:
-      Serial.println("error opening test.txt");
+      Serial.println("... opening /test.txt FALIED!");
     }
     delayMicroseconds(1); // SPI安定化検証用
     // re-open the file for reading:
     myFile = SD.open("/test.txt");
     if (myFile)
     {
-      Serial.println("Opening test.txt...");
+      // Serial.println("SD opening file /test.txt...");
 
       // read from the file until there's nothing else in it:
-      Serial.println("Reading texts in test.txt:");
+      // Serial.println("SD reading texts in test.txt:");
+      Serial.print(" read code ");
 
       while (myFile.available())
       {
@@ -527,34 +542,38 @@ void setup()
     else
     {
       // if the file didn't open, print an error:
-      Serial.println("error opening test.txt");
+      Serial.println("... opening /test.txt FALIED!");
     }
     delay(100);
   }
   else
   {
-    Serial.println("No SD Reader Mounted.");
+    Serial.println("No SD reader mounted.");
   }
 
   if (JOYPAD_MOUNT == 2)
   {
-    Serial.println("KRR-5FH(KRC-5FH) Mounted.");
+    Serial.println("KRR-5FH(KRC-5FH) mounted.");
   }
   else
   {
-    Serial.println("No Remort Controller Mounted.");
+    Serial.println("No Remort Controller mounted.");
   }
 
   /* WiFiの初期化と開始 */
-  WiFi.disconnect(true, true);                                  // WiFi接続をリセット
-  Serial.println("Connecting to WiFi to : " + String(AP_SSID)); //接続先を表示
+  WiFi.disconnect(true, true); // WiFi接続をリセット
+  // Serial.println("Connecting to WiFi to : " + String(AP_SSID)); //接続先を表示
   delay(100);
   WiFi.begin(AP_SSID, AP_PASS); // Wifiに接続
   while (WiFi.status() != WL_CONNECTED)
   {            // https://www.arduino.cc/en/Reference/WiFiStatus 返り値一覧
     delay(50); //接続が完了するまでループで待つ
   }
-  Serial.println("WiFi connected."); // WiFi接続完了通知
+  Serial.println("WiFi connected to  => " + String(AP_SSID)); // WiFi接続完了通知
+
+  Serial.print("PC's IP address is  => ");
+  Serial.println(SEND_IP); // 送信先PCのIPアドレスの表示
+  
   Serial.print("ESP32's IP address is  => ");
   Serial.println(WiFi.localIP()); // ESP32自身のIPアドレスの表示
   udp.begin(RESV_PORT);           // UDP通信の開始
@@ -679,9 +698,12 @@ void loop()
   //////// < 1 > U D P 送 信 信 号 作 成 ////////////////////////////////////////////
 
   // @ [1-1] センサーからの値を送信用に格納
-  for (int i = 0; i < 15; i++)
+  if (IMU_MOUNT == 1)
   {
-    s_udp_meridim.sval[i] = float2HfShort(bno055_read[i]); // DMP_ROLL推定値
+    for (int i = 0; i < 15; i++)
+    {
+      s_udp_meridim.sval[i] = float2HfShort(bno055_read[i]); // DMP_ROLL推定値
+    }
   }
 
   // @ [1-2] フレームスキップ検出用のカウントをカウントアップして送信用に格納
@@ -702,7 +724,7 @@ void loop()
   {
     sendUDP();
   }
-  delay(1);
+  delayMicroseconds(5);
 
   //////// < 3 > U D P 受 信 ///////////////////////////////////////////////////////
 
