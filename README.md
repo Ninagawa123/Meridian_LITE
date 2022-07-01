@@ -1,33 +1,30 @@
 # Meridian_LITE インストール方法
-  
-Meridian LITE のボードを使う方法です。
-開発環境として、PlatformIOを使用します。
-
-## PlatformIOのインストール  
-  
-ご利用の環境にPlatformIOをインストールしてください。  
+Meridian LITE のボードを使う方法です。<br>
+開発環境として、PlatformIOを使用します。<br>
+<br>
+## PlatformIOのインストール
+ご利用の環境にPlatformIOをインストールしてください。<br>
 参考URL  
 https://qiita.com/JotaroS/items/1930f156aab953194c9a  
 https://platformio.org/  
   
 ## 開発環境のインストール  
-  
-PlatformIOを起動し、「Platformes」の検索窓で「ESP32」を検索。  
-  <img width="419" alt="1" src="https://user-images.githubusercontent.com/8329123/176886184-a702c39d-9b57-41f9-8653-66529a109976.png">  
-「Espressif 32」が見つかるので、バージョン「3.5.0」をインストールする。  
-新しいバージョン(4.x.x)だとwifi関連がうまく動かない可能性大。  
-  
+PlatformIOを起動し、「Platformes」の検索窓で「ESP32」を検索。<br>
+  <img width="419" alt="1" src="https://user-images.githubusercontent.com/8329123/176886184-a702c39d-9b57-41f9-8653-66529a109976.png"><br>
+「Espressif 32」が見つかるので、バージョン「3.5.0」をインストールする。<br>
+新しいバージョン(4.x.x)だとwifi関連がうまく動かない可能性大。<br>
+<br>
+<br>
 ## 新規プロジェクトを作成する  
-  
-<img width="1383" alt="2" src="https://user-images.githubusercontent.com/8329123/176886274-bbe57e27-7a14-4a1a-8df7-48d7f7bf495f.png">  
-「Home」タブより「+New Project」を選ぶ。  
-  
-  
-<img width="911" alt="3" src="https://user-images.githubusercontent.com/8329123/176886509-4ad96264-c89f-4e3f-9b69-21799f7ad162.png">  
-Name:Meridian_LITE_xxxxxxx  
-Board:Espressif ESP32 Dev Module  
-Framework:Arduino Framework  
-とする。  
+<img width="1383" alt="2" src="https://user-images.githubusercontent.com/8329123/176886274-bbe57e27-7a14-4a1a-8df7-48d7f7bf495f.png"><br>
+「Home」タブより「+New Project」を選ぶ。<br>
+<br>
+<br>
+<img width="911" alt="3" src="https://user-images.githubusercontent.com/8329123/176886509-4ad96264-c89f-4e3f-9b69-21799f7ad162.png"><br>
+Name:Meridian_LITE_xxxxxxx<br>
+Board:Espressif ESP32 Dev Module<br>
+Framework:Arduino Framework<br>
+とする。<br>
   
   
 ## ライブラリのインストール
