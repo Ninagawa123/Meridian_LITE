@@ -9,7 +9,7 @@ Meridian LITE のボードを使う方法です。
 https://qiita.com/JotaroS/items/1930f156aab953194c9a  
 https://platformio.org/  
   
-## 環境のインストール  
+## 開発環境のインストール  
 PlatformIOを起動し、「Platformes」の検索窓で「ESP32」を検索。  
   <img width="419" alt="1" src="https://user-images.githubusercontent.com/8329123/176886184-a702c39d-9b57-41f9-8653-66529a109976.png">  
 「Espressif 32」が見つかるので、バージョン「3.5.0」をインストールする。  
