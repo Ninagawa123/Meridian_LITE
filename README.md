@@ -15,9 +15,9 @@ PlatformIOを起動し、「Platformes」の検索窓で「ESP32」を検索。
 「Espressif 32」が見つかるので、バージョン「3.5.0」をインストールする。  
 
 ## 新規プロジェクトを作成する
-<img width="1383" alt="2" src="https://user-images.githubusercontent.com/8329123/176886274-bbe57e27-7a14-4a1a-8df7-48d7f7bf495f.png">
+<img width="1383" alt="2" src="https://user-images.githubusercontent.com/8329123/176886274-bbe57e27-7a14-4a1a-8df7-48d7f7bf495f.png">  
 「Home」タブより「+New Project」を選ぶ。  
-
+  
 <img width="911" alt="3" src="https://user-images.githubusercontent.com/8329123/176886509-4ad96264-c89f-4e3f-9b69-21799f7ad162.png">
 Name:Meridian_LITE_xxxxxxx
 Board:Espressif ESP32 Dev Module
