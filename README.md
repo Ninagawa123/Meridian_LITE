@@ -70,7 +70,6 @@ monitor_speed = 500000<br>
 board_build.partitions = no_ota.csv<br>
 lib_deps = adafruit/Adafruit BNO055@^1.5.3<br>
 <br>
-
 ### メインコードの修正<br>
 main.cpp内の<br>
 #define AP_SSID "xxxxxx"             // アクセスポイントのAP_SSID<br>
@@ -91,5 +90,6 @@ macなら画面右上のwifiアイコンから"ネットワーク"環境設定..
 PCとESP32をUSBケーブルせ接続し、矢印ボタンを押すとESP32の内容が上書きされる。<br>
 アップロードが失敗する場合でも、何度か行うことで成功する場合があるので試してみてください。<br>
 ### PC側の設定<br>
-以降のテキストは準備中ですが、下記を参考にPC側の設定をすることで、デモを動作できると思います。
-https://github.com/Ninagawa123/Meridian_core
+以降のテキストは準備中ですが、下記を参考にPC側の設定をすることで、デモを動作できると思います。<br>
+https://github.com/Ninagawa123/Meridian_core<br>
+<br>
