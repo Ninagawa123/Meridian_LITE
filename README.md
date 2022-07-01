@@ -43,47 +43,53 @@ IcsClass_V210のフォルダを、さきほどの「lib」に入れる。<br>
 <img width="839" alt="5" src="https://user-images.githubusercontent.com/8329123/176911609-83cf3795-f890-4c41-88dc-92c2efcfb4ff.png">
 今回のプロジェクト（Meridian_LITE_xxxxxx）を選択し、Addボタンを押す。<br>
 <br>
+### メインコードの作成
 <img width="665" alt="6" src="https://user-images.githubusercontent.com/8329123/176911852-b245204b-b8c9-4379-9db5-7176ab3901d0.png"><br>
 再び画面左上のファイルアイコンを押し、「src」→「main.cpp」を選択。<br>
-githubのコード（[URL](https://github.com/Ninagawa123/Meridian_LITE/blob/main/ESP32/Meridian_LITE_20220612/main.cpp)）をここにコピペする。<br>
+githubのコード（[URL](https://github.com/Ninagawa123/Meridian_LITE/blob/main/ESP32/Meridian_LITE_20220612/main.cpp)）をmain.cppのコードとしてコピペする。<br>
 <br>
-■ ESP32のシリアルピンの設定  
-  
-PlatformIOを一旦閉じる。  
+### ESP32のシリアルピンの設定  
+PlatformIOを一旦閉じる。<br>
 https://qiita.com/Ninagawa_Izumi/items/8ce2d55728fd5973087d  
-を参考に、  
-RX1を9番ピンから32番ピンに変更、  
-TX1を10番ピンから27番ピンに変更する設定をしておく。  
-  
-  
-■ 環境設定  
-「platformio.ini」を開くと、  
-  
-////
-となっているので、monitor_speed = 500000を加え以下のようにする。
+を参考に、 <br>
+RX1を9番ピンから32番ピンに変更、<br>
+TX1を10番ピンから27番ピンに変更する設定をしておく。<br>
+<br>
 
-[env:esp32dev]
-platform = espressif32
-board = esp32dev
-framework = arduino
-monitor_speed = 500000
-lib_deps = adafruit/Adafruit BNO055@^1.5.3
+### platformio.iniの設定  
+「platformio.ini」を開くと、<br>
+<img width="1169" alt="7" src="https://user-images.githubusercontent.com/8329123/176912503-e552925d-ca64-43e9-a7ae-8ce2ff32dd13.png"><br>
+のようになっているので、以下のように書き加え、<br>
+シリアルモニタのスピードを500000に、またOTAという無線でのプログラム書き換え機能を削除してメモリ領域を増やす設定にする。<br>
+<br>
+[env:esp32dev]<br>
+platform = espressif32<br>
+board = esp32dev<br>
+framework = arduino<br>
+monitor_speed = 500000<br>
+board_build.partitions = no_ota.csv<br>
+lib_deps = adafruit/Adafruit BNO055@^1.5.3<br>
+<br>
 
-とする。
-
-
-
-■ コードの設定
-#define AP_SSID "xxxxxx"             // アクセスポイントのAP_SSID
-#define AP_PASS "xxxxxx"             // アクセスポイントのパスワード
-#define SEND_IP "192.168.1.xx"       // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）
-を変更する。
-
-■ ビルドとアップロード
-左下のチェックマークを押すと、ビルドを行う。
-押下して「====== [SUCCESS] Took x.xx seconds」と表示されればビルド成功。
-
-PCとESP32をUSBケーブルせ接続し、矢印ボタンを押すとESP32の内容が上書きされるえ。
-アップロードが失敗する場合でも、何度か行うことで成功する場合があるので試してみてください。
-  
-  
+### メインコードの修正<br>
+main.cpp内の<br>
+#define AP_SSID "xxxxxx"             // アクセスポイントのAP_SSID<br>
+#define AP_PASS "xxxxxx"             // アクセスポイントのパスワード<br>
+#define SEND_IP "192.168.1.xx"       // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）<br>
+を変更する。<br>
+送り先のPCのIPアドレスは、<br>
+windowsならターミナルを開いてipconfigコマンド<br>
+ubuntuならip aコマンド<br>
+macなら画面右上のwifiアイコンから"ネットワーク"環境設定...<br>
+で確認できる。<br>
+<br>
+### ビルドとアップロード<br>
+<img width="612" alt="9" src="https://user-images.githubusercontent.com/8329123/176913879-d05eb45d-15a0-47f6-a538-aa481b31e988.png"><br>
+画面左下のチェックマークを押すと、ビルドを行う。<br>
+押下して「====== [SUCCESS] Took x.xx seconds」と表示されればビルド成功。<br>
+<br>
+PCとESP32をUSBケーブルせ接続し、矢印ボタンを押すとESP32の内容が上書きされる。<br>
+アップロードが失敗する場合でも、何度か行うことで成功する場合があるので試してみてください。<br>
+### PC側の設定<br>
+以降のテキストは準備中ですが、下記を参考にPC側の設定をすることで、デモを動作できると思います。
+https://github.com/Ninagawa123/Meridian_core
