@@ -28,21 +28,21 @@ Framework:Arduino Framework<br>
   
   
 ## ライブラリのインストール
-### IcsHardSerialClassを導入する。  
-  
-先ほど作成したプロジェクトのフォルダのある場所を探す。  
-その中に「lib」があるのを確認する。  
-  
-サイトより  
-ICS_Library_for_Arduino_V2_1.zip  
-をDLし、解凍する。さらにその中のIcsClass_V210.zipを解凍する。  
-IcsClass_V210のフォルダを、さきほどの「lib」に入れる。  
-  
-・Adafruit_BNO055を導入する  
-アリ頭のアイコンから「QUICK ACCESS」→「PIO Home」→「Open」を開く。  
-右画面PIO Homeのタグの左メニューから「Libraries」を選択。  
-「BNO055」を入れて検索。「Adafruit BNO055」を選び、「Add to Project」を押す。  
-今回のプロジェクト（Meridian_LITE_xxxxxx）を選択し、Addボタンを押す。  
+### IcsHardSerialClassを導入する
+PC内で先ほど作成したプロジェクトのフォルダのある場所を探す。<br>
+その中に「lib」があるのを確認する。<br>
+<br>
+[サイト](https://kondo-robot.com/faq/ics-library-a2)より<br>
+ICS_Library_for_Arduino_V2_1.zip をDLし、解凍する。<br>
+さらにその中のIcsClass_V210.zipを解凍する。<br>
+IcsClass_V210のフォルダを、さきほどの「lib」に入れる。<br>
+<br>
+### Adafruit_BNO055を導入する  
+アリ頭のアイコンから「QUICK ACCESS」→「PIO Home」→「Open」を開く。<br>
+右画面PIO Homeのタグの左メニューから「Libraries」を選択。<br>
+<img width="839" alt="5" src="https://user-images.githubusercontent.com/8329123/176911609-83cf3795-f890-4c41-88dc-92c2efcfb4ff.png">
+
+今回のプロジェクト（Meridian_LITE_xxxxxx）を選択し、Addボタンを押す。<br>
     
 再び画面左上のファイルアイコンを押し、「src」→「main.cpp」を選択。  
 github（URL）のコードをここにコピペする。  
