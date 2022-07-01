@@ -41,12 +41,12 @@ IcsClass_V210のフォルダを、さきほどの「lib」に入れる。<br>
 アリ頭のアイコンから「QUICK ACCESS」→「PIO Home」→「Open」を開く。<br>
 右画面PIO Homeのタグの左メニューから「Libraries」を選択。<br>
 <img width="839" alt="5" src="https://user-images.githubusercontent.com/8329123/176911609-83cf3795-f890-4c41-88dc-92c2efcfb4ff.png">
-
 今回のプロジェクト（Meridian_LITE_xxxxxx）を選択し、Addボタンを押す。<br>
-    
-再び画面左上のファイルアイコンを押し、「src」→「main.cpp」を選択。  
-github（URL）のコードをここにコピペする。  
-  
+<br>
+<img width="665" alt="6" src="https://user-images.githubusercontent.com/8329123/176911852-b245204b-b8c9-4379-9db5-7176ab3901d0.png"><br>
+再び画面左上のファイルアイコンを押し、「src」→「main.cpp」を選択。<br>
+githubのコード（[URL](https://github.com/Ninagawa123/Meridian_LITE/blob/main/ESP32/Meridian_LITE_20220612/main.cpp)）をここにコピペする。<br>
+<br>
 ■ ESP32のシリアルピンの設定  
   
 PlatformIOを一旦閉じる。  
