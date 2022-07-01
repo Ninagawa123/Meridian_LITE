@@ -10,7 +10,9 @@ https://platformio.org/
   
 ## 開発環境のインストール  
 PlatformIOを起動し、「Platformes」の検索窓で「ESP32」を検索。<br>
-  <img width="419" alt="1" src="https://user-images.githubusercontent.com/8329123/176886184-a702c39d-9b57-41f9-8653-66529a109976.png"><br>
+<br>
+<br>
+<img width="419" alt="1" src="https://user-images.githubusercontent.com/8329123/176886184-a702c39d-9b57-41f9-8653-66529a109976.png"><br>
 「Espressif 32」が見つかるので、バージョン「3.5.0」をインストールする。<br>
 新しいバージョン(4.x.x)だとwifi関連がうまく動かない可能性大。<br>
 <br>
