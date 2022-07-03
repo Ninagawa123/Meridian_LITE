@@ -44,6 +44,7 @@ IcsClass_V210のフォルダを、さきほどの「lib」に入れます。<br>
 <img width="521" alt="SS 2264" src="https://user-images.githubusercontent.com/8329123/177020750-c8210d92-e1d1-4970-a4c3-e04960a4a3f7.png"><br>
 ディレクトリ構造が上図のようになっていればOKです。<br>
 <br>
+
 ### Adafruit_BNO055を導入する
 アリ頭のアイコンから「QUICK ACCESS」→「PIO Home」→「Open」を開きます。<br>
 右画面PIO Homeのタグの左メニューから「Libraries」を選択します。<br>
