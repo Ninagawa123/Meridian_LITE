@@ -59,7 +59,7 @@ githubのコード（[URL](https://github.com/Ninagawa123/Meridian_LITE/blob/mai
 <br>
 
 ### ESP32のシリアル通信ピンの設定
-ESP32のデフォルトでは一部のUARTシリアル通信が使う事ができないため、設定を変更して使えるようにします。<br>
+ESP32のデフォルトではSerial1のUARTシリアル通信が使う事ができないため、設定を変更して使えるようにします。<br>
 <br>
 PlatformIOを一旦閉じます。<br>
 <br>
@@ -73,7 +73,7 @@ TX1を10番ピンから27番ピンに変更する設定をしておきます。<
 「platformio.ini」を開くと、<br>
 <img width="1169" alt="7" src="https://user-images.githubusercontent.com/8329123/176912503-e552925d-ca64-43e9-a7ae-8ce2ff32dd13.png"><br>
 のようになっているので、以下のように書き加え、<br>
-シリアルモニタのスピードを500000に、またOTAという無線でのプログラム書き換え機能を削除してメモリ領域を増やす設定にする。<br>
+シリアルモニタのスピードを500000に、またOTAという無線でのプログラム書き換え機能を削除してメモリ領域を増やす設定にします。<br>
 <br>
 [env:esp32dev]<br>
 platform = espressif32<br>
@@ -94,15 +94,15 @@ main.cpp内の<br>
 windowsならターミナルを開いてipconfigコマンド<br>
 ubuntuならip aコマンド<br>
 macなら画面右上のwifiアイコンから"ネットワーク"環境設定...<br>
-で確認できる。<br>
+で確認できます。<br>
 <br>
 
 ### ビルドとアップロード
 <img width="612" alt="9" src="https://user-images.githubusercontent.com/8329123/176913879-d05eb45d-15a0-47f6-a538-aa481b31e988.png"><br>
-画面左下のチェックマークを押すと、ビルドを行う。<br>
-押下して「====== [SUCCESS] Took x.xx seconds」と表示されればビルド成功。<br>
+画面左下のチェックマークを押すと、ビルドが行われます。<br>
+押下して「====== [SUCCESS] Took x.xx seconds」と表示されればビルド成功です。<br>
 <br>
-PCとESP32をUSBケーブルせ接続し、矢印ボタンを押すとESP32の内容が上書きされる。<br>
+PCとESP32をUSBケーブルせ接続し、矢印ボタンを押すとESP32の内容が上書きされます。<br>
 アップロードが失敗する場合でも、何度か行うことで成功する場合があるので試してみてください。<br>
 <br>
 
