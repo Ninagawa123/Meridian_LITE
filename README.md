@@ -102,7 +102,6 @@ TX1を10番ピンから27番ピンに変更する設定をしておきます。<
 <img width="600" alt="7" src="https://user-images.githubusercontent.com/8329123/176912503-e552925d-ca64-43e9-a7ae-8ce2ff32dd13.png"><br>
 のようになっているので、以下のように書き加え、<br>
 シリアルモニタのスピードを500000に、またOTAという無線でのプログラム書き換え機能を削除してメモリ領域を増やす設定にします。<br>
-<br>
 >[env:esp32dev]<br>
 >platform = espressif32<br>
 >board = esp32dev<br>
@@ -114,9 +113,9 @@ TX1を10番ピンから27番ピンに変更する設定をしておきます。<
 
 ### メインコードの修正
 main.cpp内の<br>
-#define AP_SSID "xxxxxx"             // アクセスポイントのAP_SSID<br>
-#define AP_PASS "xxxxxx"             // アクセスポイントのパスワード<br>
-#define SEND_IP "192.168.1.xx"       // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）<br>
+>#define AP_SSID "xxxxxx"             // アクセスポイントのAP_SSID<br>
+>#define AP_PASS "xxxxxx"             // アクセスポイントのパスワード<br>
+>#define SEND_IP "192.168.1.xx"       // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）<br>
 を変更する。<br>
 送り先のPCのIPアドレスは、<br>
 windowsならターミナルを開いてipconfigコマンド<br>
@@ -128,21 +127,21 @@ macなら画面右上のwifiアイコンから"ネットワーク"環境設定..
 ### メインコードの設定
 main.cpp内の設定を手持ち機体に合わせて変更します。<br>
 <br>
-#define SD_MOUNT 1 <br>
+>#define SD_MOUNT 1 <br>
 　→ SDリーダーの搭載 (0:なし, 1:あり)<br>
 <br>
-#define IMU_MOUNT 1<br>
+>#define IMU_MOUNT 1<br>
 　→ 6軸or9軸センサーの搭載 (0:なし, 1:BNO055, 2:MPU6050(未実装))<br>
 <br>
-#define JOYPAD_MOUNT 2<br>
+>#define JOYPAD_MOUNT 2<br>
 　→ ジョイパッドの搭載 (現在2のKRC-5FHのみ有効, ジョイパッドを接続しない場合は0)<br>
 
-/* 各サーボのマウントありなし（1:サーボあり、0:サーボなし） */<br>
+>/* 各サーボのマウントありなし（1:サーボあり、0:サーボなし） */<br>
 
 　→ idl_mt[0]〜がサーボ左側系のサーボID 0〜 です。接続しているサーボIDはTrue, 非接続のIDにはFalseを設定します。<br>
 　→ idr_mt[0]〜がサーボ右側系のサーボID 0〜 です。上記と同様に設定します。<br>
 
-/* 各サーボの直立デフォルト値　(KRS値  0deg=7500, +-90deg=7500+-2667  KRS値=deg/0.03375) */<br>
+>/* 各サーボの直立デフォルト値　(KRS値  0deg=7500, +-90deg=7500+-2667  KRS値=deg/0.03375) */<br>
 
 　→ 各サーボについてのトリム値を設定できます。<br>
 
