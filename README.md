@@ -20,7 +20,7 @@ PlatformIOを起動し、「Platformes」の検索窓で「ESP32」を検索し�
 <br>
 
 ## 新規プロジェクトを作成する  
-<img width="500" alt="2" src="https://user-images.githubusercontent.com/8329123/176886274-bbe57e27-7a14-4a1a-8df7-48d7f7bf495f.png"><br>
+<img width="600" alt="2" src="https://user-images.githubusercontent.com/8329123/176886274-bbe57e27-7a14-4a1a-8df7-48d7f7bf495f.png"><br>
 「Home」タブより「+New Project」を選びます。<br>
 <br>
 <img width="400" alt="3" src="https://user-images.githubusercontent.com/8329123/176886509-4ad96264-c89f-4e3f-9b69-21799f7ad162.png"><br>
@@ -100,18 +100,23 @@ macなら画面右上のwifiアイコンから"ネットワーク"環境設定..
 ### メインコードの設定
 main.cpp内の設定を手持ち機体に合わせて変更します。<br>
 <br>
-#define SD_MOUNT 1  　  // SDリーダーの搭載 (0:なし, 1:あり)<br>
-#define IMU_MOUNT 1     // 6軸or9軸センサーの搭載 (0:なし, 1:BNO055, 2:MPU6050(未実装))<br>
-#define JOYPAD_MOUNT 2  // ジョイパッドの搭載 (現在2のKRC-5FHのみ有効, ジョイパッドを接続しない場合は0)<br>
+#define SD_MOUNT 1 <br>
+　→ SDリーダーの搭載 (0:なし, 1:あり)<br>
+<br>
+#define IMU_MOUNT 1<br>
+　→ 6軸or9軸センサーの搭載 (0:なし, 1:BNO055, 2:MPU6050(未実装))<br>
+<br>
+#define JOYPAD_MOUNT 2<br>
+　→ ジョイパッドの搭載 (現在2のKRC-5FHのみ有効, ジョイパッドを接続しない場合は0)<br>
 
 /* 各サーボのマウントありなし（1:サーボあり、0:サーボなし） */<br>
 
-idl_mt[0]〜がサーボ左側系のサーボID 0〜 です。接続しているサーボIDはTrue, 非接続のIDにはFalseを設定します。<br>
-idr_mt[0]〜がサーボ右側系のサーボID 0〜 です。上記と同様に設定します。<br>
+　→ idl_mt[0]〜がサーボ左側系のサーボID 0〜 です。接続しているサーボIDはTrue, 非接続のIDにはFalseを設定します。<br>
+　→ idr_mt[0]〜がサーボ右側系のサーボID 0〜 です。上記と同様に設定します。<br>
 
 /* 各サーボの直立デフォルト値　(KRS値  0deg=7500, +-90deg=7500+-2667  KRS値=deg/0.03375) */<br>
 
-各サーボについてのトリム値を設定できます。<br>
+　→ 各サーボについてのトリム値を設定できます。<br>
 
 ### ビルドとアップロード
 <img width="612" alt="9" src="https://user-images.githubusercontent.com/8329123/176913879-d05eb45d-15a0-47f6-a538-aa481b31e988.png"><br>
