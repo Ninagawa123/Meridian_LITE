@@ -14,16 +14,16 @@ https://platformio.org/
 ## 開発環境のインストール  
 PlatformIOを起動し、「Platformes」の検索窓で「ESP32」を検索します。<br>
 <br>
-<img width="300" alt="1" src="https://user-images.githubusercontent.com/8329123/176886184-a702c39d-9b57-41f9-8653-66529a109976.png"><br>
+<img width="200" alt="1" src="https://user-images.githubusercontent.com/8329123/176886184-a702c39d-9b57-41f9-8653-66529a109976.png"><br>
 「Espressif 32」が見つかるので、バージョン「3.5.0」をインストールします。<br>
 新しいバージョン(4.x.x)だとwifi関連がうまく動かない可能性が高いです。<br>
 <br>
 
 ## 新規プロジェクトを作成する  
-<img width="1383" alt="2" src="https://user-images.githubusercontent.com/8329123/176886274-bbe57e27-7a14-4a1a-8df7-48d7f7bf495f.png"><br>
+<img width="400" alt="2" src="https://user-images.githubusercontent.com/8329123/176886274-bbe57e27-7a14-4a1a-8df7-48d7f7bf495f.png"><br>
 「Home」タブより「+New Project」を選びます。<br>
 <br>
-<img width="911" alt="3" src="https://user-images.githubusercontent.com/8329123/176886509-4ad96264-c89f-4e3f-9b69-21799f7ad162.png"><br>
+<img width="300" alt="3" src="https://user-images.githubusercontent.com/8329123/176886509-4ad96264-c89f-4e3f-9b69-21799f7ad162.png"><br>
 Name:Meridian_LITE_xxxxxxx<br>
 Board:Espressif ESP32 Dev Module<br>
 Framework:Arduino Framework<br>
@@ -32,7 +32,7 @@ Framework:Arduino Framework<br>
 
 ## ライブラリのインストール
 ### IcsHardSerialClassを導入する
-<img width="733" alt="SS 2266" src="https://user-images.githubusercontent.com/8329123/177020842-92d11f38-49b1-4cde-86f8-171febd849da.png">
+<img width="500" alt="SS 2266" src="https://user-images.githubusercontent.com/8329123/177020842-92d11f38-49b1-4cde-86f8-171febd849da.png">
 PCのエクスプローラー(Macはファインダ)で内で先ほど作成したプロジェクトのフォルダのある場所を探します。<br>
 その中に「lib」があるのを確認します。<br>　
 <br>
@@ -41,19 +41,19 @@ https://kondo-robot.com/faq/ics-library-a2 <br>
 解凍後、さらにその中のIcsClass_V210.zipを解凍します。<br>
 IcsClass_V210のフォルダを、さきほどの「lib」に入れます。<br>
 <br>
-<img width="521" alt="SS 2264" src="https://user-images.githubusercontent.com/8329123/177020750-c8210d92-e1d1-4970-a4c3-e04960a4a3f7.png">
+<img width="300" alt="SS 2264" src="https://user-images.githubusercontent.com/8329123/177020750-c8210d92-e1d1-4970-a4c3-e04960a4a3f7.png">
 ディレクトリ構造が上図のようになっていればOKです。<br>
 <br>
 
 ### Adafruit_BNO055を導入する
 アリ頭のアイコンから「QUICK ACCESS」→「PIO Home」→「Open」を開きます。<br>
 右画面PIO Homeのタグの左メニューから「Libraries」を選択します。<br>
-<img width="839" alt="5" src="https://user-images.githubusercontent.com/8329123/176911609-83cf3795-f890-4c41-88dc-92c2efcfb4ff.png">
+<img width="400" alt="5" src="https://user-images.githubusercontent.com/8329123/176911609-83cf3795-f890-4c41-88dc-92c2efcfb4ff.png">
 今回のプロジェクト（Meridian_LITE_xxxxxx）を選択し、Addボタンを押します。<br>
 <br>
 
 ### メインコードの作成
-<img width="665" alt="6" src="https://user-images.githubusercontent.com/8329123/176911852-b245204b-b8c9-4379-9db5-7176ab3901d0.png"><br>
+<img width="300" alt="6" src="https://user-images.githubusercontent.com/8329123/176911852-b245204b-b8c9-4379-9db5-7176ab3901d0.png"><br>
 再び画面左上のファイルアイコンを押し、「src」→「main.cpp」を選択します。<br>
 githubのコード（[URL](https://github.com/Ninagawa123/Meridian_LITE/blob/main/ESP32/Meridian_LITE_20220612/main.cpp)）をmain.cppのコードとしてコピペします。<br>
 <br>
@@ -71,7 +71,7 @@ TX1を10番ピンから27番ピンに変更する設定をしておきます。<
 
 ### platformio.iniの設定
 「platformio.ini」を開くと、<br>
-<img width="1169" alt="7" src="https://user-images.githubusercontent.com/8329123/176912503-e552925d-ca64-43e9-a7ae-8ce2ff32dd13.png"><br>
+<img width="500" alt="7" src="https://user-images.githubusercontent.com/8329123/176912503-e552925d-ca64-43e9-a7ae-8ce2ff32dd13.png"><br>
 のようになっているので、以下のように書き加え、<br>
 シリアルモニタのスピードを500000に、またOTAという無線でのプログラム書き換え機能を削除してメモリ領域を増やす設定にします。<br>
 <br>
