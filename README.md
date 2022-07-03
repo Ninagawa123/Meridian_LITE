@@ -39,7 +39,7 @@ PCのエクスプローラー(Macはファインダ)で内で先ほど作成し�
 <br>
 <img width="521" alt="SS 2264" src="https://user-images.githubusercontent.com/8329123/177020750-c8210d92-e1d1-4970-a4c3-e04960a4a3f7.png">
 近藤科学様のサイトより、ICS_Library_for_Arduino_V2_1.zip をDLし、解凍します。<br>
-https://kondo-robot.com/faq/ics-library-a2
+https://kondo-robot.com/faq/ics-library-a2 <br>
 解凍後、さらにその中のIcsClass_V210.zipを解凍します。<br>
 IcsClass_V210のフォルダを、さきほどの「lib」に入れます。<br>
 <br>
