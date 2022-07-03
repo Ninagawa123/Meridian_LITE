@@ -44,7 +44,7 @@ IcsClass_V210のフォルダを、さきほどの「lib」に入れます。<br>
 <img width="521" alt="SS 2264" src="https://user-images.githubusercontent.com/8329123/177020750-c8210d92-e1d1-4970-a4c3-e04960a4a3f7.png"><br>
 ディレクトリ構造が上図のようになっていればOKです。<br>
 <br>
-### Adafruit_BNO055を導入する  
+### Adafruit_BNO055を導入する
 アリ頭のアイコンから「QUICK ACCESS」→「PIO Home」→「Open」を開きます。<br>
 右画面PIO Homeのタグの左メニューから「Libraries」を選択します。<br>
 <img width="839" alt="5" src="https://user-images.githubusercontent.com/8329123/176911609-83cf3795-f890-4c41-88dc-92c2efcfb4ff.png">
@@ -57,7 +57,7 @@ IcsClass_V210のフォルダを、さきほどの「lib」に入れます。<br>
 githubのコード（[URL](https://github.com/Ninagawa123/Meridian_LITE/blob/main/ESP32/Meridian_LITE_20220612/main.cpp)）をmain.cppのコードとしてコピペします。<br>
 <br>
 <br>
-### ESP32のシリアル通信ピンの設定  
+### ESP32のシリアル通信ピンの設定
 ESP32のデフォルトでは一部のUARTシリアル通信が使う事ができないため、設定を変更して使えるようにします。<br>
 <br>
 PlatformIOを一旦閉じます。<br>
@@ -67,7 +67,7 @@ RX1を9番ピンから32番ピンに変更、<br>
 TX1を10番ピンから27番ピンに変更する設定をしておきます。<br>
 <br>
 <br>
-### platformio.iniの設定  
+### platformio.iniの設定
 「platformio.ini」を開くと、<br>
 <img width="1169" alt="7" src="https://user-images.githubusercontent.com/8329123/176912503-e552925d-ca64-43e9-a7ae-8ce2ff32dd13.png"><br>
 のようになっているので、以下のように書き加え、<br>
@@ -82,7 +82,7 @@ board_build.partitions = no_ota.csv<br>
 lib_deps = adafruit/Adafruit BNO055@^1.5.3<br>
 <br>
 <br>
-### メインコードの修正<br>
+### メインコードの修正
 main.cpp内の<br>
 #define AP_SSID "xxxxxx"             // アクセスポイントのAP_SSID<br>
 #define AP_PASS "xxxxxx"             // アクセスポイントのパスワード<br>
@@ -95,7 +95,7 @@ macなら画面右上のwifiアイコンから"ネットワーク"環境設定..
 で確認できる。<br>
 <br>
 <br>
-### ビルドとアップロード<br>
+### ビルドとアップロード
 <img width="612" alt="9" src="https://user-images.githubusercontent.com/8329123/176913879-d05eb45d-15a0-47f6-a538-aa481b31e988.png"><br>
 画面左下のチェックマークを押すと、ビルドを行う。<br>
 押下して「====== [SUCCESS] Took x.xx seconds」と表示されればビルド成功。<br>
@@ -104,7 +104,7 @@ PCとESP32をUSBケーブルせ接続し、矢印ボタンを押すとESP32の�
 アップロードが失敗する場合でも、何度か行うことで成功する場合があるので試してみてください。<br>
 <br>
 <br>
-### PC側の設定<br>
+### PC側の設定
 以降のテキストは準備中ですが、下記を参考にPC側の設定をすることで、デモを動作できると思います。<br>
 https://github.com/Ninagawa123/Meridian_core<br>
 <br>
