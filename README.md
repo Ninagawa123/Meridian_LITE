@@ -116,6 +116,7 @@ main.cpp内の<br>
 >#define AP_SSID "xxxxxx"             // アクセスポイントのAP_SSID<br>
 >#define AP_PASS "xxxxxx"             // アクセスポイントのパスワード<br>
 >#define SEND_IP "192.168.1.xx"       // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）<br>
+
 を変更する。<br>
 送り先のPCのIPアドレスは、<br>
 windowsならターミナルを開いてipconfigコマンド<br>
