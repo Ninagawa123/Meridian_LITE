@@ -31,16 +31,14 @@ Framework:Arduino Framework<br>
 ## ライブラリのインストール
 ### IcsHardSerialClassを導入する
 <img width="733" alt="SS 2266" src="https://user-images.githubusercontent.com/8329123/177020842-92d11f38-49b1-4cde-86f8-171febd849da.png">
-
-PC内で先ほど作成したプロジェクトのフォルダのある場所を探す。<br>
+PCのエクスプローラー(Macはファインダ)で内で先ほど作成したプロジェクトのフォルダのある場所を探す。<br>
 その中に「lib」があるのを確認する。<br>　
 <br>
 <img width="521" alt="SS 2264" src="https://user-images.githubusercontent.com/8329123/177020750-c8210d92-e1d1-4970-a4c3-e04960a4a3f7.png">
-[近藤科学のサイト](https://kondo-robot.com/faq/ics-library-a2)より<br>
+[近藤科学様のサイト](https://kondo-robot.com/faq/ics-library-a2)より<br>
 ICS_Library_for_Arduino_V2_1.zip をDLし、解凍する。<br>
 解凍後、さらにその中のIcsClass_V210.zipを解凍する。<br>
 IcsClass_V210のフォルダを、さきほどの「lib」に入れる。<br>
-
 
 <br>
 ### Adafruit_BNO055を導入する  
