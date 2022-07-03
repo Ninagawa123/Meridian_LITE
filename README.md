@@ -1,4 +1,4 @@
-# Meridian_LITE ボードの接続や拡張について
+# Meridian_LITE ボードについて
 <img width="400" src="https://user-images.githubusercontent.com/8329123/177022808-50ccf555-4afd-450c-a07e-3302771d45cf.jpg">
 
 "Meridian board -LITE-" は半二重通信回路2系統を搭載とSPI,I2Cなどの出力ピンを備えたボードです。<br>
