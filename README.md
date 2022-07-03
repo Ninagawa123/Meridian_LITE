@@ -62,6 +62,7 @@ githubのコード（[URL](https://github.com/Ninagawa123/Meridian_LITE/blob/mai
 ESP32のデフォルトでは一部のUARTシリアル通信が使う事ができないため、設定を変更して使えるようにします。<br>
 <br>
 PlatformIOを一旦閉じます。<br>
+<br>
 https://qiita.com/Ninagawa_Izumi/items/8ce2d55728fd5973087d  
 を参考に、 <br>
 RX1を9番ピンから32番ピンに変更、<br>
