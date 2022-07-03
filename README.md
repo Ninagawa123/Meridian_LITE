@@ -1,6 +1,5 @@
 # Meridian_LITE インストール方法
-Meridian LITE のボードを使う方法です。<br><img width="521" alt="SS 2264" src="https://user-images.githubusercontent.com/8329123/177020663-f10295f7-dafe-4a88-b266-dd5a4758e796.png">
-
+Meridian LITE のボードを使う方法です。<br>
 開発環境として、PlatformIOを使用します。<br>
 <br>
 ## PlatformIOのインストール
