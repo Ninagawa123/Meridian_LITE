@@ -1,3 +1,26 @@
+# Meridian_LITE ボードの接続や拡張について
+<img width="400" src="https://user-images.githubusercontent.com/8329123/177022808-50ccf555-4afd-450c-a07e-3302771d45cf.jpg">
+
+"Meridian board -LITE-" は半二重通信回路2系統を搭載とSPI,I2Cなどの出力ピンを備えたボードです。<br>
+ESP32devkitCを搭載することで、半二重通信方式のコマンドサーボを扱えるロボット用ボードとして機能します。<br>
+
+<br>
+
+## ピンアサイン
+<img width="500" alt="Meridian_Board_LITE_pinassign" src="https://user-images.githubusercontent.com/8329123/177022712-105a7df0-2ec7-45dc-9e2a-feb9f01e9ea7.png">
+ピンアサインは上記の通りです。
+<br>
+
+## 機能拡張とマウント
+<img width="400" alt="SS 2267" src="https://user-images.githubusercontent.com/8329123/177022972-3c9931ae-cfe3-44bb-9145-84303330a387.png">
+上図のようにKHR-3HVのランドセルに本体無改造で固定することができます。<br>
+ただしランドセル側とボードの間には1~2mm程度のスペーサーが入れるとボード底面の干渉を回避できます。<br>
+秋月電子で販売のSDカードホルダをSPI端子にそのまま接続することができます。<br>
+９軸センサについては秋月で販売のBNO055をI2Cに接続することを標準としています。<br>
+またリモコン受信機KRR-5FHも内臓できます。左下のビス穴のみを使いた簡易固定ができます。<br>
+蓋もギリギリですが閉じることができます。<br>
+<br>
+
 # Meridian_LITE インストール方法
 Meridian LITE のボードを使う方法です。<br>
 開発環境として、VScodeとPlatformIOを使用します。<br>
