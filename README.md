@@ -1,6 +1,7 @@
 # Meridian_LITE インストール方法
 Meridian LITE のボードを使う方法です。<br>
 開発環境として、PlatformIOを使用します。<br>
+※ArduinoIDEを使用した場合、WIFIライブラリの関係でESP32のパフォーマンスが発揮しきれません。<br>
 <br>
 ## PlatformIOのインストール
 ご利用の環境にPlatformIOをインストールしてください。<br>
