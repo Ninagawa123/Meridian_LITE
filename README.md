@@ -103,13 +103,13 @@ TX1を10番ピンから27番ピンに変更する設定をしておきます。<
 のようになっているので、以下のように書き加え、<br>
 シリアルモニタのスピードを500000に、またOTAという無線でのプログラム書き換え機能を削除してメモリ領域を増やす設定にします。<br>
 <br>
-[env:esp32dev]<br>
-platform = espressif32<br>
-board = esp32dev<br>
-framework = arduino<br>
-monitor_speed = 500000<br>
-board_build.partitions = no_ota.csv<br>
-lib_deps = adafruit/Adafruit BNO055@^1.5.3<br>
+>[env:esp32dev]<br>
+>platform = espressif32<br>
+>board = esp32dev<br>
+>framework = arduino<br>
+>monitor_speed = 500000<br>
+>board_build.partitions = no_ota.csv<br>
+>lib_deps = adafruit/Adafruit BNO055@^1.5.3<br>
 <br>
 
 ### メインコードの修正
