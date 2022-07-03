@@ -48,7 +48,7 @@ IcsClass_V210のフォルダを、さきほどの「lib」に入れます。<br>
 ### Adafruit_BNO055を導入する
 アリ頭のアイコンから「QUICK ACCESS」→「PIO Home」→「Open」を開きます。<br>
 右画面PIO Homeのタグの左メニューから「Libraries」を選択します。<br>
-<img width="400" alt="5" src="https://user-images.githubusercontent.com/8329123/176911609-83cf3795-f890-4c41-88dc-92c2efcfb4ff.png">
+<img width="400" alt="5" src="https://user-images.githubusercontent.com/8329123/176911609-83cf3795-f890-4c41-88dc-92c2efcfb4ff.png"><br>
 今回のプロジェクト（Meridian_LITE_xxxxxx）を選択し、Addボタンを押します。<br>
 <br>
 
@@ -96,6 +96,22 @@ ubuntuならip aコマンド<br>
 macなら画面右上のwifiアイコンから"ネットワーク"環境設定...<br>
 で確認できます。<br>
 <br>
+
+### メインコードの設定
+main.cpp内の設定を手持ち機体に合わせて変更します。<br>
+<br>
+#define SD_MOUNT 1  　  // SDリーダーの搭載 (0:なし, 1:あり)
+#define IMU_MOUNT 1     // 6軸or9軸センサーの搭載 (0:なし, 1:BNO055, 2:MPU6050(未実装))
+#define JOYPAD_MOUNT 2  // ジョイパッドの搭載 (現在2のKRC-5FHのみ有効, ジョイパッドを接続しない場合は0)
+
+/* 各サーボのマウントありなし（1:サーボあり、0:サーボなし） */<br>
+
+idl_mt[0]がサーボ左側系のID0~です。接続しているサーボIDはTrue, 非接続のIDにはFalseを設定します。
+idr_mt[0]がサーボ右側系のID0~です。上記と同様に設定します。
+
+/* 各サーボの直立デフォルト値　(KRS値  0deg=7500, +-90deg=7500+-2667  KRS値=deg/0.03375) */<br>
+
+各サーボについてのトリム値を設定できます。
 
 ### ビルドとアップロード
 <img width="612" alt="9" src="https://user-images.githubusercontent.com/8329123/176913879-d05eb45d-15a0-47f6-a538-aa481b31e988.png"><br>
