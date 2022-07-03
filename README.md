@@ -7,7 +7,8 @@ ESP32devkitCを搭載することで、半二重通信方式のコマンドサ�
 <br>
 
 ## ピンアサイン
-<img width="800" alt="Meridian_Board_LITE_pinassign" src="https://user-images.githubusercontent.com/8329123/177022712-105a7df0-2ec7-45dc-9e2a-feb9f01e9ea7.png">
+
+<img width="800" alt="lite_pinassign" src="https://user-images.githubusercontent.com/8329123/177044311-0021c4bc-42ca-4f08-afd5-a440fdac624f.png">
 ピンアサインは上記の通りです。
 <br>
 
