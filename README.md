@@ -1,5 +1,6 @@
 # Meridian_LITE インストール方法
-Meridian LITE のボードを使う方法です。<br>
+Meridian LITE のボードを使う方法です。<br><img width="521" alt="SS 2264" src="https://user-images.githubusercontent.com/8329123/177020663-f10295f7-dafe-4a88-b266-dd5a4758e796.png">
+
 開発環境として、PlatformIOを使用します。<br>
 <br>
 ## PlatformIOのインストール
@@ -32,10 +33,13 @@ Framework:Arduino Framework<br>
 PC内で先ほど作成したプロジェクトのフォルダのある場所を探す。<br>
 その中に「lib」があるのを確認する。<br>
 <br>
-[サイト](https://kondo-robot.com/faq/ics-library-a2)より<br>
+<img width="521" alt="SS 2264" src="https://user-images.githubusercontent.com/8329123/177020750-c8210d92-e1d1-4970-a4c3-e04960a4a3f7.png">
+[近藤科学のサイト](https://kondo-robot.com/faq/ics-library-a2)より<br>
 ICS_Library_for_Arduino_V2_1.zip をDLし、解凍する。<br>
-さらにその中のIcsClass_V210.zipを解凍する。<br>
+解凍後、さらにその中のIcsClass_V210.zipを解凍する。<br>
 IcsClass_V210のフォルダを、さきほどの「lib」に入れる。<br>
+
+
 <br>
 ### Adafruit_BNO055を導入する  
 アリ頭のアイコンから「QUICK ACCESS」→「PIO Home」→「Open」を開く。<br>
