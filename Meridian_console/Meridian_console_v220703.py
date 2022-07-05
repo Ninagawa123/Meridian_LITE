@@ -9,7 +9,7 @@
 # ＜取扱説明書＞
 # ・起動方法
 # 当ファイルがあるディレクトリにて、ターミナルより
-# python3 Meridian_Console_v220703.py もしくは python Meridian_Console_v220703.py
+# python3 Meridian_console_v220703.py もしくは python Meridian_console_v220703.py
 # と入力して実行します。必要に応じてライブラリをpip3で追加してください。
 # UDP_RESV_IP,UDP_SEND_IPについては予め調べスクリプト上で書き換えておく必要があります。(入力しないと起動しません)
 # UDP_RESV_IPはターミナルにてip a もしくはipconfig,ifconfig等で調べられます。
