@@ -86,7 +86,7 @@ bool UDP_RESEIVE = true;                // PCからのデータ受信を行う�
 #define ENTER_TRIM_MODE 10003 // トリムモードに入る（全サーボオンで垂直に"気をつけ"の姿勢で立つ. ※未実装)
 
 /* 各種設定 #DEFINE */
-#define MSG_SIZE 90       // Meridim配列の長さ設定（デフォルトは90）
+#define MSG_SIZE 90       // Meridim配列の長さ設定（byte換算）
 #define SEND_PORT 22222   // 送り先のポート番号
 #define RESV_PORT 22224   // このESP32のポート番号
 #define ERR_LED 25        // LED用 処理が時間内に収まっていない場合に点灯
