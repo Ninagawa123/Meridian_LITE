@@ -76,8 +76,9 @@ IcsClass_V210のフォルダを、さきほどの「lib」に入れます。<br>
 ### Adafruit_BNO055を導入する
 アリ頭のアイコンから「QUICK ACCESS」→「PIO Home」→「Open」を開きます。<br>
 右画面PIO Homeのタグの左メニューから「Libraries」を選択します。<br>
+「Search libraries」となっている検索枠に「BNO055」と入力し、Adafruit BNO055を選択して「Add to Project」を押します。
 <img width="400" alt="5" src="https://user-images.githubusercontent.com/8329123/176911609-83cf3795-f890-4c41-88dc-92c2efcfb4ff.png"><br>
-今回のプロジェクト（Meridian_LITE_xxxxxx）を選択し、Addボタンを押します。<br>
+次に開くウインドの「Select a project」で今回のプロジェクト（Meridian_LITE_xxxxxx）を選択し、Addボタンを押します。<br>
 <br>
 
 ### メインコードの作成
