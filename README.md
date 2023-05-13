@@ -14,6 +14,8 @@ IOがESP32DevkitCのピン番号に該当しているので、ESP32Devkitのデ�
 Fとなっている箇所は未接続のピンとなっています。背面で好きな箇所と導線をはんだ付けすることで自由に機能を与えることができます。<br>
 搭載するESP32DevkitCはUSBコネクタがMeridian -LITE-のロゴ側を向くように設置してください。<br>
 <br>
+特にサーボコネクタを逆やズラして刺すと半二重回路に負荷がかかりボード上のICが一発で壊れるので、接続は十分ご注意ください。<br>
+<br>
 
 ## マウントと機能拡張
 <img width="400" alt="SS 2267" src="https://user-images.githubusercontent.com/8329123/177022972-3c9931ae-cfe3-44bb-9145-84303330a387.png">
@@ -160,9 +162,14 @@ main.cpp内の設定を手持ち機体に合わせて変更します。<br>
 <br>
 PCとESP32をUSBケーブルせ接続し、矢印ボタンを押すとESP32の内容が上書きされます。<br>
 アップロードが失敗する場合でも、何度か行うことで成功する場合があるので試してみてください。<br>
-<br>
 
 ### PC側の設定
 以降のテキストは準備中ですが、下記を参考にPC側の設定をすることで、デモを動作できると思います。<br>
 https://github.com/Ninagawa123/Meridian_core<br>
 <br>
+
+### 補足
+BNO_055とのI2C通信がうまくいかない場合は、10kΩ程度の抵抗でプルアップすることでI2Cの通信品質が改善する場合があります。
+<img width="1102" alt="SS 545" src="https://github.com/Ninagawa123/Meridian_LITE/assets/8329123/782ae3da-5e99-422f-865c-b1a683f2f2b9">
+
+
