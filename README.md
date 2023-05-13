@@ -170,4 +170,4 @@ https://github.com/Ninagawa123/Meridian_core<br>
 
 ### 補足
 BNO_055とのI2C通信がうまくいかない場合は、写真のように10kΩ程度の抵抗でプルアップすることでI2Cの通信品質が改善する場合があります。
-<img width="400" src="https://user-images.githubusercontent.com/8329123/176913879-d05eb45d-15a0-47f6-a538-aa481b31e988.png"><br>
+<img width="400" src="https://github.com/Ninagawa123/Meridian_LITE/blob/main/images/pullup.jpg"><br>
