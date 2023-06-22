@@ -1,7 +1,8 @@
 /*Meridian.h
   This is a library to drive a communication system for humanoid robots.
   It operates numerous servo motors and 9-axis sensors at 100 Hz and links status information with a PC in real time.
-  Created by Ninagawa123. June 22, 2023.
+  Created by Ninagawa123. October 30, 2022. 
+  and modified June 22, 2023.
   MIT license.*/
 
 #ifndef Meridian_h
