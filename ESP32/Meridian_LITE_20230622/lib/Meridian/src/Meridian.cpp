@@ -2,7 +2,7 @@
 
 ARDUINO_ROBOTICS_ESPTEENSY_MERIDIAN_NAMESPACE_BEGIN
 
-/*Meridian.h
+/*Meridian.cpp
   This is a library to drive a communication system for humanoid robots.
   It operates numerous servo motors and 9-axis sensors at 100 Hz and links status information with a PC in real time.
   Created by Ninagawa123. October 30, 2022. 
