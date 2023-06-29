@@ -95,8 +95,8 @@
 
 /* 各種ハードウェアのマウント有無 */
 #define MOUNT_ESP32 1        // ESPの搭載 (0:なし-SPI通信およびUDP通信を実施しない, 1:あり)
-#define MOUNT_SD 0           // SDカードリーダーの有無 (0:なし, 1:あり)
-#define MOUNT_IMUAHRS 0      // IMU/AHRSの搭載状況 0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
+#define MOUNT_SD 1           // SDカードリーダーの有無 (0:なし, 1:あり)
+#define MOUNT_IMUAHRS 3      // IMU/AHRSの搭載状況 0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
 #define MOUNT_ICS3 0         // 半二重サーボ信号の3系の有無 (0:なし, 1:あり)
 #define MOUNT_JOYPAD 2       // ジョイパッドの搭載
                              // 0:なし, 1:SBDBT(未), 2:KRC-5FH, 3:PS3(未), 4:PS4 ,5:Wii_yoko,
@@ -107,7 +107,7 @@
 #define MOUNT_SERVO_NUM_3 0  // 3系統につないだサーボの総数
 
 /* 動作チェックモード */
-#define CHECK_SD_RW 0 // 起動時のSDカードリーダーの読み書きチェック
+#define CHECK_SD_RW 1 // 起動時のSDカードリーダーの読み書きチェック
 
 /* シリアルモニタリング */
 // #define MONITOR_ALL_ERROR 0 // Teensyでのシリアル表示:全経路の受信エラー率
@@ -117,8 +117,8 @@
 #define MONITOR_SERVO_ERR 0 // シリアルモニタでサーボエラーを表示（0:OFF, 1:ON）
 
 /* Wifiアクセスポイントの設定 */
-#define WIFI_AP_SSID "xxxxxxxxx"    // アクセスポイントのWIFI_AP_SSID
-#define WIFI_AP_PASS "xxxxxxxxx"     // アクセスポイントのパスワード
+#define WIFI_AP_SSID "xxxxxxxx"    // アクセスポイントのWIFI_AP_SSID
+#define WIFI_AP_PASS "xxxxxxxx"     // アクセスポイントのパスワード
 #define WIFI_SEND_IP "192.168.1.xx" // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）
 #define UDP_SEND_PORT 22222         // 送り先のポート番号
 #define UDP_RESV_PORT 22224         // このESP32のポート番号
