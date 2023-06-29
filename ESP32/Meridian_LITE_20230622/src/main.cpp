@@ -152,6 +152,7 @@ float idr_tgt_past[15] = {0}; // R系統の前回の値
 /* 各サーボのマウントありなし */
 int idl_mount[15] = {IDL_MT0, IDL_MT1, IDL_MT2, IDL_MT3, IDL_MT4, IDL_MT5, IDL_MT6, IDL_MT7, IDL_MT8, IDL_MT9, IDL_MT10, IDL_MT11, IDL_MT12, IDL_MT13, IDL_MT14}; // L系統
 int idr_mount[15] = {IDR_MT0, IDR_MT1, IDR_MT2, IDR_MT3, IDR_MT4, IDR_MT5, IDR_MT6, IDR_MT7, IDR_MT8, IDR_MT9, IDR_MT10, IDR_MT11, IDR_MT12, IDR_MT13, IDR_MT14}; // R系統
+int id3_mount[15] = {0};                                                                                                                                          // 3系統
 
 /* 各サーボの回転方向順逆補正用 */
 int idl_cw[15] = {IDL_CW0, IDL_CW1, IDL_CW2, IDL_CW3, IDL_CW4, IDL_CW5, IDL_CW6, IDL_CW7, IDL_CW8, IDL_CW9, IDL_CW10, IDL_CW11, IDL_CW12, IDL_CW13, IDL_CW14}; // L系統
@@ -211,7 +212,8 @@ void setup()
   check_sd();
 
   /* マウントされたサーボIDの表示 */
-  mrd.print_servo_mounts(idl_mount, idr_mount);
+  // mrd.print_servo_mounts(idl_mount, idr_mount, id3_mount);
+  mrd.print_servo_mounts(idl_mount, idr_mount, id3_mount);
 
   /* JOYPADの認識 */
   mrd.print_controlpad(MOUNT_JOYPAD, JOYPAD_POLLING);
@@ -346,7 +348,7 @@ void loop()
             idl_err[i] = 0;
           }
         }
-        idl_tgt[i] = mrd.Krs2Deg(k, idl_trim[i]);
+        idl_tgt[i] = mrd.Krs2Deg(k, idl_trim[i], idl_cw[i]);
       }
       // delayMicroseconds(2);
 
@@ -388,7 +390,7 @@ void loop()
             idr_err[i] = 0;
           }
         }
-        idr_tgt[i] = mrd.Krs2Deg(k, idr_trim[i]);
+        idr_tgt[i] = mrd.Krs2Deg(k, idr_trim[i], idr_cw[i]);
       }
       delayMicroseconds(2);
     }
@@ -418,7 +420,8 @@ void loop()
   //////// < 7 > エ ラ ー リ ポ ー ト の 作 成 ///////////////////////////////////////
   // @ [7-1] 通信エラー処理(スキップ検出)
   mrd_seq_r_expect = mrd.predict_seq_num(mrd_seq_r_expect); // シーケンス番号予想値
-  mrd_seq_r = int(s_udp_meridim.usval[1]);                  // 受信したシーケンス番号
+  // mrd_seq_r_expect = mrd.seq_predict_num(mrd_seq_r_expect); // シーケンス番号予想値
+  mrd_seq_r = int(s_udp_meridim.usval[1]); // 受信したシーケンス番号
 
   if (MONITOR_SEQ)
   {
@@ -428,7 +431,9 @@ void loop()
     Serial.println(mrd_seq_r);
   }
 
-  if (mrd.compare_seq_nums(mrd_seq_r_expect, mrd_seq_r)) // シーケンス番号が期待通りなら順番どおり受信
+  // if (mrd.seq_compare_nums(mrd_seq_r_expect, mrd_seq_r)) // シーケンス番号が期待通りなら順番どおり受信
+
+  if (mrd.seq_compare_nums(mrd_seq_r_expect, mrd_seq_r)) // シーケンス番号が期待通りなら順番どおり受信
   {
     // Serial.println("BINGO");
     s_udp_meridim.bval[MSG_ERR_u] &= B11111011; // エラーフラグ10番(ESP受信のスキップ検出)をオフ
@@ -493,6 +498,7 @@ void loop()
 
   // @ [9-2] フレームスキップ検出用のカウントをカウントアップして送信用に格納
   mrd_seq_s_increment = mrd.increase_seq_num(mrd_seq_s_increment);
+  // mrd_seq_s_increment = mrd.seq_increase_num(mrd_seq_s_increment);
   s_udp_meridim.usval[1] = mrd_seq_s_increment;
 
   // @ [9-3] チェックサムを計算して格納
