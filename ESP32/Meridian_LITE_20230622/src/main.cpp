@@ -114,18 +114,23 @@ int err_pc_esp = 0; // ESP32の受信エラー（PCからのUDP）
 //////// リモコン関連 /////////////////
 typedef union
 {
-  short sval[4];       // short型で4個の配列データを持つ
-  uint16_t usval[8];   // 上記のunsigned short型
-  uint64_t ui64val[1]; // 上記のunsigned int16型
-                       // button, pad_stick_L_x:pad_stick_L_y,
-                       // pad_stick_R_x:pad_stick_R_y, pad_L2_val:pad_R2_val
+    short sval[4];       // short型で4個の配列データを持つ
+    uint16_t usval[4];   // 上記のunsigned short型
+    int8_t bval[8];      // 上記のbyte型
+    uint8_t ubval[8];    // 上記のunsigned byte型
+    uint64_t ui64val[1]; // 上記のunsigned int16型
+                         // button, pad_stick_L_x:pad_stick_L_y,
+                         // pad_stick_R_x:pad_stick_R_y, pad_L2_val:pad_R2_val
 } UnionPad;
 UnionPad pad_array = {0}; // リモコン値格納用の配列
-int pad_button = 0;
+unsigned short pad_btn = 0;
+int pad_stick_R = 0;
 int pad_stick_R_x = 0;
 int pad_stick_R_y = 0;
+int pad_stick_L = 0;
 int pad_stick_L_x = 0;
 int pad_stick_L_y = 0;
+int pad_stick_V = 0;
 int pad_R2_val = 0;
 int pad_L2_val = 0;
 
