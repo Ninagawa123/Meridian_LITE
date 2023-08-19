@@ -50,8 +50,7 @@ PlatformIOを起動し、「Platformes」の検索窓で「ESP32」を検索し�
 <br>
 
 ## ファイルをDLする  
-
-<img width="419" alt="SS 925" src="https://github.com/Ninagawa123/Meridian_LITE/assets/8329123/cbb6f741-2690-48bd-85e9-90974a6d697a">
+<img width="419" alt="SS 925" src="https://github.com/Ninagawa123/Meridian_LITE/assets/8329123/cbb6f741-2690-48bd-85e9-90974a6d697a">  
 このサイトの右上の「CODE」からzip形式などを選択してDLし、適切な場所に解凍、展開してください。
 慣れてている方はもちろんgit cloneなどでもかまいません。
 
