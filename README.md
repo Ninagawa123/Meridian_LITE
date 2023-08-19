@@ -49,17 +49,16 @@ PlatformIOを起動し、「Platformes」の検索窓で「ESP32」を検索し�
 新しいバージョン(4.x.x)だとwifi関連がうまく動かない可能性が高いです。<br>
 <br>
 
-## 新規プロジェクトを作成する  
-<img width="600" alt="2" src="https://user-images.githubusercontent.com/8329123/176886274-bbe57e27-7a14-4a1a-8df7-48d7f7bf495f.png"><br>
-「Home」タブより「+New Project」を選びます。<br>
-<br>
-<img width="400" alt="3" src="https://user-images.githubusercontent.com/8329123/176886509-4ad96264-c89f-4e3f-9b69-21799f7ad162.png"><br>
-Name:Meridian_LITE_xxxxxxx<br>
-Board:Espressif ESP32 Dev Module<br>
-Framework:Arduino Framework<br>
-とします。<br>
-<br>
+## ファイルをDLする  
 
+<img width="419" alt="SS 925" src="https://github.com/Ninagawa123/Meridian_LITE/assets/8329123/cbb6f741-2690-48bd-85e9-90974a6d697a">
+このサイトの右上の「CODE」からzip形式などを選択してDLし、適切な場所に解凍、展開してください。
+慣れてている方はもちろんgit cloneなどでもかまいません。
+
+## フォルダを開く
+VSCodeのファイルメニューから「フォルダを開く...」を選択し、展開したファイルの中にある「Meridian_LITE_for_ESP32」を開きます。  
+  
+<br>
 ## ライブラリのインストール
 ### IcsHardSerialClassを導入する
 <img width="600" alt="SS 2266" src="https://user-images.githubusercontent.com/8329123/177020842-92d11f38-49b1-4cde-86f8-171febd849da.png">
