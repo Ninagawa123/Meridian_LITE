@@ -59,28 +59,16 @@ VSCodeのファイルメニューから「フォルダを開く...」を選択�
 <br>
   
 ## ライブラリのインストール  
-
-### IcsHardSerialClassを導入する  
   
-<img width="600" alt="SS 2266" src="https://user-images.githubusercontent.com/8329123/177020842-92d11f38-49b1-4cde-86f8-171febd849da.png">
-PCのエクスプローラー(Macはファインダ)で内で先ほど作成したプロジェクトのフォルダのある場所を探します。<br>
-その中に「lib」があるのを確認します。<br>　
-<br>
-近藤科学様のサイトより、ICS_Library_for_Arduino_V2_1.zip をDLし、解凍します。<br>
-https://kondo-robot.com/faq/ics-library-a2 <br>
-解凍後、さらにその中のIcsClass_V210.zipを解凍します。（※IcsSoftSerialClass_V210.zipではないので注意。）<br>
-IcsClass_V210のフォルダを、さきほどの「lib」に入れます。<br>
-<br>
-<img width="300" alt="SS 2264" src="https://user-images.githubusercontent.com/8329123/177020750-c8210d92-e1d1-4970-a4c3-e04960a4a3f7.png">
-ディレクトリ構造が上図のようになっていればOKです。<br>
-<br>
-
-### Adafruit_BNO055を導入する
+### Meridianを導入する
 アリ頭のアイコンから「QUICK ACCESS」→「PIO Home」→「Open」を開きます。<br>
 右画面PIO Homeのタグの左メニューから「Libraries」を選択します。<br>
-「Search libraries」となっている検索枠に「BNO055」と入力し、Adafruit BNO055を選択して「Add to Project」を押します。<br>
-<img width="400" alt="5" src="https://user-images.githubusercontent.com/8329123/176911609-83cf3795-f890-4c41-88dc-92c2efcfb4ff.png"><br>
-次に開くウインドの「Select a project」で今回のプロジェクト（Meridian_LITE_xxxxxx）を選択し、Addボタンを押します。<br>
+「Search libraries」となっている検索枠に「Meridian」と入力し、「Meridian by Ninagawa123」を選択して「Add to Project」を押します。バージョンは0.1.0以上を使用してください。<br>
+次に開くウインドの「Select a project」で今回のプロジェクト（Meridian_LITE_for_ESP32）を選択し、Addボタンを押します。<br>  
+  
+### Adafruit_BNO055を導入する
+上記と同様手順で、「Search libraries」となっている検索枠に「BNO055」と入力し、Adafruit BNO055を選択して「Add to Project」を押します。<br>
+
 <br>
 
 ### メインコードの作成
