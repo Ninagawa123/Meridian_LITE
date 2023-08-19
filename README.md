@@ -1,12 +1,12 @@
 # Meridian_LITE ボードについて
 <img width="400" src="https://user-images.githubusercontent.com/8329123/177022808-50ccf555-4afd-450c-a07e-3302771d45cf.jpg">
-
+  
 "Meridian board -LITE-" は半二重通信回路2系統を搭載とSPI,I2Cなどの出力ピンを備えたボードです。<br>
 ESP32devkitCを搭載することで、半二重通信方式のコマンドサーボを扱えるロボット用ボードとして機能します。<br>
 <br>
-
+  
 ## ピンアサイン
-
+  
 <img width="800" alt="lite_pinassign" src="https://user-images.githubusercontent.com/8329123/177044311-0021c4bc-42ca-4f08-afd5-a440fdac624f.png">
 ピンアサインは上記の通りです。<br>
 IOがESP32DevkitCのピン番号に該当しているので、ESP32Devkitのデータシート等を参考に使うことができます。<br>
@@ -16,7 +16,7 @@ Fとなっている箇所は未接続のピンとなっています。背面で�
 <br>
 特にサーボコネクタを逆やズラして刺すと半二重回路に負荷がかかりボード上のICが一発で壊れるので、接続は十分ご注意ください。<br>
 <br>
-
+  
 ## マウントと機能拡張
 <img width="400" alt="SS 2267" src="https://user-images.githubusercontent.com/8329123/177022972-3c9931ae-cfe3-44bb-9145-84303330a387.png">
 上図のようにKHR-3HVのランドセルに本体無改造で固定することができます。<br>
@@ -27,20 +27,20 @@ Fとなっている箇所は未接続のピンとなっています。背面で�
 またリモコン受信機KRR-5FHも内臓できます。左下のビス穴のみを使いた簡易固定ができます。<br>
 蓋もギリギリですが閉じることができます。<br>
 <br>
-
+  
 # Meridian_LITE インストール方法
 Meridian LITE のボードを使う方法です。<br>
 開発環境として、VScodeとPlatformIOを使用します。<br>
 ※ArduinoIDEを使用した場合、WIFIライブラリの関係でESP32のパフォーマンスが発揮しきれません。<br>
 <br>
-
+  
 ## PlatformIOのインストール
 ご利用の環境にPlatformIOをインストールしてください。<br>
 参考URL  
 https://qiita.com/JotaroS/items/1930f156aab953194c9a  
 https://platformio.org/  
 <br>
-
+  
 ## 開発環境のインストール  
 PlatformIOを起動し、「Platformes」の検索窓で「ESP32」を検索します。<br>
 <br>
@@ -48,18 +48,20 @@ PlatformIOを起動し、「Platformes」の検索窓で「ESP32」を検索し�
 「Espressif 32」が見つかるので、バージョン「3.5.0」をインストールします。<br>
 新しいバージョン(4.x.x)だとwifi関連がうまく動かない可能性が高いです。<br>
 <br>
-
+  
 ## ファイルをDLする  
 <img width="419" alt="SS 925" src="https://github.com/Ninagawa123/Meridian_LITE/assets/8329123/cbb6f741-2690-48bd-85e9-90974a6d697a"><br>  
 このサイトの右上の「CODE」からzip形式などを選択してDLし、適切な場所に解凍、展開してください。  
 慣れてている方はもちろんgit cloneなどでもかまいません。  
   
 ## フォルダを開く
-VSCodeのファイルメニューから「フォルダを開く...」を選択し、展開したファイルの中にある「Meridian_LITE_for_ESP32」を開きます。  
-  
+VSCodeのファイルメニューから「フォルダを開く...」を選択し、展開したファイルの中にある「Meridian_LITE_for_ESP32」を開きます。
 <br>
-## ライブラリのインストール
-### IcsHardSerialClassを導入する
+  
+## ライブラリのインストール  
+
+### IcsHardSerialClassを導入する  
+  
 <img width="600" alt="SS 2266" src="https://user-images.githubusercontent.com/8329123/177020842-92d11f38-49b1-4cde-86f8-171febd849da.png">
 PCのエクスプローラー(Macはファインダ)で内で先ほど作成したプロジェクトのフォルダのある場所を探します。<br>
 その中に「lib」があるのを確認します。<br>　
