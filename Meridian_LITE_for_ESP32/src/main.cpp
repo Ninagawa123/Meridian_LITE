@@ -1,11 +1,13 @@
-// Meridan Board -LITE-
-// ESP32用スクリプト　20230818版
-#define VERSION "Hello, This is Meridian_LITE_20230818." // バージョン表示
+// Meridian_LITE_v1.0.1_20230820 for Meridan Board -LITE- with ESP32DecKitC
+#define VERSION "Hello, This is Meridian_LITE_v1.0.1_20230820." // バージョン表示
 
 // [ 概 要 ] ///////////////////////////////////////////////////////////////////////
-// MeridianはMeridim90というサーボやセンサーの状態が格納されたデータ配列を, PCと100Hzで共有する.
-// ハードウェアの制限上, サーボ値の返信は取りこぼしなどあるが, 取りこぼす直前のデータを使うことで擬似的に安定させている.
-// ICSサーボの返信データはサーボ由来の揺らぎがあるため現状では参考値と考えるのがよく,サーボ値を指示して動作させることが基本的な利用法となる.
+// Meridianはサーボやセンサーの状態が格納されたMeridim90というデータ配列を, PCと100Hzで共有します.
+// ハードウェアの制限上, サーボ値の返信に若干の取りこぼしがありますが, 取りこぼす直前のデータを使うなど
+// の処理で擬似的に安定させています.
+// ICSサーボの返信データはサーボ由来の揺らぎがあるため現状では参考値と考えるのがよく,サーボ値を指示して
+// 動作させることが基本的な利用法となります.
+// Meridian_LITE は, ESP32DevkitC + Meridian board -LITE- の組み合わせで使用します.
 
 // [ 利 用 プ ラ ッ ト フ ォ ー ム ] //////////////////////////////////////////////////
 //  ESP32 DevkitC + PlatformIOで使うことを想定
@@ -13,7 +15,7 @@
 //  Serial1を使うには設定を変更する必要あり. 参考 → https://qiita.com/Ninagawa_Izumi/items/8ce2d55728fd5973087d
 
 // [ デ フ ォ ル ト の ハ ー ド ウ ェ ア ] /////////////////////////////////////////////
-// 100Hz通信で安定動作.
+// 100Hz通信で安定動作します.
 // デフォルトの環境設定は
 // ① Meridian Board -LITE- に Espressif ESP32DevKitCを搭載.
 // ② ICSサーボL,R 11個ずつ合計22軸分を接続
@@ -22,59 +24,65 @@
 // ⑤ SDカード(SPIに接続)は不搭載
 //
 // 上記を搭載している場合,
-// サーボについてはconfig.h内にて下記の初期設定をしておく.
+// サーボについてはconfig.h内にて下記の初期設定をしておいてください.
 // IDL_MT0 - IDR_MT14     : 各サーボのマウントありなし(デフォルトはKHR - 3HVの22軸設定.)
 // IDL_CW0 - IDR_CW14     : 各サーボの回転方向の正負補正
 // IDL_TRIM0 - IDR_TRIM14 : 直立時の各サーボのデフォルト値
-// その他については,config.h内の SD_MOUNT,MOUNT_IMUAHRS,MOUNT_JOYPAD などをそれぞれ設定.
+// その他については,config.h内の SD_MOUNT,MOUNT_IMUAHRS,MOUNT_JOYPAD などをそれぞれ設定します.
 
 // [ WIFI設定 ] ////////////////////////////////////////////////////////////////////
-// サーボについてはconfig.h内の /* Wifiアクセスポイントの設定 */ にて
-// WIFI_AP_SSID, WIFI_AP_PASS, WIFI_SEND_IP を設定する.
-// PCのIPアドレスはPC側で調べる.
-// ESP32側のIPアドレス, BluetoothMACアドレスはEPS32の起動時にシリアルモニタに表示される.
+// サーボについてはkeys.h内の /* Wifiアクセスポイントの設定 */ にて
+// WIFI_AP_SSID, WIFI_AP_PASS, WIFI_SEND_IP を設定してください.
+// PCのIPアドレスはPC側で調べてください.
+// ESP32側のIPアドレス, BluetoothMACアドレスはEPS32の起動時にシリアルモニタに表示されます.
 
-// [ 更 新 履 歴 ] /////////////////////////////////////////////////////////////////
-// 20230617 20220703版をベースに, 全面改訂.
-// 20230617 公式ライブラリ<Meridian.h> バージョンxx に対応.
-// 20230617 変数名や関数名をMeridian TWINと共通化.
-// 20230617 サーボ角の扱いの基本型をdegree値に変更.
-// 20230617 config.hとmain.hを作成.
+// [ バージョン情報 ] ////////////////////////////////////////////////////////////////
+// v1.0.1 (20230820)
+// ・公式ライブラリの<Meridian.h>に対応しました.
+// ・wiimote(wiiリモコン)にデフォルト対応しました.
+// ・bno055のヨー軸データが原点リセットに対応し、-180〜180度を取得できるようにしました.
+// ・サーボの断線検出に対応しました.
+// ・SSIDなどのパスワードを含むヘッダファイルをkeys.hに隔離しました.
 
 //================================================================================================================
 //---- 初 期 設 定  -----------------------------------------------------------------------------------------------
 //================================================================================================================
 
-//////// モジュール導入 ////////////////
-/* ライブラリ導入 */
-#include <Arduino.h>
-#include <Meridian.h>           // Meridianのライブラリ導入
-#include <WiFi.h>               // WiFi通信用ライブラリ
-#include <WiFiUdp.h>            // UDP通信用ライブラリ
-#include <IcsHardSerialClass.h> // KONDOサーボのライブラリ
-#include <Wire.h>               // I2C通信用ライブラリ
-#include <Adafruit_BNO055.h>    // 9軸センサBNO055用のライブラリ
-#include <SPI.h>                // SPI自体は使用しないがBNO055に必要
-#include <SD.h>                 // SDカード用のライブラリ
-#include <map>                  // 辞書型配列用のライブラリ
 /* コンフィグファイルの読み込み */
 #include "config.h"
+#include "keys.h"
+
 /* ヘッダファイルの読み込み */
 #include "main.h"
 
-//////// インスタンス関連 //////////////
-MERIDIANFLOW::Meridian mrd;                                              // ライブラリのクラスを mrdという名前でインスタンス化
+/* ライブラリ導入 */
+#include <Arduino.h>
+#include <Meridian.h>           // Meridianのライブラリ導入
+MERIDIANFLOW::Meridian mrd;     // ライブラリのクラスを mrdという名前でインスタンス化
+#include <WiFi.h>               // WiFi通信用ライブラリ
+#include <WiFiUdp.h>            // UDP通信用ライブラリ
+WiFiUDP udp;                    // wifi設定
+#include <IcsHardSerialClass.h> // KONDOサーボのライブラリ
+#include <Wire.h>               // I2C通信用ライブラリ
+#include <Adafruit_BNO055.h>    // 9軸センサBNO055用のライブラリ
+#include <ESP32Wiimote.h>       // Wiiコントローラーのライブラリ
+ESP32Wiimote wiimote;           // Wiiコントローラー設定
+#include <SPI.h>                // SPIのライブラリ
+#include <SD.h>                 // SDカード用のライブラリ
+
+/* ICSサーボのインスタンス設定 */
 IcsHardSerialClass krs_L(&Serial1, PIN_EN_L, ICS_BAUDRATE, ICS_TIMEOUT); // サーボL系統UARTの設定（TX27,RX32,EN33）
 IcsHardSerialClass krs_R(&Serial2, PIN_EN_R, ICS_BAUDRATE, ICS_TIMEOUT); // サーボR系統UARTの設定（TX17,RX16,EN4）
-WiFiUDP udp;
 
-//////// Meridim配列定義関連 //////////
-const int MSG_BUFF = MSG_SIZE * 2;     // Meridim配列の長さ（byte換算）
+/* Meridim配列設定 */
+const int MSG_BUFF = MSG_SIZE * 2;     // Meridim配列のバイト長
 const int MSG_ERR = MSG_SIZE - 2;      // エラーフラグの格納場所（配列の末尾から2つめ）
 const int MSG_ERR_u = MSG_ERR * 2 + 1; // エラーフラグの格納場所（上位8ビット）
 const int MSG_ERR_l = MSG_ERR * 2;     // エラーフラグの格納場所（下位8ビット）
 const int MSG_CKSM = MSG_SIZE - 1;     // チェックサムの格納場所（配列の末尾）
-typedef union                          // Meridim配列用の共用体の設定
+
+/* Meridim配列用の共用体の設定 */
+typedef union // Meridim配列用の共用体の設定
 {
   short sval[MSG_SIZE + 4];           // short型でデフォルト90個の配列データを持つ
   unsigned short usval[MSG_SIZE + 2]; // 上記のunsigned short型
@@ -82,36 +90,34 @@ typedef union                          // Meridim配列用の共用体の設定
 } UnionData;
 UnionData s_udp_meridim = {0}; // UDP送信用共用体のインスタンスを宣言
 UnionData r_udp_meridim = {0}; // UDP受信用共用体のインスタンスを宣言
-// UnionData pad_udp_meridim = {0}; // UDP送信用共用体のインスタンスを宣言
 
-//////// システム関連 /////////////////
+/* システム用変数 */
 TaskHandle_t thp[4];                                           // マルチスレッドのタスクハンドル格納用
 File myFile;                                                   // SDカード用
 int servo_num_max = max(MOUNT_SERVO_NUM_L, MOUNT_SERVO_NUM_R); // サーボ送受信のループ処理数（L系R系で多い方）
 
-//////// フラグ関連 ///////////////////
+/* フラグ関連変数 */
 bool udp_rsvd_flag = 0; // UDPの受信終了フラグ
 
-//////// タイマー関連 /////////////////
+/* タイマー管理用の変数 */
 long frame_ms = FRAME_DURATION;  // 1フレームあたりの単位時間(ms)
-int frame_count = 0;             // サイン計算用の変数
-int frame_count_diff = 2;        // サインカーブ動作などのフレームカウントをいくつずつ進めるか
-int frame_count_max = 360000;    // フレームカウントの最大値
-int joypad_frame_count = 0;      // JOYPADのデータを読みに行くためのフレームカウント
 long mrd_t_mil = (long)millis(); // フレーム管理時計の時刻 Meridian Time.
 long now_t_mil = (long)millis(); // 現在時刻をミリ秒で取得
 long now_t_mic = (long)micros(); // 現在時刻をマイクロ秒で取得
+int frame_count = 0;             // サイン計算用の変数
+int frame_count_diff = 2;        // サインカーブ動作などのフレームカウントをいくつずつ進めるか
+int frame_count_max = 360000;    // フレームカウントの最大値
+int joypad_polling_count = 0;    // JOYPADのデータを読みに行くためのフレームカウント
 int mrd_seq_s_increment = 0;     // フレーム毎に0-59999をカウントし、送信
 int mrd_seq_r_expect = 0;        // フレーム毎に0-59999をカウントし、受信値と比較
-int mrd_seq_r = 0;               // 今フレームに受信したframe_syncを格納
 
-//////// エラー管理 ///////////////////
+/* エラーカウント用 */
 int err_pc_esp = 0; // ESP32の受信エラー（PCからのUDP）
 
-//////// モード切り替え関連 ////////////
-// config.hにて設定
+/* 各種モード設定 */
+//
 
-//////// リモコン関連 /////////////////
+/* リモコン用変数 */
 typedef union
 {
   short sval[4];       // short型で4個の配列データを持つ
@@ -134,32 +140,17 @@ int pad_stick_V = 0;
 int pad_R2_val = 0;
 int pad_L2_val = 0;
 
-//////// センサー関連 /////////////////
+/* センサー(BNO055)用の変数*/
 Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28, &Wire);
-float bno055_read[16]; // bno055のデータの一時保存
-float yaw_center = 0;  // ヨー軸の原点セット用
-
-//////// サーボボジション関連 //////////
-/* サーボのポジション用配列.*/
-int s_servo_pos_L[15] = {0}; // 15要素 100倍したdegree値
-int s_servo_pos_R[15] = {0}; // 15要素 100倍したdegree値
-
-/* サーボのエラーカウンタ配列.*/
-int idl_err[15] = {0}; // 15要素
-int idr_err[15] = {0}; // 15要素
-
-/* 各サーボのポジション値(degree) */
-float idl_tgt[15] = {0};      // L系統の目標値
-float idr_tgt[15] = {0};      // R系統の目標値
-float idl_tgt_past[15] = {0}; // L系統の前回の値
-float idr_tgt_past[15] = {0}; // R系統の前回の値
+float bno055_read[16];        // bno055のデータの一時保存
+float imuahrs_yaw_origin = 0; // ヨー軸の原点セット用
 
 /* 各サーボのマウントありなし */
 int idl_mount[15] = {IDL_MT0, IDL_MT1, IDL_MT2, IDL_MT3, IDL_MT4, IDL_MT5, IDL_MT6, IDL_MT7, IDL_MT8, IDL_MT9, IDL_MT10, IDL_MT11, IDL_MT12, IDL_MT13, IDL_MT14}; // L系統
 int idr_mount[15] = {IDR_MT0, IDR_MT1, IDR_MT2, IDR_MT3, IDR_MT4, IDR_MT5, IDR_MT6, IDR_MT7, IDR_MT8, IDR_MT9, IDR_MT10, IDR_MT11, IDR_MT12, IDR_MT13, IDR_MT14}; // R系統
 int id3_mount[15] = {0};                                                                                                                                          // 3系統
 
-/* 各サーボの回転方向順逆補正用 */
+/* 各サーボの正逆方向補正用配列 */
 int idl_cw[15] = {IDL_CW0, IDL_CW1, IDL_CW2, IDL_CW3, IDL_CW4, IDL_CW5, IDL_CW6, IDL_CW7, IDL_CW8, IDL_CW9, IDL_CW10, IDL_CW11, IDL_CW12, IDL_CW13, IDL_CW14}; // L系統
 int idr_cw[15] = {IDR_CW0, IDR_CW1, IDR_CW2, IDR_CW3, IDR_CW4, IDR_CW5, IDR_CW6, IDR_CW7, IDR_CW8, IDR_CW9, IDR_CW10, IDR_CW11, IDR_CW12, IDR_CW13, IDR_CW14}; // R系統
 
@@ -167,7 +158,21 @@ int idr_cw[15] = {IDR_CW0, IDR_CW1, IDR_CW2, IDR_CW3, IDR_CW4, IDR_CW5, IDR_CW6,
 float idl_trim[15] = {IDL_TRIM0, IDL_TRIM1, IDL_TRIM2, IDL_TRIM3, IDL_TRIM4, IDL_TRIM5, IDL_TRIM6, IDL_TRIM7, IDL_TRIM8, IDL_TRIM9, IDL_TRIM10, IDL_TRIM11, IDL_TRIM12, IDL_TRIM13, IDL_TRIM14}; // L系統
 float idr_trim[15] = {IDR_TRIM0, IDR_TRIM1, IDR_TRIM2, IDR_TRIM3, IDR_TRIM4, IDR_TRIM5, IDR_TRIM6, IDR_TRIM7, IDR_TRIM8, IDR_TRIM9, IDR_TRIM10, IDR_TRIM11, IDR_TRIM12, IDR_TRIM13, IDR_TRIM14}; // R系統
 
-//////// 計算用変数 //////////////////
+/* サーボのポジション用配列 */
+int s_servo_pos_L[15] = {0}; // 15要素 100倍したdegree値
+int s_servo_pos_R[15] = {0}; // 15要素 100倍したdegree値
+
+/* 各サーボのポジション値(degree) */
+float idl_tgt[15] = {0};      // L系統の目標値
+float idr_tgt[15] = {0};      // R系統の目標値
+float idl_tgt_past[15] = {0}; // L系統の前回の値
+float idr_tgt_past[15] = {0}; // R系統の前回の値
+
+/* サーボのエラーカウンタ配列 */
+int idl_err[15] = {0}; // 15要素
+int idr_err[15] = {0}; // 15要素
+
+/* 計算用変数 */
 float n; // 計算用
 int k;   // 各サーボの計算用変数
 
@@ -192,12 +197,19 @@ void setup()
 
   /* WiFiの初期化と開始 */
   init_wifi(WIFI_AP_SSID, WIFI_AP_PASS);
+  while (WiFi.status() != WL_CONNECTED)
+  {           // https://www.arduino.cc/en/Reference/WiFiStatus 戻り値一覧
+    delay(1); // 接続が完了するまでループで待つ
+  }
 
   /* 起動メッセージ2 */
-  mrd.print_esp_hello_ip(WIFI_SEND_IP, WiFi.localIP(), FIXED_IP_ADDR, MODE_FIXED_IP);
+  mrd.print_esp_hello_ip(WIFI_SEND_IP, WiFi.localIP().toString(), FIXED_IP_ADDR, MODE_FIXED_IP);
 
   /* UDP通信の開始 */
   udp.begin(UDP_RESV_PORT);
+
+  /* Bluetoothリモコン関連の処理 */
+  bt_settings();
 
   /* I2Cの開始 */
   Wire.begin(22, 21);
@@ -209,7 +221,7 @@ void setup()
   if (MOUNT_IMUAHRS == 3)
   {
     xTaskCreatePinnedToCore(Core1_bno055_r, "Core1_bno055_r", 4096, NULL, 10, &thp[0], 1);
-    Serial.println("Core1 Slead for bno055 start.");
+    Serial.println("Core1 thread for bno055 start.");
     delay(10); // センサー用スレッド
   }
 
@@ -217,7 +229,6 @@ void setup()
   check_sd();
 
   /* マウントされたサーボIDの表示 */
-  // mrd.print_servo_mounts(idl_mount, idr_mount, id3_mount);
   mrd.print_servo_mounts(idl_mount, idr_mount, id3_mount);
 
   /* JOYPADの認識 */
@@ -262,8 +273,6 @@ void loop()
       udp_rsvd_flag = 0;
     }
   }
-  mrd.monitor_check_flow("[1]", MONITOR_FLOW); // デバグ用フロー表示
-
   // 　→ ここでr_udp_meridim.sval に受信したMeridim配列が入っている状態。
 
   // @ [1-2] チェックサムを確認
@@ -277,6 +286,9 @@ void loop()
     // @ [1-4] エラーフラグ14番(ESP32のPCからのUDP受信エラー検出)をオフ
     s_udp_meridim.bval[MSG_ERR_u] &= B10111111;
 
+    //
+    mrd.monitor_check_flow("[1]", MONITOR_FLOW); // デバグ用フロー表示
+
     //////// < 2 > リ モ コ ン 受 信 ///////////////////////////////////////////////////
     // @ [2-1] コントロールパッド受信値の転記
     if (MOUNT_JOYPAD != 0)
@@ -287,23 +299,25 @@ void loop()
       {
         monitor_joypad(pad_array.usval);
       }
+      //
       mrd.monitor_check_flow("[2]", MONITOR_FLOW); // デバグ用フロー表示
     }
 
     //////// < 3 > 受 信 コ マ ン ド に 基 づ く 制 御 処 理 /////////////////////////////
-    // @ [3-1] AHRSのヨー軸リセット
-    if (r_udp_meridim.sval[0] == MCMD_UPDATE_YAW_CENTER)
-    {
-      setyawcenter();
-    }
+    // @[3-1] マスターコマンドの判定により工程の実行orスキップを分岐
+    execute_MasterCommand(); // マスターコマンドの実行
+
+    //
     mrd.monitor_check_flow("[3]", MONITOR_FLOW); // デバグ用フロー表示
 
     //////// < 4 > E S P 内 部 で 位 置 制 御 す る 場 合 の 処 理 ///////////////////////
-    /* 現在はとくに設定なし */
+    // @[4-1] 現在はとくに設定なし
+
+    //
     mrd.monitor_check_flow("[4]", MONITOR_FLOW); // デバグ用フロー表示
 
     //////// < 5 > サ ー ボ 動 作 の 実 行 /////////////////////////////////////////////
-    // @ [5-1] 受信したサーボ位置をサーボ配列に書き込む
+    // @ [5-1] UDPから受信したサーボ位置をサーボ配列に書き込む
     for (int i = 0; i < servo_num_max; i++)
     {
       idl_tgt_past[i] = idl_tgt[i];                       // 前回のdegreeをキープ
@@ -313,95 +327,100 @@ void loop()
     }
 
     // @ [5-2] サーボ受信値の処理
-    for (int i = 0; i < servo_num_max; i++) // ICS_L系統の処理
-    {                                       // 接続したサーボの数だけ繰り返す。最大は15
-      if (idl_mount[i])
-      {
-        if (r_udp_meridim.sval[(i * 2) + 20] == 1) // 受信配列のサーボコマンドが1ならPos指定
+    if (s_udp_meridim.sval[MRD_MASTER] != 0)
+    {
+      for (int i = 0; i < servo_num_max; i++) // ICS_L系統の処理
+      {                                       // 接続したサーボの数だけ繰り返す。最大は15
+        if (idl_mount[i])
         {
-          k = krs_L.setPos(i, mrd.Deg2Krs(idl_tgt[i], idl_trim[i], idl_cw[i]));
-          if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
+          if (s_udp_meridim.sval[(i * 2) + 20] == 1) // 受信配列のサーボコマンドが1ならPos指定
           {
-            k = mrd.Deg2Krs(idl_tgt_past[i], idl_trim[i], idl_cw[i]);
-            idl_err[i]++;
-            if (idl_err[i] >= SERVO_LOST_ERROR_WAIT)
+            k = krs_L.setPos(i, mrd.Deg2Krs(idl_tgt[i], idl_trim[i], idl_cw[i]));
+            if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
             {
-              s_udp_meridim.bval[MSG_ERR_l] = char(i); // Meridim[MSG_ERR] エラーを出したサーボID（0をID[L00]として[L99]まで）
-              mrd.monitor_servo_error("L", i, MONITOR_SERVO_ERR);
+              k = mrd.Deg2Krs(idl_tgt_past[i], idl_trim[i], idl_cw[i]);
+              idl_err[i]++;
+              if (idl_err[i] >= SERVO_LOST_ERROR_WAIT)
+              {
+                s_udp_meridim.bval[MSG_ERR_l] = char(i); // Meridim[MSG_ERR] エラーを出したサーボID（0をID[L00]として[L99]まで）
+                mrd.monitor_servo_error("L", i, MONITOR_SERVO_ERR);
+              }
+            }
+            else
+            {
+              idl_err[i] = 0;
             }
           }
-          else
+          else // 1以外ならとりあえずサーボを脱力し位置を取得。手持ちの最大は15
           {
-            idl_err[i] = 0;
-          }
-        }
-        else // 1以外ならとりあえずサーボを脱力し位置を取得。手持ちの最大は15
-        {
-          k = krs_L.setFree(i); // サーボからの返信信号を受け取れていれば値を更新
-          if (k == -1)          // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
-          {
-            k = mrd.Deg2Krs(idl_tgt_past[i], idl_trim[i], idl_cw[i]);
-            idl_err[i]++;
-            if (idl_err[i] >= SERVO_LOST_ERROR_WAIT)
+            k = krs_L.setFree(i); // サーボからの返信信号を受け取れていれば値を更新
+            if (k == -1)          // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
             {
-              s_udp_meridim.bval[MSG_ERR_l] = char(i); // Meridim[MSG_ERR] エラーを出したサーボID（0をID[L00]として[L99]まで）
-              mrd.monitor_servo_error("L", i, MONITOR_SERVO_ERR);
+              k = mrd.Deg2Krs(idl_tgt_past[i], idl_trim[i], idl_cw[i]);
+              idl_err[i]++;
+              if (idl_err[i] >= SERVO_LOST_ERROR_WAIT)
+              {
+                s_udp_meridim.bval[MSG_ERR_l] = char(i); // Meridim[MSG_ERR] エラーを出したサーボID（0をID[L00]として[L99]まで）
+                mrd.monitor_servo_error("L", i, MONITOR_SERVO_ERR);
+              }
+            }
+            else
+            {
+              idl_err[i] = 0;
             }
           }
-          else
-          {
-            idl_err[i] = 0;
-          }
+          idl_tgt[i] = mrd.Krs2Deg(k, idl_trim[i], idl_cw[i]);
         }
-        idl_tgt[i] = mrd.Krs2Deg(k, idl_trim[i], idl_cw[i]);
-      }
-      // delayMicroseconds(2);
+        delayMicroseconds(1);
 
-      if (idr_mount[i])
-      {
-        if (r_udp_meridim.sval[(i * 2) + 50] == 1) // 受信配列のサーボコマンドが1ならPos指定
+        if (idr_mount[i])
         {
-          k = krs_R.setPos(i, mrd.Deg2Krs(idr_tgt[i], idr_trim[i], idr_cw[i]));
-          if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
+          if (s_udp_meridim.sval[(i * 2) + 50] == 1) // 受信配列のサーボコマンドが1ならPos指定
           {
-            k = mrd.Deg2Krs(idr_tgt_past[i], idr_trim[i], idr_cw[i]);
-            idr_err[i]++;
-            if (idr_err[i] >= SERVO_LOST_ERROR_WAIT)
+            k = krs_R.setPos(i, mrd.Deg2Krs(idr_tgt[i], idr_trim[i], idr_cw[i]));
+            if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
             {
-              s_udp_meridim.bval[MSG_ERR_l] = char(i + 100); // Meridim[MSG_ERR] エラーを出したサーボID（100をID[R00]として[R99]まで）
-              mrd.monitor_servo_error("R", i + 100, MONITOR_SERVO_ERR);
+              k = mrd.Deg2Krs(idr_tgt_past[i], idr_trim[i], idr_cw[i]);
+              idr_err[i]++;
+              if (idr_err[i] >= SERVO_LOST_ERROR_WAIT)
+              {
+                s_udp_meridim.bval[MSG_ERR_l] = char(i + 100); // Meridim[MSG_ERR] エラーを出したサーボID（100をID[R00]として[R99]まで）
+                mrd.monitor_servo_error("R", i + 100, MONITOR_SERVO_ERR);
+              }
+            }
+            else
+            {
+              idr_err[i] = 0;
             }
           }
-          else
+          else // 1以外ならとりあえずサーボを脱力し位置を取得
           {
-            idr_err[i] = 0;
-          }
-        }
-        else // 1以外ならとりあえずサーボを脱力し位置を取得
-        {
-          k = krs_R.setFree(i);
-          if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
-          {
-            k = mrd.Deg2Krs(idr_tgt_past[i], idr_trim[i], idr_cw[i]);
-            idr_err[i]++;
-            if (idr_err[i] >= SERVO_LOST_ERROR_WAIT)
+            k = krs_R.setFree(i);
+            if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
             {
-              s_udp_meridim.bval[MSG_ERR_l] = char(i + 100); // Meridim[MSG_ERR] エラーを出したサーボID（100をID[R00]として[R99]まで）
-              mrd.monitor_servo_error("R", i + 100, MONITOR_SERVO_ERR);
+              k = mrd.Deg2Krs(idr_tgt_past[i], idr_trim[i], idr_cw[i]);
+              idr_err[i]++;
+              if (idr_err[i] >= SERVO_LOST_ERROR_WAIT)
+              {
+                s_udp_meridim.bval[MSG_ERR_l] = char(i + 100); // Meridim[MSG_ERR] エラーを出したサーボID（100をID[R00]として[R99]まで）
+                mrd.monitor_servo_error("R", i + 100, MONITOR_SERVO_ERR);
+              }
+            }
+            else
+            {
+              idr_err[i] = 0;
             }
           }
-          else
-          {
-            idr_err[i] = 0;
-          }
+          idr_tgt[i] = mrd.Krs2Deg(k, idr_trim[i], idr_cw[i]);
         }
-        idr_tgt[i] = mrd.Krs2Deg(k, idr_trim[i], idr_cw[i]);
+        delayMicroseconds(1);
       }
-      delayMicroseconds(2);
+
+      //
+      mrd.monitor_check_flow("[5]", MONITOR_FLOW); // デバグ用フロー表示
     }
-    mrd.monitor_check_flow("[5]", MONITOR_FLOW); // デバグ用フロー表示
   }
-  else // Check sum NG*
+  else // Check sum NG
   {
     err_pc_esp++;
     s_udp_meridim.bval[MSG_ERR_u] |= B01000000;     // エラーフラグ14番(ESP32のPCからのUDP受信エラー検出)をオン
@@ -420,43 +439,27 @@ void loop()
     // s_udp_meridim.sval[i * 2 + 50] = 0;                              // 仮にここでは各サーボのコマンドを脱力&ポジション指示(0)に設定
     s_udp_meridim.sval[i * 2 + 51] = mrd.float2HfShort(idr_tgt[i]); // 仮にここでは最新のサーボ角度degreeを格納
   }
+
+  //
   mrd.monitor_check_flow("[6]", MONITOR_FLOW); // デバグ用フロー表示
 
   //////// < 7 > エ ラ ー リ ポ ー ト の 作 成 ///////////////////////////////////////
-  // @ [7-1] 通信エラー処理(スキップ検出)
-  mrd_seq_r_expect = mrd.predict_seq_num(mrd_seq_r_expect); // シーケンス番号予想値
-  // mrd_seq_r_expect = mrd.seq_predict_num(mrd_seq_r_expect); // シーケンス番号予想値
-  mrd_seq_r = int(s_udp_meridim.usval[1]); // 受信したシーケンス番号
+  // @[7-1] シーケンス番号チェック
+  mrd_seq_r_expect = mrd.seq_predict_num(mrd_seq_r_expect);                                // シーケンス番号予想値の生成
+  monitor_seq_num(mrd_seq_r_expect, int(s_udp_meridim.usval[MRD_SEQENTIAL]), MONITOR_SEQ); // シーケンス番号の表示
 
-  if (MONITOR_SEQ)
+  if (mrd.seq_compare_nums(mrd_seq_r_expect, int(s_udp_meridim.usval[MRD_SEQENTIAL])))
   {
-    Serial.print("exp:revd/");
-    Serial.print(mrd_seq_r_expect);
-    Serial.print(":");
-    Serial.println(mrd_seq_r);
+    s_udp_meridim.bval[MSG_ERR_u] &= B11111011; // [MSG_ERR] 9番ビット[Teensy受信のスキップ検出]をサゲる.
+  }
+  else // 受信シーケンシャルカウンタの値が予想と違ったら
+  {
+    mrd_seq_r_expect = int(s_udp_meridim.usval[MRD_SEQENTIAL]); // 現在の受信値を予想結果としてキープ
+    s_udp_meridim.bval[MSG_ERR_u] |= B00000100;                 // Meridim[MSG_ERR] 9番ビット[Teensy受信のスキップ検出]をアゲる.
+    // err_tsy_skip++;
   }
 
-  // if (mrd.seq_compare_nums(mrd_seq_r_expect, mrd_seq_r)) // シーケンス番号が期待通りなら順番どおり受信
-
-  if (mrd.seq_compare_nums(mrd_seq_r_expect, mrd_seq_r)) // シーケンス番号が期待通りなら順番どおり受信
-  {
-    // Serial.println("BINGO");
-    s_udp_meridim.bval[MSG_ERR_u] &= B11111011; // エラーフラグ10番(ESP受信のスキップ検出)をオフ
-  }
-  else
-  {
-    // Serial.println("bongo");
-    s_udp_meridim.bval[MSG_ERR_u] |= B00000100; // エラーフラグ10番(ESP受信のスキップ検出)をオン
-                                                // if (mrd_seq_r == mrd_seq_r_expect - 1)
-    //{
-    //  同じ値を２回取得した場合には実際はシーケンスが進んだものとして補正（アルゴリズム要検討）
-    //  mrd_seq_r_expect = mrd_seq_r + 1;
-    //}
-    // else
-    //{
-    mrd_seq_r_expect = mrd_seq_r; // 取りこぼしについては現在の受信値を正解の予測値としてキープ
-    //}
-  }
+  //
   mrd.monitor_check_flow("[7]", MONITOR_FLOW); // デバグ用フロー表示
 
   //////// < 8 > フ レ ー ム 終 端 処 理 ////////////////////////////////////////////
@@ -489,7 +492,9 @@ void loop()
   // @ [8-3] フレーム管理時計mercのカウントアップ
   mrd_t_mil = mrd_t_mil + frame_ms;             // フレーム管理時計を1フレーム分進める
   frame_count = frame_count + frame_count_diff; // サインカーブ動作用のフレームカウントをいくつずつ進めるかをここで設定。
-  mrd.monitor_check_flow("[8]", MONITOR_FLOW);  // デバグ用フロー表示
+
+  //
+  mrd.monitor_check_flow("[8]", MONITOR_FLOW); // デバグ用フロー表示
 
   //////// < 9 > U D P 送 信 信 号 作 成 ////////////////////////////////////////////
   // @ [9-1] センサーからの値を送信用に格納
@@ -502,12 +507,13 @@ void loop()
   }
 
   // @ [9-2] フレームスキップ検出用のカウントをカウントアップして送信用に格納
-  mrd_seq_s_increment = mrd.increase_seq_num(mrd_seq_s_increment);
-  // mrd_seq_s_increment = mrd.seq_increase_num(mrd_seq_s_increment);
+  mrd_seq_s_increment = mrd.seq_increase_num(mrd_seq_s_increment);
   s_udp_meridim.usval[1] = mrd_seq_s_increment;
 
   // @ [9-3] チェックサムを計算して格納
   s_udp_meridim.sval[MSG_CKSM] = mrd.cksm_val(s_udp_meridim.sval, MSG_SIZE);
+
+  //
   mrd.monitor_check_flow("[9]", MONITOR_FLOW); // デバグ用フロー表示
 
   //////// < 10 > U D P 送 信 //////////////////////////////////////////////////////
@@ -515,32 +521,28 @@ void loop()
   if (UDP_SEND) // 設定でUDPの送信を行うかどうか決定
   {
     sendUDP();
+
+    //
     mrd.monitor_check_flow("[10]\n", MONITOR_FLOW); // デバグ用フロー表示
   }
-  delayMicroseconds(5);
+  // delayMicroseconds(1);
 }
 
 //================================================================================================================
 //---- 関 数 各 種  -----------------------------------------------------------------------------------------------
 //================================================================================================================
 
-// +-------------------------------------------------------------------
-// | 関数名　　:  setyawcenter()
-// +-------------------------------------------------------------------
-// | 機能     :  センサーのヨー軸中央値を再セットする
-// +------------------------------------------------------------------
-void setyawcenter()
+void init_wifi(const char *wifi_ap_ssid, const char *wifi_ap_pass)
 {
-  yaw_center = bno055_read[14];
+  WiFi.disconnect(true, true); // WiFi接続をリセット
+  delay(100);
+  WiFi.begin(wifi_ap_ssid, wifi_ap_pass); // Wifiに接続
+  while (WiFi.status() != WL_CONNECTED)
+  {            // https://www.arduino.cc/en/Reference/WiFiStatus 戻り値一覧
+    delay(50); // 接続が完了するまでループで待つ
+  }
 }
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  receiveUDP()
-// +----------------------------------------------------------------------
-// | 機能     :  UDP通信の受信パケットを確認し、
-// | 　　        受信していたら共用体r_udp_meridimに値を格納する
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
 void receiveUDP()
 {
   if (udp.parsePacket() >= MSG_BUFF) // データの受信バッファ確認
@@ -551,12 +553,6 @@ void receiveUDP()
   // delay(1);
 }
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  sendUDP()
-// +----------------------------------------------------------------------
-// | 機能     :  共用体s_udp_meridimをUDP通信で送信する
-// | 引数　　　:  なし
-// +----------------------------------------------------------------------
 void sendUDP()
 {
   udp.beginPacket(WIFI_SEND_IP, UDP_SEND_PORT); // UDPパケットの開始
@@ -564,102 +560,6 @@ void sendUDP()
   udp.endPacket(); // UDPパケットの終了
 }
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  joypad_read()
-// +----------------------------------------------------------------------
-// | 機能     :  リモコンの入力データを受け取り, PS2/3リモコン配列形式で返す
-// | 引数１　　:  int. リモコンの種類(現在は2:KRC-5FHのみ)
-// | 引数２　　:  uint64_t. 前回の受信値(8バイト分, 共用体データを想定)
-// | 引数３　　:  bool. JOYPADの受信ボタンデータをこのデバイスで0リセットするか、
-// | 　　　　　　　リセットせず論理加算するか （0:overide, 1:reflesh, 通常は1）
-// | 戻値　　　:  uint64_t. リモコン受信値を格納
-// +----------------------------------------------------------------------
-uint64_t joypad_read(int mount_joypad, uint64_t pre_val, int polling, bool joypad_reflesh)
-{
-  if (mount_joypad == 2)
-  { // KRR5FH(KRC-5FH)をICS_R系に接続している場合
-    joypad_frame_count++;
-    if (joypad_frame_count >= polling)
-    {
-      unsigned short buttonData;
-      unsigned short pad_btn_tmp = 0;
-
-      buttonData = krs_R.getKrrButton();
-      delayMicroseconds(2);
-      if (buttonData != KRR_BUTTON_FALSE) // ボタンデータが受信できていたら
-      {
-        int button_1 = buttonData;
-
-        if ((button_1 & 15) == 15)
-        { // 左側十字ボタン全部押しなら start押下とみなす
-          pad_btn_tmp += 1;
-        }
-        else
-        {
-          // 左側の十字ボタン
-          pad_btn_tmp += (button_1 & 1) * 16 + ((button_1 & 2) >> 1) * 64 + ((button_1 & 4) >> 2) * 32 + ((button_1 & 8) >> 3) * 128;
-        }
-        if ((button_1 & 368) == 368)
-          pad_btn_tmp += 8; // 右側十字ボタン全部押しなら select押下とみなす
-        else
-        {
-          // 右側十字ボタン
-          pad_btn_tmp += ((button_1 & 16) >> 4) * 4096 + ((button_1 & 32) >> 5) * 16384 + ((button_1 & 64) >> 6) * 8192 + ((button_1 & 256) >> 8) * 32768;
-        }
-        // L1,L2,R1,R2
-        pad_btn_tmp += ((button_1 & 2048) >> 11) * 2048 + ((button_1 & 4096) >> 12) * 512 + ((button_1 & 512) >> 9) * 1024 + ((button_1 & 1024) >> 10) * 256;
-      }
-      /* 共用体用の64ビットの上位16ビット部をボタンデータとして書き換える */
-      uint64_t updated_val;
-      if (joypad_reflesh)
-      {
-        updated_val = (pre_val & 0xFFFFFFFFFFFF0000) | (static_cast<uint64_t>(pad_btn_tmp)); // 上位16ビット index[0]
-      }
-      else
-      {
-        updated_val = (pre_val) | (static_cast<uint64_t>(pad_btn_tmp));
-      }
-      // updated_val = (updated_val & 0x0000FFFFFFFFFFFF) | (static_cast<uint64_t>(pad_btn_tmp) << 48); // 下位16ビット index[3]
-      // updated_val = (updated_val & 0xFFFF0000FFFFFFFF) | (static_cast<uint64_t>(pad_btn_tmp) << 32); // 上位33-48ビット index[2]
-      // updated_val = (updated_val & 0xFFFFFFFF0000FFFF) | (static_cast<uint64_t>(pad_btn_tmp) << 16); // 上位17-32ビット index[1]
-      joypad_frame_count = 0;
-      return updated_val;
-    }
-    else
-    {
-      return pre_val;
-    }
-  }
-  else
-  {
-    return pre_val;
-  }
-}
-
-// +----------------------------------------------------------------------
-// | 関数名　　:  monitor_joypad(ushort *arr)
-// +----------------------------------------------------------------------
-// | 機能     :  リモコンの入力データを表示する.
-// | 引数　　　:  ushort配列 4個.
-// +----------------------------------------------------------------------
-void monitor_joypad(ushort *arr)
-{
-  for (int i = 0; i < 4; i++)
-  {
-    Serial.print(arr[i]);
-    if (i < 3)
-    {
-      Serial.print("/");
-    }
-  }
-  Serial.println();
-}
-
-// +----------------------------------------------------------------------
-// | 関数名　　:  check_sd()
-// +----------------------------------------------------------------------
-// | 機能     :  SDカードの初期化と読み書きテスト
-// +----------------------------------------------------------------------
 void check_sd()
 {
   if (MOUNT_SD)
@@ -726,27 +626,139 @@ void check_sd()
   }
 }
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  init_wifi()
-// +----------------------------------------------------------------------
-// | 機能     :  wifiの初期化
-// +----------------------------------------------------------------------
-void init_wifi(const char *wifi_ap_ssid, const char *wifi_ap_pass)
+void bt_settings()
 {
-  WiFi.disconnect(true, true); // WiFi接続をリセット
-  delay(100);
-  WiFi.begin(wifi_ap_ssid, wifi_ap_pass); // Wifiに接続
-  while (WiFi.status() != WL_CONNECTED)
-  {            // https://www.arduino.cc/en/Reference/WiFiStatus 戻り値一覧
-    delay(50); // 接続が完了するまでループで待つ
+  /* Wiiコントローラの接続開始 */
+  if ((MOUNT_JOYPAD == 5) or (MOUNT_JOYPAD == 6))
+  {
+    Serial.println("Try to connect Wiimote...");
+    wiimote.init();
   }
 }
 
-// +----------------------------------------------------------------------
-// | 関数名　　:  init_imuahrs()
-// +----------------------------------------------------------------------
-// | 機能     :  センサーの初期化(BNO055のみ)
-// +----------------------------------------------------------------------
+uint64_t joypad_read(int mount_joypad, uint64_t pre_val, int polling, bool joypad_reflesh)
+{
+  if (mount_joypad == 2)
+  { // KRR5FH(KRC-5FH)をICS_R系に接続している場合
+    joypad_polling_count++;
+    if (joypad_polling_count >= polling)
+    {
+      static bool isFirstCall = true; // 初回の呼び出しフラグ
+      if (isFirstCall)
+      {
+        Serial.println("KRC-5FH successfully connected. ");
+        isFirstCall = false; // 初回の呼び出しフラグをオフにする
+      }
+      unsigned short buttonData;
+      unsigned short pad_btn_tmp = 0;
+
+      buttonData = krs_R.getKrrButton();
+      delayMicroseconds(2);
+      if (buttonData != KRR_BUTTON_FALSE) // ボタンデータが受信できていたら
+      {
+        int button_1 = buttonData;
+
+        if (JOYPAD_GENERALIZE)
+        {
+
+          if ((button_1 & 15) == 15)
+          { // 左側十字ボタン全部押しなら start押下とみなす
+            pad_btn_tmp += 1;
+          }
+          else
+          {
+            // 左側の十字ボタン
+            pad_btn_tmp += (button_1 & 1) * 16 + ((button_1 & 2) >> 1) * 64 + ((button_1 & 4) >> 2) * 32 + ((button_1 & 8) >> 3) * 128;
+          }
+          if ((button_1 & 368) == 368)
+            pad_btn_tmp += 8; // 右側十字ボタン全部押しなら select押下とみなす
+          else
+          {
+            // 右側十字ボタン
+            pad_btn_tmp += ((button_1 & 16) >> 4) * 4096 + ((button_1 & 32) >> 5) * 16384 + ((button_1 & 64) >> 6) * 8192 + ((button_1 & 256) >> 8) * 32768;
+          }
+          // L1,L2,R1,R2
+          pad_btn_tmp += ((button_1 & 2048) >> 11) * 2048 + ((button_1 & 4096) >> 12) * 512 + ((button_1 & 512) >> 9) * 1024 + ((button_1 & 1024) >> 10) * 256;
+        }
+        else
+        {
+          pad_btn_tmp = button_1;
+        }
+      }
+      /* 共用体用の64ビットの上位16ビット部をボタンデータとして書き換える */
+      uint64_t updated_val;
+      if (joypad_reflesh)
+      {
+        updated_val = (pre_val & 0xFFFFFFFFFFFF0000) | (static_cast<uint64_t>(pad_btn_tmp)); // 上位16ビット index[0]
+      }
+      else
+      {
+        updated_val = (pre_val) | (static_cast<uint64_t>(pad_btn_tmp));
+      }
+      // updated_val = (updated_val & 0x0000FFFFFFFFFFFF) | (static_cast<uint64_t>(pad_btn_tmp) << 48); // 下位16ビット index[3]
+      // updated_val = (updated_val & 0xFFFF0000FFFFFFFF) | (static_cast<uint64_t>(pad_btn_tmp) << 32); // 上位33-48ビット index[2]
+      // updated_val = (updated_val & 0xFFFFFFFF0000FFFF) | (static_cast<uint64_t>(pad_btn_tmp) << 16); // 上位17-32ビット index[1]
+      joypad_polling_count = 0;
+      return updated_val;
+    }
+    else
+    {
+      return pre_val;
+    }
+  }
+  else if (mount_joypad == 5) // wiimote_yoko
+  {
+    uint64_t updated_val = 0;
+    if (joypad_reflesh)
+    {
+      updated_val = (pre_val & 0xFFFFFFFFFFFF0000) | (static_cast<uint64_t>(pad_wiimote_receive())); // 上位16ビット index[0]
+    }
+    else
+    {
+      updated_val = (pre_val) | (static_cast<uint64_t>(pad_wiimote_receive()));
+    }
+    joypad_polling_count = 0;
+    return updated_val;
+  }
+  else
+  {
+    return pre_val;
+  }
+}
+
+uint16_t pad_wiimote_receive()
+{
+  wiimote.task();
+  if (wiimote.available() > 0)
+  {
+    static bool isFirstCall = true; // 初回の呼び出しフラグ
+    if (isFirstCall)
+    {
+      Serial.println("Wiimote successfully connected. ");
+      isFirstCall = false; // 初回の呼び出しフラグをオフにする
+    }
+    uint16_t button = wiimote.getButtonState();
+    pad_btn = 0;
+    for (int i = 0; i < 16; i++)
+    {
+      uint16_t mask = 1 << i;
+      if ((JOYPAD_GENERALIZE && (PAD_WIIMOTE_SOLO[i] & button)) || (!JOYPAD_GENERALIZE && (PAD_WIIMOTE_ORIG[i] & button)))
+      {
+        pad_btn |= mask;
+      }
+    }
+    return pad_btn;
+  }
+  else
+  {
+    return pad_btn;
+  }
+  if (MOUNT_JOYPAD == 6)
+  {
+    Serial.println("Wiimote + Nunchuk not available now. "); //
+  }
+}
+
 void init_imuahrs(int mount_imuahrs)
 {
   if (mount_imuahrs == 3)
@@ -767,11 +779,6 @@ void init_imuahrs(int mount_imuahrs)
   }
 }
 
-// +----------------------------------------------------------------------
-// | スレッド用関数　:  Core1_bno055_r(void *args)
-// +----------------------------------------------------------------------
-// | 機能    　　　 :  bno055のデータを取得し、bno055_read[]に書き込む
-// +----------------------------------------------------------------------
 void Core1_bno055_r(void *args)
 {
   while (1)
@@ -796,9 +803,18 @@ void Core1_bno055_r(void *args)
 
     /* センサフュージョンによる方向推定値の取得と表示 - VECTOR_EULER - degrees */
     imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-    bno055_read[12] = euler.y();                    // DMP_ROLL推定値
-    bno055_read[13] = euler.z();                    // DMP_PITCH推定値
-    bno055_read[14] = euler.x() - yaw_center - 180; // DMP_YAW推定値
+    bno055_read[12] = euler.y();                          // DMP_ROLL推定値
+    bno055_read[13] = euler.z();                          // DMP_PITCH推定値
+    float yaw_tmp = euler.x() - 180 - imuahrs_yaw_origin; // DMP_YAW推定値
+    if (yaw_tmp >= 180)
+    {
+      yaw_tmp = yaw_tmp - 360;
+    }
+    else if (yaw_tmp < -180)
+    {
+      yaw_tmp = yaw_tmp + 360;
+    }
+    bno055_read[14] = yaw_tmp; // DMP_YAW推定値
 
     /*
       // センサフュージョンの方向推定値のクオータニオン
@@ -819,5 +835,92 @@ void Core1_bno055_r(void *args)
     Serial.print(", Mg"); Serial.println(mag, DEC);
     */
     delay(IMUAHRS_POLLING);
+  }
+}
+
+void monitor_joypad(ushort *arr)
+{
+  for (int i = 0; i < 4; i++)
+  {
+    Serial.print(arr[i]);
+    if (i < 3)
+    {
+      Serial.print("/");
+    }
+  }
+  Serial.println();
+}
+
+void monitor_seq_num(int exp, int rsvd, bool monitor_seq)
+{
+  if (monitor_seq)
+  {
+    Serial.print("exp:revd/");
+    Serial.print(exp);
+    Serial.print(":");
+    Serial.println(rsvd);
+  }
+}
+
+//================================================================================================================
+//---- Command processing ----------------------------------------------------------------------------------------
+//================================================================================================================
+
+void execute_MasterCommand()
+{
+  // コマンド[0]: 全サーボ脱力
+  if (s_udp_meridim.sval[MRD_MASTER] == 0)
+  {
+    servo_all_off();
+  }
+
+  // コマンド[90]: サーボオンを含む通常動作
+
+  // コマンド[10002]: IMU/AHRSのヨー軸リセット
+  if (s_udp_meridim.sval[MRD_MASTER] == MCMD_UPDATE_YAW_CENTER)
+  {
+    setyawcenter();
+  }
+
+  // コマンド[10003]: トリムモード（既存のものは廃止し、検討中）
+
+  // コマンド[10004]: 通信エラーサーボIDのクリア
+  if (s_udp_meridim.sval[MRD_MASTER] == MCMD_CLEAR_SERVO_ERROR_ID)
+  {
+    s_udp_meridim.bval[MSG_ERR_l] = 0;
+  }
+}
+
+void servo_all_off()
+{
+  for (int h = 0; h < 5; h++)
+  {
+    for (int i = 0; i < 15; i++)
+    {
+      if (idl_mount[i] == 1)
+      {
+        krs_L.setFree(i);
+      }
+      if (idr_mount[i] == 1)
+      {
+        krs_R.setFree(i);
+      }
+      delayMicroseconds(2);
+    }
+  }
+  delay(100);
+  Serial.println("All servos off.");
+}
+
+void setyawcenter()
+{
+  if (MOUNT_IMUAHRS == 1) // MPU6050
+  {
+    Serial.println("MPU6050 driver is not implemented in this version.");
+  }
+  else if (MOUNT_IMUAHRS == 3) // BNO055
+  {
+    imuahrs_yaw_origin = bno055_read[14];
+    s_udp_meridim.sval[0] = MSG_SIZE;
   }
 }
