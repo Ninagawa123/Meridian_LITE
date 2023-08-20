@@ -152,6 +152,7 @@ int pad_L2_val = 0;
 Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28, &Wire);
 float bno055_read[16];        // bno055のデータの一時保存
 float imuahrs_yaw_origin = 0; // ヨー軸の原点セット用
+float imuahrs_yaw_source = 0; // ヨー軸のソースデータ保持用
 
 /* 各サーボのマウントありなし */
 int idl_mount[15] = {IDL_MT0, IDL_MT1, IDL_MT2, IDL_MT3, IDL_MT4, IDL_MT5, IDL_MT6, IDL_MT7, IDL_MT8, IDL_MT9, IDL_MT10, IDL_MT11, IDL_MT12, IDL_MT13, IDL_MT14}; // L系統
@@ -813,6 +814,7 @@ void Core1_bno055_r(void *args)
     imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
     bno055_read[12] = euler.y();                          // DMP_ROLL推定値
     bno055_read[13] = euler.z();                          // DMP_PITCH推定値
+    imuahrs_yaw_source = euler.x();                       // ヨー軸のソースデータ保持
     float yaw_tmp = euler.x() - 180 - imuahrs_yaw_origin; // DMP_YAW推定値
     if (yaw_tmp >= 180)
     {
@@ -928,7 +930,7 @@ void setyawcenter()
   }
   else if (MOUNT_IMUAHRS == 3) // BNO055
   {
-    imuahrs_yaw_origin = bno055_read[14];
+    imuahrs_yaw_origin = imuahrs_yaw_source - 180;
     s_udp_meridim.sval[0] = MSG_SIZE;
   }
 }
