@@ -98,7 +98,7 @@
 #define MOUNT_SD 1           // SDカードリーダーの有無 (0:なし, 1:あり)
 #define MOUNT_IMUAHRS 3      // IMU/AHRSの搭載状況 0:off, 1:MPU6050(GY-521), 2:MPU9250(GY-6050/GY-9250) 3:BNO055
 #define MOUNT_ICS3 0         // 半二重サーボ信号の3系の有無 (0:なし, 1:あり)
-#define MOUNT_JOYPAD 2       // ジョイパッドの搭載
+#define MOUNT_JOYPAD 5       // ジョイパッドの搭載
                              // 0:なし, 1:SBDBT(未), 2:KRC-5FH, 3:PS3(未), 4:PS4 ,5:Wii_yoko,
                              // 6:Wii+Nun(未), 7:WiiPRO(未), 8:Xbox(未),
                              // 9:Merimote(未), 10:Retro
@@ -122,7 +122,6 @@
 #define MODE_FIXED_IP 0 // IPアドレスを固定するか（0:NO, 1:YES）
 
 /* リモコンの設定(ESP32自身のBluetoothMACアドレスは別途keys.hで指定) */
-#define JOYPAD_POLLING 4           // ジョイパッドの問い合わせフレーム間隔(PSは10)
 #define BT_PAIR_MAX_DEVICES 20     // BT接続デバイスの記憶可能数
 #define BT_REMOVE_BONDED_DEVICES 0 // 0でバインドデバイス情報表示, 1でバインドデバイス情報クリア(BTリモコンがペアリング接続できない時に使用)
 // リモコン受信ボタンデータの変換テーブル
@@ -130,7 +129,7 @@ constexpr unsigned short PAD_WIIMOTE_SOLO[16] = {0x1000, 0x0080, 0x0000, 0x0010,
 constexpr unsigned short PAD_WIIMOTE_ORIG[16] = {0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x0000, 0x0000, 0x0000, 0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0000, 0x0000, 0x0080};
 
 // PC接続関連設定
-#define SERIAL_PC_BPS 200000 // PCとのシリアル速度（モニタリング表示用）
+#define SERIAL_PC_BPS 115200 // PCとのシリアル速度（モニタリング表示用）
 
 // SPI設定
 #define SPI_SPEED 6000000 // SPI通信の速度（6000000kHz推奨）
@@ -146,16 +145,18 @@ constexpr unsigned short PAD_WIIMOTE_ORIG[16] = {0x0100, 0x0200, 0x0400, 0x0800,
 
 // サーボ関連設定
 #define ICS_BAUDRATE 1250000    // ICSサーボの通信速度1.25M
-#define ICS_TIMEOUT 2           // ICS返信待ちのタイムアウト時間.通信できてないか確認する場合には1000ぐらいに設定するとよい
-#define SERVO_LOST_ERROR_WAIT 3 // 連続何フレームサーボ信号をロストしたら異常とするか
+#define ICS_TIMEOUT 2           // ICS返信待ちのタイムアウト時間
+#define SERVO_LOST_ERROR_WAIT 4 // 連続何フレームサーボ信号をロストしたら異常とするか
 
 // JOYPAD関連設定
-#define JOYPAD_FRAME 4   // 上記JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4)
-#define JOYPAD_REFRESH 1 // JOYPADの受信ボタンデータをこのデバイスで0リセットするか、リセットせず論理加算するか （0:overide, 1:reflesh, 通常は1）
+#define JOYPAD_POLLING 10   // 上記JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨,BT系は10推奨)
+#define JOYPAD_REFRESH 4    // JOYPADの受信ボタンデータをこのデバイスで0リセットするか、リセットせず論理加算するか （0:overide, 1:reflesh, 通常は1）
+#define JOYPAD_GENERALIZE 1 // ジョイパッドの入力値をPS系に一般化する
 
 /* 固定値, マスターコマンド定義 */
-#define MCMD_UPDATE_YAW_CENTER 10002 // センサの推定ヨー軸を現在値センターとしてリセット
-#define MCMD_ENTER_TRIM_MODE 10003   // トリムモードに入る（全サーボオンで垂直に気おつけ姿勢で立つ）
+#define MCMD_UPDATE_YAW_CENTER 10002    // センサの推定ヨー軸を現在値センターとしてリセット
+#define MCMD_ENTER_TRIM_MODE 10003      // トリムモードに入る（全サーボオンで垂直に気おつけ姿勢で立つ）
+#define MCMD_CLEAR_SERVO_ERROR_ID 10004 // 通信エラーのサーボのIDをクリア(MSG_ERR_l)
 
 /* ピンアサイン */
 #define ERR_LED 25           // LED用 処理が時間内に収まっていない場合に点灯
