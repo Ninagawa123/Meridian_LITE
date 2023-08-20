@@ -114,7 +114,7 @@ keys.h内の
 #define AP_PASS "xxxxxx"             // アクセスポイントのパスワード  
 #define SEND_IP "192.168.1.xx"       // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）  
   
-を変更してください.  
+を使用環境に合わせて変更してください.  
 送り先のPCのIPアドレスは,  
 windowsならターミナルを開いてipconfigコマンド  
 ubuntuならip aコマンド  
