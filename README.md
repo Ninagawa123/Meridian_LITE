@@ -3,6 +3,9 @@
   
 "Meridian board -LITE-" は半二重通信回路2系統を搭載とSPI,I2Cなどの出力ピンを備えたボードです。<br>
 ESP32devkitCを搭載することで、半二重通信方式のコマンドサーボを扱えるロボット用ボードとして機能します。<br>
+当リポジトリのスクリプトを使用することにより、ロボットを100Hzの更新頻度をもつデジタルツインを実現することができます。<br>
+システムの詳細については以下をご参照ください。<br>  
+https://ninagawa123.github.io/Meridian_info/#
 <br>
   
 ## ピンアサイン
@@ -60,7 +63,10 @@ VSCodeのファイルメニューから「フォルダを開く...」を選択�
   
 ## ライブラリのインストール  
   
-### Meridianを導入する
+必要なライブラリはVSCode上で自動でインストールされます。  
+もし、自動でインストールされない場合には、下記を参考に必要なモジュールをインストールしてください。  
+  
+### Meridianを導入する  
 アリ頭のアイコンから「QUICK ACCESS」→「PIO Home」→「Open」を開きます。<br>
 右画面PIO Homeのタグの左メニューから「Libraries」を選択します。<br>
 「Search libraries」となっている検索枠に「Meridian」と入力し、「Meridian by Ninagawa123」を選択して「Add to Project」を押します。バージョンは0.1.0以上を使用してください。<br>
@@ -69,12 +75,6 @@ VSCodeのファイルメニューから「フォルダを開く...」を選択�
 ### Adafruit_BNO055を導入する
 上記と同様手順で、「Search libraries」となっている検索枠に「BNO055」と入力し、Adafruit BNO055を選択して「Add to Project」を押します。<br>
 
-<br>
-
-### メインコードの作成
-<img width="400" alt="6" src="https://user-images.githubusercontent.com/8329123/176911852-b245204b-b8c9-4379-9db5-7176ab3901d0.png"><br>
-再び画面左上のファイルアイコンを押し、「src」→「main.cpp」を選択します。<br>
-githubのコード（[URL](https://github.com/Ninagawa123/Meridian_LITE/blob/main/ESP32/Meridian_LITE_20220612/main.cpp)）をmain.cppのコードとしてコピペします。<br>
 <br>
 
 ### ESP32のシリアル通信ピンの設定
@@ -89,57 +89,55 @@ TX1を10番ピンから27番ピンに変更する設定をしておきます。<
 <br>
 
 ### platformio.iniの設定
-「platformio.ini」を開くと、<br>
-<img width="600" alt="7" src="https://user-images.githubusercontent.com/8329123/176912503-e552925d-ca64-43e9-a7ae-8ce2ff32dd13.png"><br>
-のようになっているので、以下のように書き加え、<br>
-シリアルモニタのスピードを500000に、またOTAという無線でのプログラム書き換え機能を削除してメモリ領域を増やす設定にします。<br>
->[env:esp32dev]<br>
->platform = espressif32<br>
->board = esp32dev<br>
->framework = arduino<br>
->monitor_speed = 500000<br>
->board_build.partitions = no_ota.csv<br>
->lib_deps = adafruit/Adafruit BNO055@^1.5.3<br>
+「platformio.ini」を開くと下記のように設定されています。<br>
+シリアルモニタのスピードを115200bpsとし、自動インストールするモジュールを指定しています。<br>
+またOTAという無線でのプログラム書き換え機能を削除してメモリ領域を増やす設定にしています。<br>
+[env:esp32dev]<br>
+platform = espressif32<br>
+board = esp32dev<br>
+framework = arduino<br>
+monitor_speed = 115200<br>
+lib_deps = <br>
+	ninagawa123/Meridian@^0.1.0<br>
+	adafruit/Adafruit BNO055@^1.5.3<br>
+board_build.partitions = no_ota.csv<br>
+　　
 <br>
-
-### メインコードの修正
-main.cpp内の<br>
+  
+### keys.hの修正
+keys.h内の<br>
 >#define AP_SSID "xxxxxx"             // アクセスポイントのAP_SSID<br>
 >#define AP_PASS "xxxxxx"             // アクセスポイントのパスワード<br>
 >#define SEND_IP "192.168.1.xx"       // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）<br>
-
-を変更する。<br>
+<br>
+を変更してください。<br>
 送り先のPCのIPアドレスは、<br>
 windowsならターミナルを開いてipconfigコマンド<br>
 ubuntuならip aコマンド<br>
 macなら画面右上のwifiアイコンから"ネットワーク"環境設定...<br>
 で確認できます。<br>
 <br>
-
-### メインコードの設定
-main.cpp内の設定を手持ち機体に合わせて変更します。<br>
+  
+### config.hの修正 
+config.hの内容について、お手持ちの環境にあわせ適度に更新してください。<br>
+設定の内容については、コード内にコメントを記しています。<br>
+主な修正点は下記の通りです。<br>
+  
 <br>
->#define SD_MOUNT 1 <br>
-
+#define SD_MOUNT 1 <br>
 　→ SDリーダーの搭載 (0:なし, 1:あり)<br>
 <br>
->#define IMU_MOUNT 1<br>
-
+#define IMU_MOUNT 1<br>
 　→ 6軸or9軸センサーの搭載 (0:なし, 1:BNO055, 2:MPU6050(未実装))<br>
 <br>
->#define JOYPAD_MOUNT 2<br>
-
-　→ ジョイパッドの搭載 (現在2のKRC-5FHのみ有効, ジョイパッドを接続しない場合は0)<br>
+#define JOYPAD_MOUNT 2<br>
+　→ ジョイパッドの搭載 (現在2:KRC-5FHと5:wiimoteのみ有効, ジョイパッドを接続しない場合は0)<br>
 <br>
-
->/* 各サーボのマウントありなし（1:サーボあり、0:サーボなし） */<br>
-
+/* 各サーボのマウントありなし（1:サーボあり、0:サーボなし） */<br>
 　→ idl_mt[0]〜がサーボ左側系のサーボID 0〜 です。接続しているサーボIDはTrue, 非接続のIDにはFalseを設定します。<br>
 　→ idr_mt[0]〜がサーボ右側系のサーボID 0〜 です。上記と同様に設定します。<br>
 <br>
-
->/* 各サーボの直立デフォルト値　(KRS値  0deg=7500, +-90deg=7500+-2667  KRS値=deg/0.03375) */<br>
-
+/* 各サーボの直立デフォルト値　(KRS値  0deg=7500, +-90deg=7500+-2667  KRS値=deg/0.03375) */<br>
 　→ 各サーボについてのトリム値を設定できます。<br>
 <br>
 
@@ -152,10 +150,13 @@ PCとESP32をUSBケーブルせ接続し、矢印ボタンを押すとESP32の�
 アップロードが失敗する場合でも、何度か行うことで成功する場合があるので試してみてください。<br>
 
 ### PC側の設定
-以降のテキストは準備中ですが、下記を参考にPC側の設定をすることで、デモを動作できると思います。<br>
-https://github.com/Ninagawa123/Meridian_core<br>
+PC側の設定をすることで、UnityやROSを使用したデジタルツインのデモを実行できます。<br>
+下記のサイトより「Meridian consoleを実行する」以降をお試しください。  
+[https://github.com/Ninagawa123/Meridian_core](https://github.com/Ninagawa123/Meridian_TWIN)<br>
 <br>
 
 ### 補足
 BNO_055とのI2C通信がうまくいかない場合は、写真のように10kΩ程度の抵抗でプルアップすることでI2Cの通信品質が改善する場合があります。<br>
 <img width="400" src="https://github.com/Ninagawa123/Meridian_LITE/blob/main/images/pullup.jpg"><br>
+<br>
+現在、数秒に1フレーム程度のエラーが発生する場合がありますが、正常な動作です。
