@@ -107,15 +107,6 @@ TX1を10番ピンから27番ピンに変更する設定をしておきます.
 「platformio.ini」を開くと下記のように設定されています.  
 シリアルモニタのスピードを115200bpsとし, 自動インストールするモジュールを指定しています.  
 またOTAという無線でのプログラム書き換え機能を削除してメモリ領域を増やす設定にしています.  
-[env:esp32dev]  
-platform = espressif32  
-board = esp32dev  
-framework = arduino  
-monitor_speed = 115200  
-lib_deps =  
-	ninagawa123/Meridian@^0.1.0  
-	adafruit/Adafruit BNO055@^1.5.3  
-board_build.partitions = no_ota.csv  
   
 ### keys.hの修正  
 keys.h内の  
