@@ -83,13 +83,13 @@ VSCodeのファイルメニューから「フォルダを開く...」を選択�
 必要なライブラリはVSCode上で自動でインストールされます.  
 もし, 自動でインストールされない場合には, 下記を参考に必要なモジュールをインストールしてください.   
   
-# Meridianを導入する   
+### Meridianのライブラリを導入する   
 アリ頭のアイコンから「QUICK ACCESS」→「PIO Home」→「Open」を開きます.  
 右画面PIO Homeのタグの左メニューから「Libraries」を選択します.  
 「Search libraries」となっている検索枠に「Meridian」と入力し, 「Meridian by Ninagawa123」を選択して「Add to Project」を押します. バージョンは0.1.0以上を使用してください.  
 次に開くウインドの「Select a project」で今回のプロジェクト（Meridian_LITE_for_ESP32）を選択し, Addボタンを押します.  
   
-### Adafruit_BNO055を導入する  
+### Adafruit_BNO055のライブラリを導入する  
 上記と同様手順で, 「Search libraries」となっている検索枠に「BNO055」と入力し, Adafruit BNO055を選択して「Add to Project」を押します.  
   
 ### ESP32のシリアル通信ピンの設定  
