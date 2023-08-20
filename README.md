@@ -92,7 +92,7 @@ VSCodeのファイルメニューから「フォルダを開く...」を選択�
 ### Adafruit_BNO055のライブラリを導入する  
 上記と同様手順で, 「Search libraries」となっている検索枠に「BNO055」と入力し, Adafruit BNO055を選択して「Add to Project」を押します.  
   
-### ESP32のシリアル通信ピンの設定  
+## ESP32のシリアル通信ピンの設定  
 ESP32のデフォルトではSerial1のUARTシリアル通信が使う事ができないため, 設定を変更して使えるようにします.  
   
 PlatformIOを一旦閉じます.  
