@@ -148,7 +148,7 @@ constexpr unsigned short PAD_WIIMOTE_ORIG[16] = {0x0100, 0x0200, 0x0400, 0x0800,
 #define SERVO_LOST_ERROR_WAIT 4 // 連続何フレームサーボ信号をロストしたら異常とするか
 
 // JOYPAD関連設定
-#define JOYPAD_POLLING 10   // 上記JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨,BT系は10推奨)
+#define JOYPAD_POLLING 4    // 上記JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨,Bluetooth系は10推奨)
 #define JOYPAD_REFRESH 1    // JOYPADの受信ボタンデータをこのデバイスで0リセットするか、リセットせず論理加算するか （0:overide, 1:reflesh, 通常は1）
 #define JOYPAD_GENERALIZE 1 // ジョイパッドの入力値をPS系に一般化する
 
