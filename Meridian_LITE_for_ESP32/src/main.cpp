@@ -1,4 +1,12 @@
-// Meridian_LITE_v1.0.1_20230820 for Meridan Board -LITE- with ESP32DecKitC
+/**                                                                                   \
+ * @file    Meridian_LITE_for_ESP32/src/main.cpp                                      \
+ * @brief   Meridian is a system that smartly realizes the digital twin of a robot.   \
+ * @details Meridian_LITE_v1.0.1_20230820 for Meridan Board -LITE- with ESP32DecKitC. \
+ *                                                                                    \
+ * This code is licensed under the MIT License.                                       \
+ * Copyright (c) 2022 Izumi Ninagawa & Project Meridian                               \
+ */
+
 #define VERSION "Hello, This is Meridian_LITE_v1.0.1_20230820." // バージョン表示
 
 // [ 概 要 ] ///////////////////////////////////////////////////////////////////////
