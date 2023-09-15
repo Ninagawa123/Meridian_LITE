@@ -1,13 +1,13 @@
 /**                                                                                   \
  * @file    Meridian_LITE_for_ESP32/src/main.cpp                                      \
  * @brief   Meridian is a system that smartly realizes the digital twin of a robot.   \
- * @details Meridian_LITE_v1.0.0_20230820 for Meridan Board -LITE- with ESP32DecKitC. \
+ * @details Meridian_LITE_v1.0.1_20230915 for Meridan Board -LITE- with ESP32DecKitC. \
  *                                                                                    \
  * This code is licensed under the MIT License.                                       \
  * Copyright (c) 2022 Izumi Ninagawa & Project Meridian                               \
  */
 
-#define VERSION "Hello, This is Meridian_LITE_v1.0.0_20230820." // バージョン表示
+#define VERSION "Hello, This is Meridian_LITE_v1.0.1_20230915." // バージョン表示
 
 // [ 概 要 ] ///////////////////////////////////////////////////////////////////////
 // Meridianはサーボやセンサーの状態が格納されたMeridim90というデータ配列を, PCと100Hzで共有します.
@@ -336,97 +336,106 @@ void loop()
     }
 
     // @ [5-2] サーボ受信値の処理
-    if (s_udp_meridim.sval[MRD_MASTER] != 0)
+    if (!ESP32_STDALONE)
     {
-      for (int i = 0; i < servo_num_max; i++) // ICS_L系統の処理
-      {                                       // 接続したサーボの数だけ繰り返す。最大は15
-        if (idl_mount[i])
-        {
-          if (s_udp_meridim.sval[(i * 2) + 20] == 1) // 受信配列のサーボコマンドが1ならPos指定
+      if (s_udp_meridim.sval[MRD_MASTER] != 0)
+      {
+        for (int i = 0; i < servo_num_max; i++) // ICS_L系統の処理
+        {                                       // 接続したサーボの数だけ繰り返す。最大は15
+          if (idl_mount[i])
           {
-            k = krs_L.setPos(i, mrd.Deg2Krs(idl_tgt[i], idl_trim[i], idl_cw[i]));
-            if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
+            if (s_udp_meridim.sval[(i * 2) + 20] == 1) // 受信配列のサーボコマンドが1ならPos指定
             {
-              k = mrd.Deg2Krs(idl_tgt_past[i], idl_trim[i], idl_cw[i]);
-              idl_err[i]++;
-              if (idl_err[i] >= SERVO_LOST_ERROR_WAIT)
+              k = krs_L.setPos(i, mrd.Deg2Krs(idl_tgt[i], idl_trim[i], idl_cw[i]));
+              if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
               {
-                s_udp_meridim.bval[MSG_ERR_l] = char(i); // Meridim[MSG_ERR] エラーを出したサーボID（0をID[L00]として[L99]まで）
-                mrd.monitor_servo_error("L", i, MONITOR_SERVO_ERR);
+                k = mrd.Deg2Krs(idl_tgt_past[i], idl_trim[i], idl_cw[i]);
+                idl_err[i]++;
+                if (idl_err[i] >= SERVO_LOST_ERROR_WAIT)
+                {
+                  s_udp_meridim.bval[MSG_ERR_l] = char(i); // Meridim[MSG_ERR] エラーを出したサーボID（0をID[L00]として[L99]まで）
+                  mrd.monitor_servo_error("L", i, MONITOR_SERVO_ERR);
+                }
+              }
+              else
+              {
+                idl_err[i] = 0;
               }
             }
-            else
+            else // 1以外ならとりあえずサーボを脱力し位置を取得。手持ちの最大は15
             {
-              idl_err[i] = 0;
-            }
-          }
-          else // 1以外ならとりあえずサーボを脱力し位置を取得。手持ちの最大は15
-          {
-            k = krs_L.setFree(i); // サーボからの返信信号を受け取れていれば値を更新
-            if (k == -1)          // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
-            {
-              k = mrd.Deg2Krs(idl_tgt_past[i], idl_trim[i], idl_cw[i]);
-              idl_err[i]++;
-              if (idl_err[i] >= SERVO_LOST_ERROR_WAIT)
+              k = krs_L.setFree(i); // サーボからの返信信号を受け取れていれば値を更新
+              if (k == -1)          // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
               {
-                s_udp_meridim.bval[MSG_ERR_l] = char(i); // Meridim[MSG_ERR] エラーを出したサーボID（0をID[L00]として[L99]まで）
-                mrd.monitor_servo_error("L", i, MONITOR_SERVO_ERR);
+                k = mrd.Deg2Krs(idl_tgt_past[i], idl_trim[i], idl_cw[i]);
+                idl_err[i]++;
+                if (idl_err[i] >= SERVO_LOST_ERROR_WAIT)
+                {
+                  s_udp_meridim.bval[MSG_ERR_l] = char(i); // Meridim[MSG_ERR] エラーを出したサーボID（0をID[L00]として[L99]まで）
+                  mrd.monitor_servo_error("L", i, MONITOR_SERVO_ERR);
+                }
+              }
+              else
+              {
+                idl_err[i] = 0;
               }
             }
-            else
-            {
-              idl_err[i] = 0;
-            }
+            idl_tgt[i] = mrd.Krs2Deg(k, idl_trim[i], idl_cw[i]);
           }
-          idl_tgt[i] = mrd.Krs2Deg(k, idl_trim[i], idl_cw[i]);
-        }
-        delayMicroseconds(1);
+          delayMicroseconds(1);
 
-        if (idr_mount[i])
-        {
-          if (s_udp_meridim.sval[(i * 2) + 50] == 1) // 受信配列のサーボコマンドが1ならPos指定
+          if (idr_mount[i])
           {
-            k = krs_R.setPos(i, mrd.Deg2Krs(idr_tgt[i], idr_trim[i], idr_cw[i]));
-            if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
+            if (s_udp_meridim.sval[(i * 2) + 50] == 1) // 受信配列のサーボコマンドが1ならPos指定
             {
-              k = mrd.Deg2Krs(idr_tgt_past[i], idr_trim[i], idr_cw[i]);
-              idr_err[i]++;
-              if (idr_err[i] >= SERVO_LOST_ERROR_WAIT)
+              k = krs_R.setPos(i, mrd.Deg2Krs(idr_tgt[i], idr_trim[i], idr_cw[i]));
+              if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
               {
-                s_udp_meridim.bval[MSG_ERR_l] = char(i + 100); // Meridim[MSG_ERR] エラーを出したサーボID（100をID[R00]として[R99]まで）
-                mrd.monitor_servo_error("R", i + 100, MONITOR_SERVO_ERR);
+                k = mrd.Deg2Krs(idr_tgt_past[i], idr_trim[i], idr_cw[i]);
+                idr_err[i]++;
+                if (idr_err[i] >= SERVO_LOST_ERROR_WAIT)
+                {
+                  s_udp_meridim.bval[MSG_ERR_l] = char(i + 100); // Meridim[MSG_ERR] エラーを出したサーボID（100をID[R00]として[R99]まで）
+                  mrd.monitor_servo_error("R", i + 100, MONITOR_SERVO_ERR);
+                }
+              }
+              else
+              {
+                idr_err[i] = 0;
               }
             }
-            else
+            else // 1以外ならとりあえずサーボを脱力し位置を取得
             {
-              idr_err[i] = 0;
-            }
-          }
-          else // 1以外ならとりあえずサーボを脱力し位置を取得
-          {
-            k = krs_R.setFree(i);
-            if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
-            {
-              k = mrd.Deg2Krs(idr_tgt_past[i], idr_trim[i], idr_cw[i]);
-              idr_err[i]++;
-              if (idr_err[i] >= SERVO_LOST_ERROR_WAIT)
+              k = krs_R.setFree(i);
+              if (k == -1) // サーボからの返信信号を受け取れなかった時は前回の数値のままにする
               {
-                s_udp_meridim.bval[MSG_ERR_l] = char(i + 100); // Meridim[MSG_ERR] エラーを出したサーボID（100をID[R00]として[R99]まで）
-                mrd.monitor_servo_error("R", i + 100, MONITOR_SERVO_ERR);
+                k = mrd.Deg2Krs(idr_tgt_past[i], idr_trim[i], idr_cw[i]);
+                idr_err[i]++;
+                if (idr_err[i] >= SERVO_LOST_ERROR_WAIT)
+                {
+                  s_udp_meridim.bval[MSG_ERR_l] = char(i + 100); // Meridim[MSG_ERR] エラーを出したサーボID（100をID[R00]として[R99]まで）
+                  mrd.monitor_servo_error("R", i + 100, MONITOR_SERVO_ERR);
+                }
+              }
+              else
+              {
+                idr_err[i] = 0;
               }
             }
-            else
-            {
-              idr_err[i] = 0;
-            }
+            idr_tgt[i] = mrd.Krs2Deg(k, idr_trim[i], idr_cw[i]);
           }
-          idr_tgt[i] = mrd.Krs2Deg(k, idr_trim[i], idr_cw[i]);
+          delayMicroseconds(1);
         }
-        delayMicroseconds(1);
+
+        //
+        mrd.monitor_check_flow("[5]", MONITOR_FLOW); // デバグ用フロー表示
       }
-
+    }
+    else
+    {
+      // ボード単体動作モードの場合はサーボの戻り値を調べず、L0番サーボ値として+-30度のサインカーブの値を返す
+      idl_tgt[0] = sin(frame_count * M_PI / 180.0) * 30; //
       //
-      mrd.monitor_check_flow("[5]", MONITOR_FLOW); // デバグ用フロー表示
     }
   }
   else // Check sum NG
