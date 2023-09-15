@@ -106,7 +106,9 @@
 #define MOUNT_SERVO_NUM_3 0  // 3系統につないだサーボの総数
 
 /* 動作チェックモード */
-#define CHECK_SD_RW 0 // 起動時のSDカードリーダーの読み書きチェック
+#define CHECK_SD_RW 0    // 起動時のSDカードリーダーの読み書きチェック
+#define ESP32_STDALONE 0 // ESP32をボードに挿さず単体で動作確認
+                         // （サーボを無視し、L0番サーボ値として+-30度のサインカーブを代入）
 
 /* シリアルモニタリング */
 #define MONITOR_JOYPAD 0    // シリアルモニタでリモコンのデータを表示（0:OFF, 1:ON）
@@ -234,31 +236,31 @@ constexpr unsigned short PAD_WIIMOTE_ORIG[16] = {0x0100, 0x0200, 0x0400, 0x0800,
 
 /* 各サーボの直立デフォルト値(degree) 直立状態になるよう、具体的な数値を入れて現物調整する */
 #define IDL_TRIM0 0        // 頭ヨー
-#define IDL_TRIM1 -2.3625  // 左肩ピッチ
-#define IDL_TRIM2 -91.125  // 左肩ロール
+#define IDL_TRIM1 -2.36    // 左肩ピッチ
+#define IDL_TRIM2 -91.13   // 左肩ロール
 #define IDL_TRIM3 0        // 左肘ヨー
-#define IDL_TRIM4 89.9775  // 左肘ピッチ
+#define IDL_TRIM4 89.98    // 左肘ピッチ
 #define IDL_TRIM5 0        // 左股ヨー
 #define IDL_TRIM6 0        // 左股ロール
 #define IDL_TRIM7 -1.35    // 左股ピッチ
 #define IDL_TRIM8 -58.05   // 左膝ピッチ
 #define IDL_TRIM9 -20.25   // 左足首ピッチ
-#define IDL_TRIM10 -0.675  // 左足首ロール
+#define IDL_TRIM10 -0.68   // 左足首ロール
 #define IDL_TRIM11 0       // 追加サーボ用
 #define IDL_TRIM12 0       // 追加サーボ用
 #define IDL_TRIM13 0       // 追加サーボ用
 #define IDL_TRIM14 0       // 追加サーボ用
 #define IDR_TRIM0 0        // 腰ヨー
 #define IDR_TRIM1 0        // 右肩ピッチ
-#define IDR_TRIM2 -89.4375 // 右肩ロール
+#define IDR_TRIM2 -89.44   // 右肩ロール
 #define IDR_TRIM3 0        // 右肘ヨー
-#define IDR_TRIM4 89.9775  // 右肘ピッチ
+#define IDR_TRIM4 89.98    // 右肘ピッチ
 #define IDR_TRIM5 0        // 右股ヨー
-#define IDR_TRIM6 1.6875   // 右股ロール
-#define IDR_TRIM7 -3.375   // 右股ピッチ
-#define IDR_TRIM8 -57.375  // 右膝ピッチ
+#define IDR_TRIM6 1.69     // 右股ロール
+#define IDR_TRIM7 -3.38    // 右股ピッチ
+#define IDR_TRIM8 -57.38   // 右膝ピッチ
 #define IDR_TRIM9 -20.25   // 右足首ピッチ
-#define IDR_TRIM10 -2.3625 // 右足首ロール
+#define IDR_TRIM10 -2.36   // 右足首ロール
 #define IDR_TRIM11 0       // 追加サーボ用
 #define IDR_TRIM12 0       // 追加サーボ用
 #define IDR_TRIM13 0       // 追加サーボ用
