@@ -105,7 +105,9 @@ File myFile;                                                   // SDカード用
 int servo_num_max = max(MOUNT_SERVO_NUM_L, MOUNT_SERVO_NUM_R); // サーボ送受信のループ処理数（L系R系で多い方）
 
 /* フラグ関連変数 */
-bool udp_rsvd_flag = 0; // UDPの受信終了フラグ
+bool udp_rsvd_flag = 0;           // UDPの受信終了フラグ
+bool udp_board_passive_flag = 0;  // UDP受信のパッシブモード（0:active/デフォルト, 1:passive/PC側が通信周期制御)
+bool rest_meridian_time_flag = 0; // フレーム管理時計をリセットするかどうか(パッシブモードの終了時にリセットする設定)
 
 /* タイマー管理用の変数 */
 long frame_ms = FRAME_DURATION;  // 1フレームあたりの単位時間(ms)
@@ -497,17 +499,21 @@ void loop()
   // @ [8-2] この時点で時間が余っていたら時間消化。時間がオーバーしていたらこの処理を自然と飛ばす。
   now_t_mil = (long)millis();
   now_t_mic = (long)micros(); // 現在時刻を取得
-  while ((mrd_t_mil - now_t_mil) >= 1)
+
+  if (udp_board_passive_flag) // パッシブモードの時は時間消化なし
   {
-    delay(1);
-    now_t_mil = (long)millis();
-  }
-  while (now_t_mic < mrd_t_mil * 1000)
-  {
-    now_t_mic = (long)micros(); // 現在時刻を取得
+    while ((mrd_t_mil - now_t_mil) >= 1)
+    {
+      delay(1);
+      now_t_mil = (long)millis();
+    }
+    while (now_t_mic < mrd_t_mil * 1000)
+    {
+      now_t_mic = (long)micros(); // 現在時刻を取得
+    }
   }
 
-  // @ [8-3] フレーム管理時計mercのカウントアップ
+  // @ [8-3] フレーム管理時計mrd_t_milのカウントアップ
   mrd_t_mil = mrd_t_mil + frame_ms;             // フレーム管理時計を1フレーム分進める
   frame_count = frame_count + frame_count_diff; // サインカーブ動作用のフレームカウントをいくつずつ進めるかをここで設定。
 
@@ -895,18 +901,37 @@ void execute_MasterCommand()
 
   // コマンド[90]: サーボオンを含む通常動作
 
-  // コマンド[10002]: IMU/AHRSのヨー軸リセット
+  // コマンド:MCMD_UPDATE_YAW_CENTER (10002) IMU/AHRSのヨー軸リセット
   if (s_udp_meridim.sval[MRD_MASTER] == MCMD_UPDATE_YAW_CENTER)
   {
     setyawcenter();
   }
 
-  // コマンド[10003]: トリムモード（既存のものは廃止し、検討中）
+  // コマンド:MCMD_ENTER_TRIM_MODE (10003) トリムモードに入る（既存のものは廃止し、検討中）
 
-  // コマンド[10004]: 通信エラーサーボIDのクリア
+  // コマンド:MCMD_CLEAR_SERVO_ERROR_ID (10004) 通信エラーサーボIDのクリア
   if (s_udp_meridim.sval[MRD_MASTER] == MCMD_CLEAR_SERVO_ERROR_ID)
   {
     s_udp_meridim.bval[MSG_ERR_l] = 0;
+  }
+
+  // コマンド:MCMD_BOARD_TRANSMIT_ACTIVE (10005) UDP受信の通信周期制御をボード側主導に（デフォルト）
+  if (s_udp_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_ACTIVE)
+  {
+    udp_board_passive_flag = 0;  // UDP送信をアクティブモードに
+    if (rest_meridian_time_flag) // パッシブモードをからの復帰の時にフレーム管理時計を現在時刻にリセット
+    {
+      now_t_mil = (long)millis();
+      mrd_t_mil = now_t_mil + 1;
+      rest_meridian_time_flag = 0;
+    }
+  }
+
+  // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10006) UDP受信の通信周期制御をPC側主導に（SSH的な動作）
+  if (s_udp_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_PASSIVE)
+  {
+    udp_board_passive_flag = 1;  // UDP送信をパッシブモードに
+    rest_meridian_time_flag = 1; // フレーム管理時計をリセットするかどうか(パッシブモードの終了時にリセットする設定)
   }
 }
 
