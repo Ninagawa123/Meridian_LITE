@@ -107,7 +107,7 @@
 
 /* 動作チェックモード */
 #define CHECK_SD_RW 0    // 起動時のSDカードリーダーの読み書きチェック
-#define ESP32_STDALONE 0 // ESP32をボードに挿さず単体で動作確認
+#define ESP32_STDALONE 1 // ESP32をボードに挿さず単体で動作確認
                          // （サーボを無視し、L0番サーボ値として+-30度のサインカーブを代入）
 
 /* シリアルモニタリング */
@@ -160,6 +160,7 @@ constexpr unsigned short PAD_WIIMOTE_ORIG[16] = {0x0100, 0x0200, 0x0400, 0x0800,
 #define MCMD_CLEAR_SERVO_ERROR_ID 10004   // 通信エラーのサーボのIDをクリア(MSG_ERR_l)
 #define MCMD_BOARD_TRANSMIT_ACTIVE 10005  // ボードが定刻で送信を行うモード（PC側が受信待ち.デフォルト）
 #define MCMD_BOARD_TRANSMIT_PASSIVE 10006 // ボードが受信を待ち返信するモード（PC側が定刻送信）
+#define MCMD_RESET_MRD_TIMER 10007        // フレーム管理時計mrd_t_milを現在時刻にリセット
 
 /* ピンアサイン */
 #define ERR_LED 25           // LED用 処理が時間内に収まっていない場合に点灯
