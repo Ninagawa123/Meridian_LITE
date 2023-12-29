@@ -7,7 +7,7 @@
  * Copyright (c) 2022 Izumi Ninagawa & Project Meridian                               \
  */
 
-#define VERSION "Hello, This is Meridian_LITE_v1.0.1_20230915." // バージョン表示
+#define VERSION "Hello, This is Meridian_LITE_v1.0.1_20231229." // バージョン表示
 
 // [ 概 要 ] ///////////////////////////////////////////////////////////////////////
 // Meridianはサーボやセンサーの状態が格納されたMeridim90というデータ配列を, PCと100Hzで共有します.
@@ -277,11 +277,31 @@ void loop()
   // @ [1-1] UDP受信の実行 もしデータパケットが来ていれば受信する
   if (UDP_RESEIVE) // UDPの受信を行うかどうか
   {
-    receiveUDP(); // UDPを受信
-    if (udp_rsvd_flag)
+    if (udp_board_passive_flag) // パッシブモードの時は受信完了までループで待つ
     {
-      mrd.monitor_check_flow("[Rsvd]", MONITOR_FLOW); // デバグ用フロー表示
-      udp_rsvd_flag = 0;
+      while(true)
+      {
+        receiveUDP(); // UDPを受信
+        if (udp_rsvd_flag)
+        {
+          mrd.monitor_check_flow("[Rsvd]", MONITOR_FLOW); // デバグ用フロー表示
+          udp_rsvd_flag = 0;
+          break;
+        }
+        else{
+          mrd.monitor_check_flow(".", MONITOR_FLOW); // デバグ用フロー表示
+          delay(1);
+        }
+      }
+    }
+    else // パッシブモードではない通常の処理
+    {               
+      receiveUDP(); // UDPを受信
+      if (udp_rsvd_flag)
+      {
+        mrd.monitor_check_flow("[Rsvd]", MONITOR_FLOW); // デバグ用フロー表示
+        udp_rsvd_flag = 0;
+      }
     }
   }
   // 　→ ここでr_udp_meridim.sval に受信したMeridim配列が入っている状態。
@@ -500,7 +520,7 @@ void loop()
   now_t_mil = (long)millis();
   now_t_mic = (long)micros(); // 現在時刻を取得
 
-  if (udp_board_passive_flag) // パッシブモードの時は時間消化なし
+  if (!udp_board_passive_flag) // パッシブモードの時は時間消化なし
   {
     while ((mrd_t_mil - now_t_mil) >= 1)
     {
@@ -919,19 +939,28 @@ void execute_MasterCommand()
   if (s_udp_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_ACTIVE)
   {
     udp_board_passive_flag = 0;  // UDP送信をアクティブモードに
-    if (rest_meridian_time_flag) // パッシブモードをからの復帰の時にフレーム管理時計を現在時刻にリセット
-    {
-      now_t_mil = (long)millis();
-      mrd_t_mil = now_t_mil + 1;
-      rest_meridian_time_flag = 0;
-    }
+    rest_meridian_time_flag = 1; // フレームの管理時計をリセットフラグを上げる
   }
 
   // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10006) UDP受信の通信周期制御をPC側主導に（SSH的な動作）
   if (s_udp_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_PASSIVE)
   {
     udp_board_passive_flag = 1;  // UDP送信をパッシブモードに
-    rest_meridian_time_flag = 1; // フレーム管理時計をリセットするかどうか(パッシブモードの終了時にリセットする設定)
+    rest_meridian_time_flag = 1; // フレームの管理時計をリセットフラグを上げる
+  }
+
+  // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10007) フレーム管理時計mrd_t_milを現在時刻にリセット
+  if (s_udp_meridim.sval[MRD_MASTER] == MCMD_RESET_MRD_TIMER)
+  {
+    rest_meridian_time_flag = 1; // フレームの管理時計をリセットフラグを上げる
+  }
+
+  // フレーム管理時計mrd_t_milを現在時刻にリセット
+  if (rest_meridian_time_flag)
+  {
+    now_t_mil = (long)millis();
+    mrd_t_mil = now_t_mil + 1;
+    rest_meridian_time_flag = 0;
   }
 }
 
