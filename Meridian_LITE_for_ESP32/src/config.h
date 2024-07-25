@@ -204,12 +204,11 @@
 #define IDL_MAX 15 // L系統の最大サーボ数. 標準は15.
 #define IDR_MAX 15 // R系統の最大サーボ数. 標準は15.
 
-// 各サーボのマウントの設定
+// L系統のサーボのマウントの設定
 // 0: マウントなし        01: Single PWM,    11: I2C_PCA9685 to PWM
 // 21: FUTABA_RSxTTL,   31: DYNAMIXEL 1.0, 32: DYNAMIXEL 2.0
 // 43: KONDO_ICS 3.5/6, 44: KONDO_PMX,     51: JRPROPO_XBUS
 // 61: FEETECH_STS,     62: FEETECH_SCS
-// 凡例: idl_mt[20] = -21; → FUTABA_RSxTTLサーボを逆転設定でマウント
 int IDL_MT[IDL_MAX] = {
     // L系統のマウント状態
     43, // [00]頭ヨー
@@ -229,6 +228,11 @@ int IDL_MT[IDL_MAX] = {
     0   // [14]追加サーボ用
 };
 
+// R系統のサーボのマウントの設定
+// 0: マウントなし        01: Single PWM,    11: I2C_PCA9685 to PWM
+// 21: FUTABA_RSxTTL,   31: DYNAMIXEL 1.0, 32: DYNAMIXEL 2.0
+// 43: KONDO_ICS 3.5/6, 44: KONDO_PMX,     51: JRPROPO_XBUS
+// 61: FEETECH_STS,     62: FEETECH_SCS
 int IDR_MT[IDR_MAX] = {
     // R系統のマウント状態
     43, // [00]腰ヨー
@@ -248,9 +252,8 @@ int IDR_MT[IDR_MAX] = {
     0   // [14]追加サーボ用
 };
 
-// 各サーボの内外回転プラスマイナス方向補正(1 or -1)
+// L系統のサーボ回転方向補正(1:変更なし, -1:逆転)
 int IDL_CW[IDL_MAX] = {
-    // L系統の正転逆転
     1, // [00]頭ヨー
     1, // [01]左肩ピッチ
     1, // [02]左肩ロール
@@ -268,6 +271,7 @@ int IDL_CW[IDL_MAX] = {
     1  // [14]追加サーボ用
 };
 
+// R系統のサーボ回転方向補正(1:変更なし, -1:逆転)
 int IDR_CW[IDR_MAX] = {
     // R系統の正転逆転
     1, // [00]腰ヨー
@@ -287,9 +291,8 @@ int IDR_CW[IDR_MAX] = {
     1  // [14]追加サーボ用
 };
 
-// 各サーボのトリム値(degree)
+// L系統のトリム値(degree)
 float IDL_TRIM[IDL_MAX] = {
-    // L系統のトリム値
     0,      // [00]頭ヨー
     -2.36,  // [01]左肩ピッチ
     -91.13, // [02]左肩ロール
@@ -307,8 +310,8 @@ float IDL_TRIM[IDL_MAX] = {
     0       // [14]追加サーボ用
 };
 
+// R系統のトリム値(degree)
 float IDR_TRIM[IDR_MAX] = {
-    // R系統のトリム値
     0,      // [00]腰ヨー
     0,      // [01]右肩ピッチ
     -89.44, // [02]右肩ロール
