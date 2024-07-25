@@ -204,7 +204,7 @@
 #define IDL_MAX 15 // L系統の最大サーボ数. 標準は15.
 #define IDR_MAX 15 // R系統の最大サーボ数. 標準は15.
 
-// 各サーボのマウントありなし（1:サーボあり、0:サーボなし）
+// 各サーボのマウントの設定
 // 0: マウントなし        01: Single PWM,    11: I2C_PCA9685 to PWM
 // 21: FUTABA_RSxTTL,   31: DYNAMIXEL 1.0, 32: DYNAMIXEL 2.0
 // 43: KONDO_ICS 3.5/6, 44: KONDO_PMX,     51: JRPROPO_XBUS
@@ -287,6 +287,7 @@ int IDR_CW[IDR_MAX] = {
     1  // [14]追加サーボ用
 };
 
+// 各サーボのトリム値(degree)
 float IDL_TRIM[IDL_MAX] = {
     // L系統のトリム値
     0,      // [00]頭ヨー
