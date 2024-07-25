@@ -2,11 +2,9 @@
 # Meridian_LITE v1.1.1
 
 より改良・拡張しやすくするため, 大規模なリファクタリングを行いました.  
-命名規則はLLVM準拠とし, 内容を「.clang-format」ファイルにコメントしています.  
+命名規則はLLVM準拠とし, 内容を "Meridian_LITE_for_ESP32/src/.clang-format" ファイルにコメントしています.  
 変数名や関数名のルールもある程度整理しました.  
-構成要素となるコードをモジュール化することで, 改造の見通しが立ちやすくなりました.  
-
-  ![meridian_lite_flow_20240721](https://github.com/user-attachments/assets/f8a21144-ca6c-4bed-831c-d543e6ded62d)
+構成要素となるコードをモジュール化することで, 改造の見通しを立ちやすくなりました.  
   
 ライブラリの関数や変数表など, システムの詳細については以下のサイトがありますが, こちらの情報はまだ古いのでご注意ください.  
 https://ninagawa123.github.io/Meridian_info/#
@@ -190,18 +188,17 @@ Meridian_TWINとUnityを連携させることができます.
 [https://github.com/Ninagawa123/Meridian_TWIN/edit/main/README.md](https://github.com/Ninagawa123/Meridian_TWIN/edit/main/README.md)  
   
 # Wiiリモコンの使用方法  
-config.h内の設定値を以下のように変更してください.    
-#define MOUNT_JOYPAD 2       // ジョイパッドの搭載  
-#define JOYPAD_POLLING 10    // 上記JOYPADのデータを読みに行くフレーム間隔  
-起動後, wiiリモコンのABボタンを同時押し, 接続を確立します.  
-接続が確立するとリモコンのランプが点滅から点灯に変化し, シリアルモニタには"Wiimote successfully connected."と表示されます.
+簡略のためwiiリモコンはオプションとし, 一旦標準機能からは外しました.  
   
-
 # バージョン更新履歴  
 - 2023.09.15 v1.0.1  
 #define ESP32_STDALONE 0 をconfig.hに追加し, 値を1に設定することでESP32単体で通信テストが行えるようにした.
 その際,　サーボ値は調べず, 代わりにL0番のサーボ値として+-30度のサインカーブを代入しつづける.  
-
+  
+- 2024.07.25 v1.1.1  
+コードをモジュールに分割し, Meridian_TWIN v1.1.0 と同等の構成にした.  
+命名規則を導入した. 今後, Meridian_TWIN v1.1.0 にも同ルールを適用し1.1.1とする.     
+  
 # トラブルシューティング  
 ### サーボ通信が片方しか使えない！  
 **原因１: ESP32のピン設定が反映されてていない**  
