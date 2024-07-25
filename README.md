@@ -6,6 +6,37 @@
 変数名や関数名のルールもある程度整理しました.  
 構成要素となるコードをモジュール化することで, 改造の見通しを立ちやすくなりました.  
   
+```  
+Meridian_LITE_for_ESP32
+│
+├── lib
+│   └── IcsClass_V210
+├── platformio.ini
+└── src
+    ├── .clang-format
+    ├── config.h
+    ├── keys.h
+    ├── main.cpp
+    ├── main.h
+    │
+    ├── mrd_eeprom.h
+    ├── mrd_move.h
+    ├── mrd_msg.h
+    ├── mrd_pad.h
+    ├── mrd_sd.h
+    ├── mrd_servo.h
+    ├── mrd_wifi.h
+    ├── mrd_wire0.h
+    └── mrd_module
+        ├── mv_firstIK.h
+        ├── mv_motionplay.h
+        ├── sv_dxl2.h
+        ├── sv_ftbrx.h
+        ├── sv_ftc.h
+        └── sv_ics.h
+```  
+  
+  
 ライブラリの関数や変数表など, システムの詳細については以下のサイトがありますが, こちらの情報はまだ古いのでご注意ください.  
 https://ninagawa123.github.io/Meridian_info/#
   
