@@ -17,20 +17,20 @@ IcsHardSerialClass ics_R(&Serial2, PIN_EN_R, SERVO_BAUDRATE_R, SERVO_TIMEOUT_R);
 //  列挙型
 //------------------------------------------------------------------------------------
 
-enum UartLine { // サーボ系統の列挙型
+enum UartLine { // サーボ系統の列挙型(L,R,C)
   L,            // Left
   R,            // Right
   C             // Center
 };
 
-enum ImuAhrsType { // 6軸9軸センサ種の列挙型
+enum ImuAhrsType { // 6軸9軸センサ種の列挙型(NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS)
   NO_IMU = 0,      // IMU/AHRS なし.
   MPU6050_IMU = 1, // MPU6050
   MPU9250_IMU = 2, // MPU9250(未設定)
   BNO055_AHRS = 3  // BNO055
 };
 
-enum PadReceiverType { // リモコン種の列挙型
+enum PadReceiverType { // リモコン種の列挙型(PC, MERIMOTE, BLUERETRO, SBDBT, KRR5FH)
   PC = 0,              // PCからのPD入力情報を使用
   MERIMOTE = 1,        // MERIMOTE(未導入)
   BLUERETRO = 2,       // BLUERETRO(未導入)
@@ -38,7 +38,7 @@ enum PadReceiverType { // リモコン種の列挙型
   KRR5FH = 4           // KRR5FH
 };
 
-enum HexBinDec { // 数値表示タイプの列挙型
+enum HexBinDec { // 数値表示タイプの列挙型(Bin, Hex, Dec)
   Bin = 0,       // BIN
   Hex = 1,       // HEX
   Dec = 2,       // DEC
@@ -170,7 +170,8 @@ struct AhrsValue {
   uint8_t fifoBuffer[64]; // FIFO storage buffer
   Quaternion q;           // [w, x, y, z]         quaternion container
   VectorFloat gravity;    // [x, y, z]            gravity vector
-  float ypr[3];           // [roll, pitch, yaw]   roll/pitch/yaw container
+  float ypr[3];           // [roll, pitch, yaw]   roll/pitch/yaw container and gravity
+                          // vector
   float yaw_origin = 0;   // ヨー軸の補正センター値
   float yaw_source = 0;   // ヨー軸のソースデータ保持用
   float read
