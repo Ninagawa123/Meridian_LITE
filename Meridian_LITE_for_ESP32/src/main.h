@@ -38,7 +38,7 @@ enum PadReceiverType { // リモコン種の列挙型(PC, MERIMOTE, BLUERETRO, S
   KRR5FH = 4           // KRR5FH
 };
 
-enum HexBinDec { // 数値表示タイプの列挙型(Bin, Hex, Dec)
+enum BinHexDec { // 数値表示タイプの列挙型(Bin, Hex, Dec)
   Bin = 0,       // BIN
   Hex = 1,       // HEX
   Dec = 2,       // DEC
