@@ -166,7 +166,7 @@ void loop() {
   // @[1-1] UDP送信の実行
   if (MODE_UDP_SEND) // 設定でUDPの送信を行うかどうか
   {
-    udp_send(s_udp_meridim.bval, MRDM_BYTE);
+    mrd_udp_send(s_udp_meridim.bval, MRDM_BYTE);
     flg.udp_rcvd = false;
   }
 
@@ -181,7 +181,7 @@ void loop() {
     unsigned long startMillis = millis();
     flg.udp_rcvd = false;
     while (!flg.udp_rcvd) {
-      if (udp_receive(r_udp_meridim.bval, MRDM_BYTE)) // 受信確認
+      if (mrd_udp_receive(r_udp_meridim.bval, MRDM_BYTE)) // 受信確認
       {
         flg.udp_rcvd = true;
       }
