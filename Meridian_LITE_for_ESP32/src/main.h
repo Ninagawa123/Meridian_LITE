@@ -177,7 +177,7 @@ struct AhrsValue {
   float yaw_source = 0;   // ヨー軸のソースデータ保持用
   float read
       [16]; // mpuからの読み込んだ一次データacc_x,y,z,gyro_x,y,z,mag_x,y,z,gr_x,y,z,rpy_r,p,y,temp
-  float zeros[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // リセット用
+  float zeros[16] = {0}; // リセット用
   float ave_data[16];                  // 上記の移動平均値を入れる
   float result[16];                    // 加工後の最新のmpuデータ（二次データ）
   float stock_data[IMUAHRS_STOCK][16]; // 上記の移動平均値計算用のデータストック
