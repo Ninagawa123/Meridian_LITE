@@ -35,7 +35,7 @@ enum PadReceiverType { // リモコン種の列挙型(PC, MERIMOTE, BLUERETRO, S
   MERIMOTE = 1,        // MERIMOTE(未導入)
   BLUERETRO = 2,       // BLUERETRO(未導入)
   SBDBT = 3,           // SBDBT(未導入)
-  KRR5FH = 4           // KRR5FH
+  KRR5FH = 4,          // KRR5FH
   WIIMOTE = 5          // WIIMOTE(未導入)
 };
 
