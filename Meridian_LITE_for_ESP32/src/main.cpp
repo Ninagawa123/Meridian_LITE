@@ -107,7 +107,7 @@ void setup() {
 
   // WiFiの初期化と開始
   mrd_msg_esp_wifi();
-  init_wifi(WIFI_AP_SSID, WIFI_AP_PASS);
+  mrd_init_wifi(WIFI_AP_SSID, WIFI_AP_PASS);
   while (WiFi.status() != WL_CONNECTED) {
     // https://www.arduino.cc/en/Reference/WiFiStatus 戻り値一覧
     delay(1); // 接続が完了するまでループで待つ
