@@ -1,5 +1,5 @@
 
-# Meridian_LITE v1.0.1
+# [Meridian_LITE v1.0.1](https://github.com/Ninagawa123/Meridian_LITE/tree/main)
 
 Meridian公式ライブラリ対応版として大幅なアップデートを行いました.(前回までのバージョンはoldディレクトリにzipで格納しています.)  
 ソースコードが整理され, 改造の見通しが立ちやすくなりました.  
