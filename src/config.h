@@ -354,8 +354,8 @@ float IDR_TRIM[IDR_MAX] = {
 #define MRD_MOTION_FRAMES      19 // モーション設定のフレーム数
 #define MRD_STOP_FRAMES_MS     19 // ボード停止時のフレーム数(MCMD_STOP_BOARD_DURINGで指定)
 
-#define HEAD_Y_CMD       20 // 頭ヨーのコマンド
-#define HEAD_Y_VAL       21 // 頭ヨーの値
+#define C_HEAD_Y_CMD       20 // 頭ヨーのコマンド
+#define C_HEAD_Y_VAL       21 // 頭ヨーの値
 #define L_SHOULDER_P_CMD 22 // 左肩ピッチのコマンド
 #define L_SHOULDER_P_VAL 23 // 左肩ピッチの値
 #define L_SHOULDER_R_CMD 24 // 左肩ロールのコマンド
@@ -384,8 +384,8 @@ float IDR_TRIM[IDR_MAX] = {
 #define L_SERVO_ID13_VAL 47 // 追加サーボ用の値
 #define L_SERVO_ID14_CMD 48 // 追加サーボ用のコマンド
 #define L_SERVO_ID14_VAL 49 // 追加サーボ用の値
-#define WAIST_Y_CMD      50 // 腰ヨーのコマンド
-#define WAIST_Y_VAL      51 // 腰ヨーの値
+#define C_WAIST_Y_CMD      50 // 腰ヨーのコマンド
+#define C_WAIST_Y_VAL      51 // 腰ヨーの値
 
 #define R_SHOULDER_P_CMD 52 // 右肩ピッチのコマンド
 #define R_SHOULDER_P_VAL 53 // 右肩ピッチの値

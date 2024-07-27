@@ -86,7 +86,7 @@ void setup() {
   mrd_msg_lite_servo_mounts();
 
   // EEPROMの開始, ダンプ表示
-  eeprom_init(EEPROM_SIZE);                                       // EEPROMの初期化
+  mrd_eeprom_init(EEPROM_SIZE);                                   // EEPROMの初期化
   mrd_eeprom_dump_at_boot(EEPROM_DUMP, EEPROM_FORMAT);            // 内容のダンプ表示
   mrd_eeprom_write_read_check(mrd_eeprom_make_data_from_config(), // EEPROMのリードライトテスト
                               CHECK_EEPROM_RW, EEPROM_PROTECT, EEPROM_FORMAT);
@@ -107,7 +107,7 @@ void setup() {
 
   // WiFiの初期化と開始
   mrd_msg_esp_wifi();
-  init_wifi(WIFI_AP_SSID, WIFI_AP_PASS);
+  mrd_init_wifi(WIFI_AP_SSID, WIFI_AP_PASS);
   while (WiFi.status() != WL_CONNECTED) {
     // https://www.arduino.cc/en/Reference/WiFiStatus 戻り値一覧
     delay(1); // 接続が完了するまでループで待つ
@@ -166,7 +166,7 @@ void loop() {
   // @[1-1] UDP送信の実行
   if (MODE_UDP_SEND) // 設定でUDPの送信を行うかどうか
   {
-    udp_send(s_udp_meridim.bval, MRDM_BYTE);
+    mrd_udp_send(s_udp_meridim.bval, MRDM_BYTE);
     flg.udp_rcvd = false;
   }
 
@@ -181,7 +181,7 @@ void loop() {
     unsigned long startMillis = millis();
     flg.udp_rcvd = false;
     while (!flg.udp_rcvd) {
-      if (udp_receive(r_udp_meridim.bval, MRDM_BYTE)) // 受信確認
+      if (mrd_udp_receive(r_udp_meridim.bval, MRDM_BYTE)) // 受信確認
       {
         flg.udp_rcvd = true;
       }

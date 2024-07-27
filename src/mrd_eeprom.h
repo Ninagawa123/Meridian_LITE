@@ -24,7 +24,7 @@ UnionEEPROM eeprom_read_data;  // EEPROM読み込み用
 /// @brief EEPROMの初期化
 /// @param a_eeprom_size EEPROMのバイト長
 /// @return 初期化が成功すればtrue, 失敗ならfalseを返す.
-bool eeprom_init(int a_eeprom_size) {
+bool mrd_eeprom_init(int a_eeprom_size) {
   Serial.print("Initializing EEPROM... ");
   if (EEPROM.begin(a_eeprom_size)) {
     Serial.println("OK.");
