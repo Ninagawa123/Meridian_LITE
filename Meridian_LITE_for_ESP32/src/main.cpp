@@ -86,7 +86,7 @@ void setup() {
   mrd_msg_lite_servo_mounts();
 
   // EEPROMの開始, ダンプ表示
-  eeprom_init(EEPROM_SIZE);                                       // EEPROMの初期化
+  mrd_eeprom_init(EEPROM_SIZE);                                   // EEPROMの初期化
   mrd_eeprom_dump_at_boot(EEPROM_DUMP, EEPROM_FORMAT);            // 内容のダンプ表示
   mrd_eeprom_write_read_check(mrd_eeprom_make_data_from_config(), // EEPROMのリードライトテスト
                               CHECK_EEPROM_RW, EEPROM_PROTECT, EEPROM_FORMAT);
