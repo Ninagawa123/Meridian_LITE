@@ -48,8 +48,8 @@ Meridian_LITE_for_ESP32
         └── sv_ics.h        // KONDOサーボ制御
 ```
 
-ライブラリの関数や変数表など, システムの詳細については以下のサイトがありますが, こちらの情報はまだ古いのでご注意ください.  
-<https://ninagawa123.github.io/Meridian_info/#>  
+ライブラリの関数や変数表など, システムの詳細については以下のサイトがあります. 内容はv1.1.1に合わせました.  
+https://ninagawa123.github.io/Meridian_info/
 
 ****************************************
 
