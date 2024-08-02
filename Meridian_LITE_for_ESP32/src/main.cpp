@@ -107,11 +107,7 @@ void setup() {
 
   // WiFiの初期化と開始
   mrd_msg_esp_wifi();
-  mrd_init_wifi(WIFI_AP_SSID, WIFI_AP_PASS);
-  while (WiFi.status() != WL_CONNECTED) {
-    // https://www.arduino.cc/en/Reference/WiFiStatus 戻り値一覧
-    delay(1); // 接続が完了するまでループで待つ
-  }
+  mrd_wifi_init(WIFI_AP_SSID, WIFI_AP_PASS);
 
   // wifiのIP表示
   mrd_msg_esp_ip(MODE_FIXED_IP);
@@ -166,7 +162,7 @@ void loop() {
   // @[1-1] UDP送信の実行
   if (MODE_UDP_SEND) // 設定でUDPの送信を行うかどうか
   {
-    mrd_udp_send(s_udp_meridim.bval, MRDM_BYTE);
+    mrd_wifi_udp_send(s_udp_meridim.bval, MRDM_BYTE);
     flg.udp_rcvd = false;
   }
 
@@ -181,7 +177,7 @@ void loop() {
     unsigned long startMillis = millis();
     flg.udp_rcvd = false;
     while (!flg.udp_rcvd) {
-      if (mrd_udp_receive(r_udp_meridim.bval, MRDM_BYTE)) // 受信確認
+      if (mrd_wifi_udp_receive(r_udp_meridim.bval, MRDM_BYTE)) // 受信確認
       {
         flg.udp_rcvd = true;
       }
