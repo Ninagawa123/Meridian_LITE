@@ -89,7 +89,9 @@ struct MrdFlags {
   bool sdcard_read_mode = false;        // SDCARDからの読み込みモード.
   bool wire0_init = false;              // I2C 0系統の初期化合否
   bool wire1_init = false;              // I2C 1系統の初期化合否
-  bool udp_rcvd = false;                // UDPが受信できたか.
+  bool bt_busy = false;                 // Bluetoothの受信中フラグ（UDPコンフリクト回避用）
+  bool spi_rcvd = true;                 // SPIのデータ受信判定
+  bool udp_rcvd = false;                // UDPのデータ受信判定
   bool udp_busy = false;                // UDPスレッドでの受信中フラグ（送信抑制）
   bool udp_receive_mode = MODE_UDP_RECEIVE; // PCからのデータ受信実施（0:OFF, 1:ON, 通常は1）
   bool udp_send_mode = MODE_UDP_SEND;   // PCへのデータ送信実施（0:OFF, 1:ON, 通常は1）
