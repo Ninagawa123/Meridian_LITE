@@ -182,11 +182,12 @@ void loop() {
         flg.udp_rcvd = true;
       }
 
-      // ※パッシブモードを加えること
       unsigned long currentMillis = millis();
       if (currentMillis - startMillis >= UDP_TIMEOUT) // タイムアウト抜け
       {
-        Serial.println("UDP timeout");
+        if (currentMillis > MONITOR_SUPPRESS_DURATION) { // 起動直後はエラー表示を抑制
+          Serial.println("UDP timeout");
+        }
         flg.udp_rcvd = false;
         break;
       }
