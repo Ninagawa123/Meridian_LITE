@@ -5,7 +5,7 @@
 /// This code is licensed under the MIT License.
 /// Copyright (c) 2022 Izumi Ninagawa & Project Meridian
 
-#define VERSION "Meridian_LITE_v1.1.1_2024_0724" // バージョン表示
+#define VERSION "Meridian_LITE_v1.1.1_2024_0804" // バージョン表示
 
 //================================================================================================================
 //  初期設定
