@@ -76,10 +76,10 @@ Meridim90Union s_udp_meridim_dummy; // SPI送信ダミー用
 
 // フラグ用変数
 struct MrdFlags {
-  bool imuahrs_available = true; // メインセンサ値を読み取る間, サブスレッドによる書き込みを待機
-  bool udp_board_passive = false; // UDP通信の周期制御がボード主導(false) か, PC主導(true)か.
-  bool frame_timer_reset = false; // フレーム管理時計をリセットする
-  bool stop_board_during = false; // ボードの末端処理をmeridim[2]秒, meridim[3]ミリ秒だけ止める.
+  bool imuahrs_available = true;        // メインセンサ値を読み取る間, サブスレッドによる書き込みを待機
+  bool udp_board_passive = false;       // UDP通信の周期制御がボード主導(false) か, PC主導(true)か.
+  bool frame_timer_reset = false;       // フレーム管理時計をリセットする
+  bool stop_board_during = false;       // ボードの末端処理をmeridim[2]秒, meridim[3]ミリ秒だけ止める.
   bool eeprom_write_mode = false;       // EEPROMへの書き込みモード.
   bool eeprom_read_mode = false;        // EEPROMからの読み込みモード.
   bool eeprom_protect = EEPROM_PROTECT; // EEPROMの書き込みプロテクト.
@@ -90,6 +90,9 @@ struct MrdFlags {
   bool wire0_init = false;              // I2C 0系統の初期化合否
   bool wire1_init = false;              // I2C 1系統の初期化合否
   bool udp_rcvd = false;                // UDPが受信できたか.
+  bool udp_busy = false;                // UDPスレッドでの受信中フラグ（送信抑制）
+  bool udp_receive_mode = MODE_UDP_RECEIVE; // PCからのデータ受信実施（0:OFF, 1:ON, 通常は1）
+  bool udp_send_mode = MODE_UDP_SEND;   // PCへのデータ送信実施（0:OFF, 1:ON, 通常は1）
   bool meridim_rcvd = false;            // Meridimが正しく受信できたか.
 };
 MrdFlags flg;
@@ -108,8 +111,8 @@ struct MrdTimer {
   long now_mil = 0;               // 現在時刻を取得
   long now_mic = 0;               // 現在時刻を取得
   int loop_count = 0;             // サイン計算用の循環カウンタ
-  int loop_count_dlt = 2; // サイン計算用の循環カウンタを1フレームにいくつ進めるか
-  int loop_count_max = 359999; // 循環カウンタの最大値
+  int loop_count_dlt = 2;         // サイン計算用の循環カウンタを1フレームにいくつ進めるか
+  int loop_count_max = 359999;    // 循環カウンタの最大値
 };
 MrdTimer tmr;
 
