@@ -187,6 +187,7 @@
 #define MCMD_EXIT_SDCARD_WRITE_MODE  10014 // SDCARD書き込みモードの終了
 #define MCMD_ENTER_SDCARD_READ_MODE  10015 // SDCARD読み出しモードのスタート
 #define MCMD_EXIT_SDCARD_READ_MODE   10016 // SDCARD読み出しモードの終了
+#define MCMD_DUMMY_DATA              -32768 // SPI送受信のダミーデータ判定用(TWIN等で使用)
 
 // ピンアサイン
 #define PIN_ERR_LED       25 // LED用 処理が時間内に収まっていない場合に点灯
