@@ -160,7 +160,7 @@ void loop() {
   mrd.monitor_check_flow("[1]", monitor.flow); // デバグ用フロー表示
 
   // @[1-1] UDP送信の実行
-  if (MODE_UDP_SEND) // 設定でUDPの送信を行うかどうか
+  if (flg.udp_send_mode) // 設定でUDPの送信を行うかどうか
   {
     mrd_wifi_udp_send(s_udp_meridim.bval, MRDM_BYTE);
     flg.udp_rcvd = false;
@@ -172,7 +172,7 @@ void loop() {
   mrd.monitor_check_flow("[2]", monitor.flow); // デバグ用フロー表示
 
   // @[2-1] UDPの受信待ち受けループ
-  if (MODE_UDP_RECEIVE) // UDPの受信を行うかどうか
+  if (flg.udp_receive_mode) // UDPの受信を行うかどうか
   {
     unsigned long startMillis = millis();
     flg.udp_rcvd = false;
