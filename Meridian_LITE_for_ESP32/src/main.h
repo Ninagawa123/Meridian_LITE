@@ -139,16 +139,8 @@ typedef union // リモコン値格納用
                               // [0]button, [1]pad.stick_L_x:pad.stick_L_y,
                               // [2]pad.stick_R_x:pad.stick_R_y, [3]pad.L2_val:pad.R2_val
 } PadUnion;
-PadUnion pad_array = {0};
-
-typedef union // Merimoto_I2C受信リモコン値格納用
-{
-  short sval[PAD_I2C_LEN];        // short型で4個の配列データを持つ
-  uint16_t usval[PAD_I2C_LEN];    // 上記のunsigned short型
-  int8_t bval[PAD_I2C_LEN * 2];   // 上記のbyte型
-  uint8_t ubval[PAD_I2C_LEN * 2]; // 上記のunsigned byte型
-} PadUnionWire;
-PadUnionWire pad_i2c = {0};
+PadUnion pad_array = {0}; // pad値の格納用配列
+PadUnion pad_i2c = {0};   // pad値のi2c送受信用配列
 
 struct PadValue // リモコンのアナログ入力データ
 {
@@ -162,7 +154,7 @@ struct PadValue // リモコンのアナログ入力データ
   int R2_val = 0;
   int L2_val = 0;
 };
-PadValue pad;
+PadValue pad_analog;
 
 // 6軸or9軸センサーの値
 struct AhrsValue {
