@@ -209,8 +209,7 @@ void loop() {
   {
     // @[2-4b] エラーフラグ14番(ESP32のPCからのUDP受信エラー検出)をアゲる.
     err.pc_esp++;
-    s_udp_meridim.bval[MRD_ERR_u] |=
-        B01000000; // エラーフラグ14番(ESP32のPCからのUDP受信エラー検出)をオン
+    s_udp_meridim.bval[MRD_ERR_u] |= B01000000;
     mrd.monitor_check_flow("CsErr*", monitor.flow); // デバグ用フロー表示
   }
 
