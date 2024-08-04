@@ -89,6 +89,10 @@
 // [MRDM_LEN-2] ERROR CODE
 // [MRDM_LEN-1] チェックサム
 
+//-------------------------------------------------------------------------
+//  各種設定
+//-------------------------------------------------------------------------
+
 // Meridimの基本設定
 #define MRDM_LEN       90  // Meridim配列の長さ設定（デフォルトは90）
 #define FRAME_DURATION 10  // 1フレームあたりの単位時間（単位ms）
@@ -118,7 +122,7 @@
 
 // シリアルモニタリング
 #define MONITOR_FLOW       0 // シリアルモニタでフローを表示（0:OFF, 1:ON）
-#define MONITOR_ALL_ERROR  0 // 全経路の受信エラー率を表示
+#define MONITOR_ALL_ERR    0 // 全経路の受信エラー率を表示
 #define MONITOR_SERVO_ERR  0 // シリアルモニタでサーボエラーを表示（0:OFF, 1:ON）
 #define MONITOR_SEQ_NUMBER 0 // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
 #define MONITOR_PAD        0 // シリアルモニタでリモコンのデータを表示（0:OFF, 1:ON）
@@ -130,8 +134,8 @@
 // I2C設定, I2Cセンサ関連設定
 #define MOUNT_IMUAHRS    BNO055_AHRS // IMU/AHRSの搭載 NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS
 #define I2C0_SPEED       400000      // I2Cの速度（400kHz推奨）
-#define IMUAHRS_STOCK    4 // MPUで移動平均を取る際の元にする時系列データの個数
 #define IMUAHRS_INTERVAL 10 // IMU/AHRSのセンサの読み取り間隔(ms)
+#define IMUAHRS_STOCK    4 // MPUで移動平均を取る際の元にする時系列データの個数
 // #define I2C1_SPEED 100000  // I2Cの速度（100kHz推奨?）
 // #define I2C1_MERIMOTE_ADDR 0x58 // MerimoteのI2Cアドレス
 
@@ -169,9 +173,6 @@
 // PC接続関連設定
 #define SERIAL_PC_BPS 115200 // PCとのシリアル速度（モニタリング表示用）
 
-// SPI設定
-#define SPI_SPEED 6000000 // SPI通信の速度（6000000kHz推奨）
-
 // 固定値, マスターコマンド定義
 #define MCMD_UPDATE_YAW_CENTER       10002 // センサの推定ヨー軸を現在値センターとしてリセット
 #define MCMD_ENTER_TRIM_MODE         10003 // トリムモードに入る（全サーボオンで垂直に気おつけ姿勢で立つ）
@@ -199,7 +200,7 @@
 #define PIN_I2C0_SCL      21 // I2CのSCLピン
 
 //-------------------------------------------------------------------------
-//  サ ー ボ 設 定  -----------------------------------------------------
+//  サーボ設定
 //-------------------------------------------------------------------------
 
 // 各サーボ系統の最大サーボマウント数
@@ -332,7 +333,7 @@ float IDR_TRIM[IDR_MAX] = {
 };
 
 //-------------------------------------------------------------------------
-// 　 Meridim90 配列アクセス対応キー
+//  Meridim90 配列アクセス対応キー
 //-------------------------------------------------------------------------
 #define MRD_MASTER             0  // マスターコマンド
 #define MRD_SEQENTIAL          1  // シーケンス番号
