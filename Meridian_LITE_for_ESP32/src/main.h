@@ -217,7 +217,7 @@ ServoParam sv;
 // モニタリング設定
 struct MrdMonitor {
   bool flow = MONITOR_FLOW;           // フローを表示
-  bool all_err = MONITOR_ALL_ERROR;   // 全経路の受信エラー率を表示
+  bool all_err = MONITOR_ALL_ERR;   // 全経路の受信エラー率を表示
   bool servo_err = MONITOR_SERVO_ERR; // サーボエラーを表示
   bool seq_num = MONITOR_SEQ_NUMBER;  // シーケンス番号チェックを表示
   bool pad = MONITOR_PAD;             // リモコンのデータを表示
