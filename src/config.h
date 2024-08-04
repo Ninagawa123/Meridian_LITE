@@ -122,6 +122,7 @@
 #define MONITOR_SERVO_ERR  0 // シリアルモニタでサーボエラーを表示（0:OFF, 1:ON）
 #define MONITOR_SEQ_NUMBER 0 // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
 #define MONITOR_PAD        0 // シリアルモニタでリモコンのデータを表示（0:OFF, 1:ON）
+#define MONITOR_SUPPRESS_DURATION 8000 // 起動直後のタイムアウトメッセージ抑制時間(単位ms)
 
 // 各種ハードウェアのマウント有無
 #define MOUNT_SD 0 // SDカードリーダーの有無 (0:なし, 1:あり)
@@ -187,6 +188,7 @@
 #define MCMD_EXIT_SDCARD_WRITE_MODE  10014 // SDCARD書き込みモードの終了
 #define MCMD_ENTER_SDCARD_READ_MODE  10015 // SDCARD読み出しモードのスタート
 #define MCMD_EXIT_SDCARD_READ_MODE   10016 // SDCARD読み出しモードの終了
+#define MCMD_DUMMY_DATA              -32768 // SPI送受信のダミーデータ判定用(TWIN等で使用)
 
 // ピンアサイン
 #define PIN_ERR_LED       25 // LED用 処理が時間内に収まっていない場合に点灯

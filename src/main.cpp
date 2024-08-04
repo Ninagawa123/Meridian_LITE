@@ -5,7 +5,7 @@
 /// This code is licensed under the MIT License.
 /// Copyright (c) 2022 Izumi Ninagawa & Project Meridian
 
-#define VERSION "Meridian_LITE_v1.1.1_2024_0724" // バージョン表示
+#define VERSION "Meridian_LITE_v1.1.1_2024_0804" // バージョン表示
 
 //================================================================================================================
 //  初期設定
@@ -107,11 +107,7 @@ void setup() {
 
   // WiFiの初期化と開始
   mrd_msg_esp_wifi();
-  mrd_init_wifi(WIFI_AP_SSID, WIFI_AP_PASS);
-  while (WiFi.status() != WL_CONNECTED) {
-    // https://www.arduino.cc/en/Reference/WiFiStatus 戻り値一覧
-    delay(1); // 接続が完了するまでループで待つ
-  }
+  mrd_wifi_init(WIFI_AP_SSID, WIFI_AP_PASS);
 
   // wifiのIP表示
   mrd_msg_esp_ip(MODE_FIXED_IP);
@@ -164,9 +160,9 @@ void loop() {
   mrd.monitor_check_flow("[1]", monitor.flow); // デバグ用フロー表示
 
   // @[1-1] UDP送信の実行
-  if (MODE_UDP_SEND) // 設定でUDPの送信を行うかどうか
+  if (flg.udp_send_mode) // 設定でUDPの送信を行うかどうか
   {
-    mrd_udp_send(s_udp_meridim.bval, MRDM_BYTE);
+    mrd_wifi_udp_send(s_udp_meridim.bval, MRDM_BYTE);
     flg.udp_rcvd = false;
   }
 
@@ -176,21 +172,22 @@ void loop() {
   mrd.monitor_check_flow("[2]", monitor.flow); // デバグ用フロー表示
 
   // @[2-1] UDPの受信待ち受けループ
-  if (MODE_UDP_RECEIVE) // UDPの受信を行うかどうか
+  if (flg.udp_receive_mode) // UDPの受信を行うかどうか
   {
     unsigned long startMillis = millis();
     flg.udp_rcvd = false;
     while (!flg.udp_rcvd) {
-      if (mrd_udp_receive(r_udp_meridim.bval, MRDM_BYTE)) // 受信確認
+      if (mrd_wifi_udp_receive(r_udp_meridim.bval, MRDM_BYTE)) // 受信確認
       {
         flg.udp_rcvd = true;
       }
 
-      // ※パッシブモードを加えること
       unsigned long currentMillis = millis();
       if (currentMillis - startMillis >= UDP_TIMEOUT) // タイムアウト抜け
       {
-        Serial.println("UDP timeout");
+        if (currentMillis > MONITOR_SUPPRESS_DURATION) { // 起動直後はエラー表示を抑制
+          Serial.println("UDP timeout");
+        }
         flg.udp_rcvd = false;
         break;
       }
@@ -212,8 +209,7 @@ void loop() {
   {
     // @[2-4b] エラーフラグ14番(ESP32のPCからのUDP受信エラー検出)をアゲる.
     err.pc_esp++;
-    s_udp_meridim.bval[MRD_ERR_u] |=
-        B01000000; // エラーフラグ14番(ESP32のPCからのUDP受信エラー検出)をオン
+    s_udp_meridim.bval[MRD_ERR_u] |= B01000000;
     mrd.monitor_check_flow("CsErr*", monitor.flow); // デバグ用フロー表示
   }
 

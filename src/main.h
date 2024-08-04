@@ -55,8 +55,7 @@ const int MRD_ERR = MRDM_LEN - 2; // エラーフラグの格納場所（配列�
 const int MRD_ERR_u = MRD_ERR * 2 + 1; // エラーフラグの格納場所（上位8ビット）
 const int MRD_ERR_l = MRD_ERR * 2;     // エラーフラグの格納場所（下位8ビット）
 const int MRD_CKSM = MRDM_LEN - 1;     // チェックサムの格納場所（配列の末尾）
-const int PAD_LEN = 4;                 // リモコン用配列の長さ
-const int PAD_I2C_LEN = 5;             // リモコンI2C用配列の長さ
+const int PAD_LEN = 5;                 // リモコン用配列の長さ
 TaskHandle_t thp[4];                   // マルチスレッドのタスクハンドル格納用
 
 //------------------------------------------------------------------------------------
@@ -76,10 +75,10 @@ Meridim90Union s_udp_meridim_dummy; // SPI送信ダミー用
 
 // フラグ用変数
 struct MrdFlags {
-  bool imuahrs_available = true; // メインセンサ値を読み取る間, サブスレッドによる書き込みを待機
-  bool udp_board_passive = false; // UDP通信の周期制御がボード主導(false) か, PC主導(true)か.
-  bool frame_timer_reset = false; // フレーム管理時計をリセットする
-  bool stop_board_during = false; // ボードの末端処理をmeridim[2]秒, meridim[3]ミリ秒だけ止める.
+  bool imuahrs_available = true;        // メインセンサ値を読み取る間, サブスレッドによる書き込みを待機
+  bool udp_board_passive = false;       // UDP通信の周期制御がボード主導(false) か, PC主導(true)か.
+  bool frame_timer_reset = false;       // フレーム管理時計をリセットする
+  bool stop_board_during = false;       // ボードの末端処理をmeridim[2]秒, meridim[3]ミリ秒だけ止める.
   bool eeprom_write_mode = false;       // EEPROMへの書き込みモード.
   bool eeprom_read_mode = false;        // EEPROMからの読み込みモード.
   bool eeprom_protect = EEPROM_PROTECT; // EEPROMの書き込みプロテクト.
@@ -89,7 +88,12 @@ struct MrdFlags {
   bool sdcard_read_mode = false;        // SDCARDからの読み込みモード.
   bool wire0_init = false;              // I2C 0系統の初期化合否
   bool wire1_init = false;              // I2C 1系統の初期化合否
-  bool udp_rcvd = false;                // UDPが受信できたか.
+  bool bt_busy = false;                 // Bluetoothの受信中フラグ（UDPコンフリクト回避用）
+  bool spi_rcvd = true;                 // SPIのデータ受信判定
+  bool udp_rcvd = false;                // UDPのデータ受信判定
+  bool udp_busy = false;                // UDPスレッドでの受信中フラグ（送信抑制）
+  bool udp_receive_mode = MODE_UDP_RECEIVE; // PCからのデータ受信実施（0:OFF, 1:ON, 通常は1）
+  bool udp_send_mode = MODE_UDP_SEND;   // PCへのデータ送信実施（0:OFF, 1:ON, 通常は1）
   bool meridim_rcvd = false;            // Meridimが正しく受信できたか.
 };
 MrdFlags flg;
@@ -108,8 +112,8 @@ struct MrdTimer {
   long now_mil = 0;               // 現在時刻を取得
   long now_mic = 0;               // 現在時刻を取得
   int loop_count = 0;             // サイン計算用の循環カウンタ
-  int loop_count_dlt = 2; // サイン計算用の循環カウンタを1フレームにいくつ進めるか
-  int loop_count_max = 359999; // 循環カウンタの最大値
+  int loop_count_dlt = 2;         // サイン計算用の循環カウンタを1フレームにいくつ進めるか
+  int loop_count_max = 359999;    // 循環カウンタの最大値
 };
 MrdTimer tmr;
 
@@ -135,16 +139,8 @@ typedef union // リモコン値格納用
                               // [0]button, [1]pad.stick_L_x:pad.stick_L_y,
                               // [2]pad.stick_R_x:pad.stick_R_y, [3]pad.L2_val:pad.R2_val
 } PadUnion;
-PadUnion pad_array = {0};
-
-typedef union // Merimoto_I2C受信リモコン値格納用
-{
-  short sval[PAD_I2C_LEN];        // short型で4個の配列データを持つ
-  uint16_t usval[PAD_I2C_LEN];    // 上記のunsigned short型
-  int8_t bval[PAD_I2C_LEN * 2];   // 上記のbyte型
-  uint8_t ubval[PAD_I2C_LEN * 2]; // 上記のunsigned byte型
-} PadUnionWire;
-PadUnionWire pad_i2c = {0};
+PadUnion pad_array = {0}; // pad値の格納用配列
+PadUnion pad_i2c = {0};   // pad値のi2c送受信用配列
 
 struct PadValue // リモコンのアナログ入力データ
 {
@@ -158,7 +154,7 @@ struct PadValue // リモコンのアナログ入力データ
   int R2_val = 0;
   int L2_val = 0;
 };
-PadValue pad;
+PadValue pad_analog;
 
 // 6軸or9軸センサーの値
 struct AhrsValue {

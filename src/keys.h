@@ -1,3 +1,6 @@
+#ifndef __MERIDIAN_KEYS_H__
+#define __MERIDIAN_KEYS_H__
+
 // Wifiアクセスポイントの設定
 #define WIFI_AP_SSID "xxxxxx"        // アクセスポイントのWIFI_AP_SSID
 #define WIFI_AP_PASS "xxxxxx"        // アクセスポイントのパスワード
@@ -13,3 +16,5 @@
 // リモコンの設定
 #define BT_MAC_ADDR "xx:xx:xx:xx:xx:xx" // ESP32自身のBluetoothMACアドレス（本プログラムを実行しシリアルモニタで確認）
                                         // 現在は不使用.
+#endif // __MERIDIAN_KEYS_H__
+
