@@ -169,9 +169,6 @@
 // PC接続関連設定
 #define SERIAL_PC_BPS 115200 // PCとのシリアル速度（モニタリング表示用）
 
-// SPI設定
-#define SPI_SPEED 6000000 // SPI通信の速度（6000000kHz推奨）
-
 // 固定値, マスターコマンド定義
 #define MCMD_UPDATE_YAW_CENTER       10002 // センサの推定ヨー軸を現在値センターとしてリセット
 #define MCMD_ENTER_TRIM_MODE         10003 // トリムモードに入る（全サーボオンで垂直に気おつけ姿勢で立つ）
