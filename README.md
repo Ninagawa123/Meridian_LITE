@@ -1,49 +1,14 @@
 # [Meridian_LITE v1.1.1](https://github.com/Ninagawa123/Meridian_LITE/)
-
+  
 より改良・拡張しやすくするため, 大規模なリファクタリングを行いました.  
 命名規則はLLVM準拠とし, 内容を "Meridian_LITE_for_ESP32/.clang-format" ファイルにコメントしています.  
 またコードを構成要素ごとにヘッダーファイルで切り分け, モジュール化することで, 改造や拡張の見通しを立ちやすくしました.  
 フローチャートもDocsにて公開しています.  
-  
-```  
-Meridian_LITE_for_ESP32
-│
-├── lib
-│   ├── IcsClass_V210  // KONDOサーボのライブラリ
-│   ├── wiimote        // WIIリモコンのライブラリ
-│   └── gs2d           // 今後対応予定のサーボライブラリ
-│
-├── .clang-format  // VSCODEでのコードフォーマット設定ファイル
-├── platformio.ini
-└── src
-    ├── config.h       // Meridianの主なconfig設定
-    ├── keys.h         // wifiのSSIDやパスワード
-    ├── main.cpp       // メインプログラム
-    ├── main.h         // メインプログラムのヘッダファイル
-    │
-    ├── mrd_eeprom.h   // EEPROM関連
-    ├── mrd_move.h     // モーション設定
-    ├── mrd_disp.h     // メッセージ関連
-    ├── mrd_bt_pad.h   // リモコンパッド関連
-    ├── mrd_sd.h       // SDメモリ関連
-    ├── mrd_servo.h    // サーボ処理
-    ├── mrd_wifi.h     // WiFi関連
-    ├── mrd_wire0.h    // I2C関連
-    ├── mrd_util.h     // 細かい関数
-    └── mrd_module     // モジュールディレクトリ
-        ├── mv_firstIK.h    // 簡易IK関連（未定義）
-        ├── mv_motionplay.h // モーション再生（未定義）
-        ├── sv_dxl2.h       // ダイナミクセル制御（未定義）
-        ├── sv_ftbrx.h      // 双葉サーボ制御（未定義）
-        ├── sv_ftc.h        // Feetechサーボ制御（未定義）
-        └── sv_ics.h        // KONDOサーボ制御
-```  
-  
-  
+    
 ライブラリの関数や変数表など, システムの詳細については以下のサイトがあります. 内容はv1.1.1に合わせました.  
 [https://ninagawa123.github.io/Meridian_info/](https://ninagawa123.github.io/Meridian_info/)  
   
-<br>
+<br>  
   
 ## Meridianとは？  
 Meridianはヒューマノイドの制御システムについてのオープンソースプロジェクトです.  
@@ -118,8 +83,45 @@ PlatformIOを起動し, 「Platformes」の検索窓で「ESP32」を検索し�
 <img width="419" alt="SS 925" src="https://github.com/Ninagawa123/Meridian_LITE/assets/8329123/cbb6f741-2690-48bd-85e9-90974a6d697a"><br>  
 このサイトの右上の「CODE」からzip形式などを選択してDLし, 適切な場所に解凍, 展開してください.  
 慣れてている方はもちろんgit cloneなどでもかまいません.  
+ファイル構造は以下の通りです.  
 <br>
-
+  
+```  
+Meridian_LITE_for_ESP32
+│
+├── lib
+│   ├── IcsClass_V210  // KONDOサーボのライブラリ
+│   ├── wiimote        // WIIリモコンのライブラリ
+│   └── gs2d           // 今後対応予定のサーボライブラリ
+│
+├── src
+│   ├── config.h       // Meridianの主なconfig設定
+│   ├── keys.h         // wifiのSSIDやパスワード
+│   ├── main.cpp       // メインプログラム
+│   ├── main.h         // メインプログラムのヘッダファイル
+│   │
+│   ├── mrd_eeprom.h   // EEPROM関連
+│   ├── mrd_move.h     // モーション設定
+│   ├── mrd_disp.h     // メッセージ関連
+│   ├── mrd_bt_pad.h   // リモコンパッド関連
+│   ├── mrd_sd.h       // SDメモリ関連
+│   ├── mrd_servo.h    // サーボ処理
+│   ├── mrd_wifi.h     // WiFi関連
+│   ├── mrd_wire0.h    // I2C関連
+│   ├── mrd_util.h     // 細かい関数
+│   └── mrd_module     // モジュールディレクトリ
+│       ├── mv_firstIK.h    // 簡易IK関連（未定義）
+│       ├── mv_motionplay.h // モーション再生（未定義）
+│       ├── sv_dxl2.h       // ダイナミクセル制御（未定義）
+│       ├── sv_ftbrx.h      // 双葉サーボ制御（未定義）
+│       ├── sv_ftc.h        // Feetechサーボ制御（未定義）
+│       └── sv_ics.h        // KONDOサーボ制御  
+│
+├── .clang-format  // VSCODEでのコードフォーマット設定ファイル
+└── platformio.ini
+  
+```  
+  
 ### フォルダを開く  
 VSCodeのファイルメニューから「フォルダを開く...」を選択し, 展開したファイルの中にある「Meridian_LITE_for_ESP32」を開きます.  
 <br>
@@ -262,15 +264,17 @@ config.hの「#define MOUNT_PAD WIIMOTE」と設定してボードに書き込�
   
 ## バージョン更新履歴  
   
-#### 2023.09.15 v1.0.1  
-\#define ESP32_STDALONE 0 をconfig.hに追加し, 値を1に設定することでESP32単体で通信テストが行えるようにしました.
-その際, サーボ値は調べず, 代わりにL0番のサーボ値として+-30度のサインカーブを代入しつづけます.  
-  
 #### 2024.08.18 v1.1.1  
 コードをモジュールに分割し, Meridian_TWIN v1.1.0 と同等の構成にしました.  
 命名規則を導入し, 大規模なリファクタリングを行いました.  
-コードについて, Meridian_TWIN v1.1.1 との共通部分を増やしました.      
-<br>
+コードについて, Meridian_TWIN v1.1.1 との共通部分を増やしました.  
+  
+#### 2024.08.19 v1.0.2  
+大幅なリファクタリングを施したv1.1.1のリリースにあたり, 旧版の最新版をv1.0.2 としました.  
+  
+#### 2023.09.15 v1.0.1  
+\#define ESP32_STDALONE 0 をconfig.hに追加し, 値を1に設定することでESP32単体で通信テストが行えるようにしました.
+その際, サーボ値は調べず, 代わりにL0番のサーボ値として+-30度のサインカーブを代入しつづけます. 
   
 ## トラブルシューティング  
 
