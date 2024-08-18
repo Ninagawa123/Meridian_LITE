@@ -31,14 +31,14 @@ Meridianは今後も用途に応じて様々なハードウェア, ソフトウ�
 <br>  
   
 ## Meridian_LITE ボードについて  
-<img width="400" src="https://user-images.githubusercontent.com/8329123/177022808-50ccf555-4afd-450c-a07e-3302771d45cf.jpg">
+<img width="400" alt="lite_pinassign" src="./docs/images/Meridian_LITE_Board.jpg">  
   
 "Meridian board -LITE-" はサーボ制御用の半二重通信回路2系統とSPI,I2Cなどの基本的な入出力ピンを備えたボードです.  
 ESP32devkitCを搭載し, 当リポジトリのスクリプトを使用することにより, 手軽に100Hzの更新頻度をもつデジタルツインのロボットを実現することができます.  
 <br>
   
 ### ピンアサイン    
-<img width="800" alt="lite_pinassign" src="https://user-images.githubusercontent.com/8329123/177044311-0021c4bc-42ca-4f08-afd5-a440fdac624f.png">
+<img width="800" alt="lite_pinassign" src="./docs/Meridian_Board_LITE_pinassign.png">
 ピンアサインは上記の通りです. <br>
 IOがESP32DevkitCのピン番号に該当しているので, ESP32Devkitのデータシート等を参考に使用することができます.   
 またSPIやSDカードを使用しない場合は, アサインされたピンをGNDと組み合わせるなどで他の役割を与えることもできます.   
@@ -49,7 +49,8 @@ Fとなっている箇所は未接続のピンとなっています. 背面で�
 <br>  
   
 ### KHR-3HVへのマウントと機能拡張  
-<img width="400" alt="SS 2267" src="https://user-images.githubusercontent.com/8329123/177022972-3c9931ae-cfe3-44bb-9145-84303330a387.png">
+<img width="400" alt="Mount_KHR37" src="./docs/images/Meridian_LITE_Mount_KHR3.png">
+
 上図のようにKHR-3HVのランドセルに本体無改造で固定することができます.  
 ランドセル側とボードの間に1~2mm程度のスペーサーが入れるとボード底面の干渉を回避できます.  
 秋月電子で販売のSDカードホルダ[AE-MICRO-SD-DIP]をSPI端子にそのまま接続することができます. その場合は, SDカードホルダ側にメスのピンヘッダを取り付けてください.   
@@ -75,12 +76,14 @@ https://platformio.org/
 ### 開発環境のインストール  
 PlatformIOを起動し, 「Platformes」の検索窓で「ESP32」を検索します.  
   
-<img width="300" alt="1" src="https://user-images.githubusercontent.com/8329123/176886184-a702c39d-9b57-41f9-8653-66529a109976.png"><br>「Espressif 32」が見つかるので, バージョン「3.5.0」をインストールします.  
+<img width="300" alt="GettingStarted_1" src="./docs/images/GettingStarted_1.png">
+
+<br>「Espressif 32」が見つかるので, バージョン「3.5.0」をインストールします.  
 新しいバージョン(4.x.x)だとwifi関連がうまく動かない可能性が高いです.  
 <br>
   
 ### ファイルをDLする  
-<img width="419" alt="SS 925" src="https://github.com/Ninagawa123/Meridian_LITE/assets/8329123/cbb6f741-2690-48bd-85e9-90974a6d697a"><br>  
+<img width="400" alt="GettingStarted_Download" src="./docs/images/GettingStarted_Download.png">
 このサイトの右上の「CODE」からzip形式などを選択してDLし, 適切な場所に解凍, 展開してください.  
 慣れてている方はもちろんgit cloneなどでもかまいません.  
 ファイル構造は以下の通りです.  
@@ -153,7 +156,7 @@ https://qiita.com/Ninagawa_Izumi/items/8ce2d55728fd5973087d
 RX1を9番ピンから32番ピンに変更,  
 TX1を10番ピンから27番ピンに変更する設定をしておきます.  
   
-<img width="512" alt="SS 2059" src="docs/images/GettingStarted_10.png">
+<img width="512" alt="GettingStarted_10" src="./docs/images/GettingStarted_10.png">
   
 この設定ができていないと, サーボ通信用のUARTは片方のチャンネルしか機能しません.  
 <br>
@@ -208,7 +211,8 @@ config.hの内容について, お手持ちの環境にあわせ適度に更新�
 <br>
 
 ## ビルドとアップロード  
-<img width="612" alt="9" src="https://user-images.githubusercontent.com/8329123/176913879-d05eb45d-15a0-47f6-a538-aa481b31e988.png"><br>
+<img width="600" alt="GettingStarted_9" src="./docs/images/GettingStarted_9.png">
+
 画面左下のチェックマークを押すと, ビルドが行われます.  
 押下して「====== [SUCCESS] Took x.xx seconds」と表示されればビルド成功です.  
   
@@ -231,8 +235,8 @@ PCとボードをUSBで接続した状態でボードを起動すると,シリ�
 Meridianで受け取るデータを表示できるコンソールを用意しました.python3が使える環境で実行可能です.
 下記のリポジトリより, PC側の設定を行い, 実行してください.
 https://github.com/Ninagawa123/Meridian_console
-![meridian_console](https://raw.githubusercontent.com/Ninagawa123/Meridian_console/main/image/console_img.jpg)  
-
+<img width="400" alt="Meridian_console_py" src="./docs/images/Meridian_console_py.png">
+  
 <br>
   
 ## Unity版デモを実行する    
@@ -240,7 +244,7 @@ Meridian_LITEとUnityを連携させることができます.
 下記のリポジトリの内容をお試しください.  
 [https://github.com/Ninagawa123/Meridian_Unity/tree/main](https://github.com/Ninagawa123/Meridian_Unity/tree/main)  
   
-<img width="500" alt="Meridian_Unity" src="https://github.com/Ninagawa123/Meridian_TWIN/assets/8329123/5b486e83-40b8-4556-8a98-8d0ac643effd">
+<img width="400" alt="Meridian_Unity" src="./docs/images/Meridian_unity.png">
   
 <br>
 
@@ -309,7 +313,7 @@ WIIリモコンを接続した際にも速度が低下します.これらは仕�
 ### BNO055でデータが取得できない!  
 **原因: プルアップが必要です**  
 BNO_055とのI2C通信がうまくいかない場合は, 写真のように10kΩ程度の抵抗でプルアップすることでI2Cの通信品質が改善する場合があります.  
-<img width="400" src="./docs/images/pullup.jpg">  
+<img width="400" alt="pullup" src="./docs/images/pullup.jpg">  
   
 ### PC連携時に数%の通信エラーが出る!  
 **原因１: 仕様の範囲内**  
