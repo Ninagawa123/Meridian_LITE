@@ -2,9 +2,8 @@
 
 より改良・拡張しやすくするため, 大規模なリファクタリングを行いました.  
 命名規則はLLVM準拠とし, 内容を "Meridian_LITE_for_ESP32/.clang-format" ファイルにコメントしています.  
-変数名や関数名のルールもある程度整理しました.  
-構成要素となるコードをヘッダーファイルで切り分け, モジュール化することで, 改造や拡張の見通しを立ちやすくしました.  
-またフローチャートもDocsにて公開しています.  
+またコードを構成要素ごとにヘッダーファイルで切り分け, モジュール化することで, 改造や拡張の見通しを立ちやすくしました.  
+フローチャートもDocsにて公開しています.  
   
 ```  
 Meridian_LITE_for_ESP32
@@ -45,6 +44,7 @@ Meridian_LITE_for_ESP32
 [https://ninagawa123.github.io/Meridian_info/](https://ninagawa123.github.io/Meridian_info/)  
   
 <br>
+
 ## Meridianとは？  
 
 Meridianはヒューマノイドの制御システムについてのオープンソースプロジェクトです.  
@@ -100,8 +100,8 @@ Wiiリモコンにも対応しており, すぐに使うことができます.
 ## Meridian_LITE インストール方法
 Meridian LITE のボードを使う方法です.   
 開発環境として, VScodeとPlatformIOを使用します.  
-※ArduinoIDEを使用した場合, WIFIライブラリの関係でESP32のパフォーマンスが発揮しきれません.  
-    
+※ArduinoIDEを使用した場合, ESP32のWIFIライブラリの関係で無線通信が低速になる可能性が高いです.  
+  
 <br>
 ### PlatformIOのインストール  
 ご利用の環境にPlatformIOをインストールしてください.   
@@ -156,7 +156,7 @@ TX1を10番ピンから27番ピンに変更する設定をしておきます.
 
 <img width="512" alt="SS 2059" src="https://github.com/Ninagawa123/Meridian_LITE/assets/8329123/ced42536-6a37-4852-94d7-18f542f1dfa7">
 
-この設定ができていないと, サーボ通信は片方のチャンネルしか機能しません. 　　
+この設定ができていないと, サーボ通信用のUARTは片方のチャンネルしか機能しません. 　　
 　　 
 <br>
 ### platformio.iniの設定  
@@ -188,14 +188,15 @@ config.hの内容について, お手持ちの環境にあわせ適度に更新�
 主な修正点は下記の通りです.  
 
 ```  
-#define SD_MOUNT 1  
+#define MOUNT_SD  1  
 → SDリーダーの搭載 (0:なし, 1:あり)  
   
-#define IMU_MOUNT 1  
+#define MOUNT_IMUAHRS 1  
 → 6軸or9軸センサーの搭載 (0:なし, 1:BNO055, 2:MPU6050(未実装))  
   
 // JOYPAD関連設定  
-#define MOUNT_PAD KRR5FH   
+#define MOUNT_PAD KRR5FH (KHR-3HV標準のリモコン)  
+#define MOUNT_PAD WIIMOTE (WIIリモコン, Meridianの通信速度が若干低下します.)  
   
 // 各サーボのマウントの設定  
 サーボを搭載しているIDにメーカーの番号を割り振ります. ※現在は43: KONDOのみ対応  
@@ -269,13 +270,14 @@ config.hの「#define MOUNT_PAD WIIMOTE」と設定してボードに書き込�
 ## バージョン更新履歴  
 
 #### 2023.09.15 v1.0.1  
-\#define ESP32_STDALONE 0 をconfig.hに追加し, 値を1に設定することでESP32単体で通信テストが行えるようにした.
-その際,　サーボ値は調べず, 代わりにL0番のサーボ値として+-30度のサインカーブを代入しつづける.  
+\#define ESP32_STDALONE 0 をconfig.hに追加し, 値を1に設定することでESP32単体で通信テストが行えるようにしました.
+その際,　サーボ値は調べず, 代わりにL0番のサーボ値として+-30度のサインカーブを代入しつづけます.  
   
 #### 2024.08.18 v1.1.1  
-コードをモジュールに分割し, Meridian_TWIN v1.1.0 と同等の構成にした.  
-命名規則を導入した. 今後, Meridian_TWIN v1.1.0 にも同ルールを適用し1.1.1とする.     
-  
+コードをモジュールに分割し, Meridian_TWIN v1.1.0 と同等の構成にしました.  
+命名規則を導入し, 大規模なリファクタリングを行いました.  
+コードについて, Meridian_TWIN v1.1.1 との共通部分を増やしました.  
+      
 <br>
 ## トラブルシューティング  
 ### サーボ通信が片方しか使えない！  
