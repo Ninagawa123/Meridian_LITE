@@ -1,7 +1,7 @@
 # [Meridian_LITE v1.1.1](https://github.com/Ninagawa123/Meridian_LITE/)
 
 より改良・拡張しやすくするため, 大規模なリファクタリングを行いました.  
-命名規則はLLVM準拠とし, 内容を "Meridian_LITE_for_ESP32/src/.clang-format" ファイルにコメントしています.  
+命名規則はLLVM準拠とし, 内容を "Meridian_LITE_for_ESP32/.clang-format" ファイルにコメントしています.  
 変数名や関数名のルールもある程度整理しました.  
 構成要素となるコードをヘッダーファイルで切り分け, モジュール化することで, 改造や拡張の見通しを立ちやすくしました.  
 またフローチャートもDocsにて公開しています.  
