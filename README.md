@@ -153,7 +153,7 @@ https://qiita.com/Ninagawa_Izumi/items/8ce2d55728fd5973087d
 RX1を9番ピンから32番ピンに変更,  
 TX1を10番ピンから27番ピンに変更する設定をしておきます.  
   
-<img width="512" alt="SS 2059" src="https://github.com/Ninagawa123/Meridian_LITE/assets/8329123/ced42536-6a37-4852-94d7-18f542f1dfa7">
+<img width="512" alt="SS 2059" src="docs/images/GettingStarted_10.png">
   
 この設定ができていないと, サーボ通信用のUARTは片方のチャンネルしか機能しません.  
 <br>
