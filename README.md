@@ -1,5 +1,5 @@
 
-# [Meridian_LITE v1.0.1](https://github.com/Ninagawa123/Meridian_LITE/tree/main)
+# [Meridian_LITE v1.0.2](https://github.com/Ninagawa123/Meridian_LITE/tree/main)
 
 Meridian公式ライブラリ対応版として大幅なアップデートを行いました.(前回までのバージョンはoldディレクトリにzipで格納しています.)  
 ソースコードが整理され, 改造の見通しが立ちやすくなりました.  
@@ -194,6 +194,9 @@ config.h内の設定値を以下のように変更してください.
   
 
 ## バージョン更新履歴  
+- 2024.08.19 v1.0.2
+大幅なリファクタリングを施したv1.1.1のリリースにあたり, 旧版の最新版をv1.0.2 としました.
+  
 - 2023.09.15 v1.0.1  
 #define ESP32_STDALONE 0 をconfig.hに追加し, 値を1に設定することでESP32単体で通信テストが行えるようにした.
 その際,　サーボ値は調べず, 代わりにL0番のサーボ値として+-30度のサインカーブを代入しつづける.  
