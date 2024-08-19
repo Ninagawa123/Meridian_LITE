@@ -221,13 +221,15 @@ void loop() {
     // @[2-3] UDP受信配列から UDP送信配列にデータを転写
     memcpy(s_udp_meridim.bval, r_udp_meridim.bval, MRDM_LEN * 2);
 
-    // @[2-4a] エラーフラグ14番(ESP32のPCからのUDP受信エラー検出)をサゲる.
-    s_udp_meridim.bval[MRD_ERR_u] &= B10111111;
+    // @[2-4a] エラービット14番(ESP32のPCからのUDP受信エラー検出)をサゲる
+    mrd_clearBit16(s_udp_meridim.usval[MRD_ERR], ERRBIT_14_PC_ESP);
+
   } else // チェックサムがNGならバッファから転記せず前回のデータを使用する
   {
-    // @[2-4b] エラーフラグ14番(ESP32のPCからのUDP受信エラー検出)をアゲる.
+
+    // @[2-4b] エラービット14番(ESP32のPCからのUDP受信エラー検出)をアゲる
+    mrd_setBit16(s_udp_meridim.usval[MRD_ERR], ERRBIT_14_PC_ESP);
     err.pc_esp++;
-    s_udp_meridim.bval[MRD_ERR_u] |= B01000000;
     mrd.monitor_check_flow("CsErr*", monitor.flow); // デバグ用フロー表示
   }
 
@@ -238,12 +240,17 @@ void loop() {
   mrd_disp.seq_number(mrdsq.r_expect, r_udp_meridim.usval[MRD_SEQ], monitor.seq_num);
 
   if (mrd.seq_compare_nums(mrdsq.r_expect, int(s_udp_meridim.usval[MRD_SEQ]))) {
-    s_udp_meridim.bval[MRD_ERR_u] &= B11111011; // [MRD_ERR] 10番bit[ESP受信のスキップ検出]をサゲる.
-    flg.meridim_rcvd = true;                    // Meridim受信成功フラグをアゲる.
+
+    // エラービット10番[ESP受信のスキップ検出]をサゲる
+    mrd_clearBit16(s_udp_meridim.usval[MRD_ERR], ERRBIT_10_UDP_ESP_SKIP);
+    flg.meridim_rcvd = true; // Meridim受信成功フラグをアゲる.
+
   } else { // 受信シーケンス番号の値が予想と違ったら
     mrdsq.r_expect = int(s_udp_meridim.usval[MRD_SEQ]); // 現在の受信値を予想結果としてキープ
-    s_udp_meridim.bval[MRD_ERR_u] |= B00000100; // Meridim[MRD_ERR]
-                                                // 10番ビット[ESP受信のスキップ検出]をアゲる.
+
+    // エラービット10番[ESP受信のスキップ検出]をアゲる
+    mrd_setBit16(s_udp_meridim.usval[MRD_ERR], ERRBIT_10_UDP_ESP_SKIP);
+
     err.esp_skip++;
     flg.meridim_rcvd = false; // Meridim受信成功フラグをサゲる.
   }
@@ -358,7 +365,8 @@ void loop() {
   s_udp_meridim.ubval[MRD_ERR_l] = mrd_servos_make_errcode_lite(sv);
 
   // @[11-3] チェックサムを計算して格納
-  s_udp_meridim.sval[MRD_CKSM] = mrd.cksm_val(s_udp_meridim.sval, MRDM_LEN);
+  // s_udp_meridim.sval[MRD_CKSM] = mrd.cksm_val(s_udp_meridim.sval, MRDM_LEN);
+  mrd_meriput90_cksm(s_udp_meridim);
 
   //------------------------------------------------------------------------------------
   //   [ 12 ] フレーム終端処理
