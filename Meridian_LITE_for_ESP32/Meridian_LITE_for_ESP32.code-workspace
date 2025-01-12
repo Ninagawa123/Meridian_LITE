@@ -1,0 +1,40 @@
+{
+	"folders": [
+		{
+			"name": "Meridian_LITE_for_ESP32",
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.encoding": "utf8",
+		"files.eol": "\n",
+		"doxdocgen.file.versionTag": "@version 0.23.1",
+		"doxdocgen.generic.useGitUserName": true,
+		"doxdocgen.generic.useGitUserEmail": true,
+		"doxdocgen.file.copyrightTag": [
+			"@copyright Copyright (c) {year}-."
+		],
+		"editor.formatOnSave": true,
+		"markdown-preview-enhanced.scrollSync": true,
+		"search.exclude": {
+			"__*": true,
+			".pio/*": true,
+			"**/build": true
+		},
+		"files.exclude": {
+			"**/.git": true,
+			"**/.svn": true,
+			"**/.hg": true,
+			"**/CVS": true,
+			"**/.DS_Store": true,
+			"**/.*": false,
+			".vscode": false
+		},
+		"editor.fontFamily": "Consolas, 'Courier New', monospace",
+		"editor.rulers": [
+			120
+		],
+		"cSpell.words": [],
+		"forbeslindesay-taskrunner.source": "PlatformIO"
+	}
+}
