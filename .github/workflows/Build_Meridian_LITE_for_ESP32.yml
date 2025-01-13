@@ -1,0 +1,33 @@
+name: PlatformIO CI
+on: workflow_dispatch
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    name: Build Meridian_LITE_for_ESP32
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout my project
+      uses: actions/checkout@v4
+
+    - name: cache PlatformIO dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{github.workspace}}/Meridian_LITE_for_ESP32/.cache/pip
+          ${{github.workspace}}/Meridian_LITE_for_ESP32/.platformio/.cache
+        key: ${{ runner.os }}-pio
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Install PlatformIO Core
+      working-directory: ${{github.workspace}}/Meridian_LITE_for_ESP32
+      run: pip install --upgrade platformio
+
+    - name: Build PlatformIO Project
+      working-directory: ${{github.workspace}}/Meridian_LITE_for_ESP32
+      run: pio run
