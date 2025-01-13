@@ -3,7 +3,8 @@
     // for the documentation about the extensions.json format
     "recommendations": [
         "platformio.platformio-ide",
-        "streetsidesoftware.code-spell-checker"
+        "streetsidesoftware.code-spell-checker",
+        "xaver.clang-format"
     ],
     "unwantedRecommendations": [
         "ms-vscode.cpptools-extension-pack"
