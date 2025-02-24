@@ -32,14 +32,14 @@
 //  サーボIDとロボット部位、軸との対応表 (KHR-3HVの例)
 //==================================================================================================
 //
-// ID    Parts/Axis　＜ICS_Left_Upper SIO1,SIO2＞
+// ID    Parts/Axis ＜ICS_Left_Upper SIO1,SIO2＞
 // [L00] 頭/ヨー
 // [L01] 左肩/ピッチ
 // [L02] 左肩/ロール
 // [L03] 左肘/ヨー
 // [L04] 左肘/ピッチ
 // [L05] -
-// ID    Parts/Axis　＜ICS_Left_Lower SIO3,SIO4＞
+// ID    Parts/Axis ＜ICS_Left_Lower SIO3,SIO4＞
 // [L06] 左股/ロール
 // [L07] 左股/ピッチ
 // [L08] 左膝/ピッチ
