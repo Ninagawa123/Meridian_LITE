@@ -120,10 +120,10 @@ bool mrd_wire0_setup(ImuAhrsType a_imuahrs_type, int a_i2c0_speed, AhrsValue &a_
 void mrd_wire0_Core0_bno055_r(void *args) {
   while (1) {
     // 加速度センサ値の取得と表示 - VECTOR_ACCELEROMETER - m/s^2
-    imu::Vector<3> accelermetor = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-    ahrs.read[0] = (float)accelermetor.x();
-    ahrs.read[1] = (float)accelermetor.y();
-    ahrs.read[2] = (float)accelermetor.z();
+    imu::Vector<3> accelerometer = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+    ahrs.read[0] = (float)accelerometer.x();
+    ahrs.read[1] = (float)accelerometer.y();
+    ahrs.read[2] = (float)accelerometer.z();
 
     // ジャイロセンサ値の取得 - VECTOR_GYROSCOPE - rad/s
     imu::Vector<3> gyroscope = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
@@ -132,10 +132,10 @@ void mrd_wire0_Core0_bno055_r(void *args) {
     ahrs.read[5] = gyroscope.z();
 
     // 磁力センサ値の取得と表示  - VECTOR_MAGNETOMETER - uT
-    imu::Vector<3> magnetmetor = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_MAGNETOMETER);
-    ahrs.read[6] = magnetmetor.x();
-    ahrs.read[7] = magnetmetor.y();
-    ahrs.read[8] = magnetmetor.z();
+    imu::Vector<3> magnetometer = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_MAGNETOMETER);
+    ahrs.read[6] = magnetometer.x();
+    ahrs.read[7] = magnetometer.y();
+    ahrs.read[8] = magnetometer.z();
 
     // センサフュージョンによる方向推定値の取得と表示 - VECTOR_EULER - degrees
     imu::Vector<3> euler = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_EULER);

@@ -13,7 +13,7 @@
 
 /// @brief ICSサーボの実行処理を行う関数
 /// @param a_servo_id サーボのインデックス番号
-/// @param a_cmnd サーボのコマンド
+/// @param a_cmd サーボのコマンド
 /// @param a_tgt サーボの目標位置
 /// @param a_tgt_past 前回のサーボの目標位置
 /// @param a_tgt_trim サーボの補正値
@@ -21,10 +21,10 @@
 /// @param a_err_cnt サーボのエラーカウント
 /// @param a_stat サーボのステータス
 /// @param ics サーボクラスのインスタンス
-float mrd_servo_process_ics(int a_servo_id, int a_cmnd, float a_tgt, float a_tgt_past, int a_trim,
+float mrd_servo_process_ics(int a_servo_id, int a_cmd, float a_tgt, float a_tgt_past, int a_trim,
                             int a_cw, int &a_err_cnt, uint16_t &a_stat, IcsHardSerialClass &ics) {
   int val_tmp = 0;
-  if (a_cmnd == 1) { // コマンドが1ならPos指定
+  if (a_cmd == 1) { // コマンドが1ならPos指定
     val_tmp = ics.setPos(a_servo_id, mrd.Deg2Krs(a_tgt, a_trim, a_cw));
   } else { // コマンドが0等なら脱力して値を取得
     val_tmp = ics.setFree(a_servo_id);
@@ -73,7 +73,7 @@ void mrd_sv_drive_ics_double(Meridim90Union &a_meridim, ServoParam &a_sv) {
 
 /// @brief ICSサーボの実行処理を行う関数
 /// @param a_servo_id サーボのインデックス番号
-/// @param a_cmnd サーボのコマンド
+/// @param a_cmd サーボのコマンド
 /// @param a_tgt サーボの目標位置
 /// @param a_tgt_past 前回のサーボの目標位置
 /// @param a_tgt_trim サーボの補正値
@@ -81,12 +81,12 @@ void mrd_sv_drive_ics_double(Meridim90Union &a_meridim, ServoParam &a_sv) {
 /// @param a_err_cnt サーボのエラーカウント
 /// @param a_stat サーボのステータス
 /// @param ics サーボクラスのインスタンス
-// float mrd_servo_process_ics_gs2d(int a_servo_id, int a_cmnd,
+// float mrd_servo_process_ics_gs2d(int a_servo_id, int a_cmd,
 //                                  float a_tgt, float a_tgt_past, int a_trim,
 //                                  int a_cw, int &a_err_cnt, uint16_t &a_stat,
 //                                  IcsHardSerialClass &ics) {
 //   int val_tmp = 0;
-//   if (a_cmnd == 1) { // コマンドが1ならPos指定
+//   if (a_cmd == 1) { // コマンドが1ならPos指定
 //     val_tmp = ics.setPos(a_servo_id, mrd.Deg2Krs(a_tgt, a_trim, a_cw));
 //   } else { // コマンドが0等なら脱力して値を取得
 //     val_tmp = ics.setFree(a_servo_id);

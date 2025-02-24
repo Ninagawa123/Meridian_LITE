@@ -5,7 +5,7 @@
 
 /// @file    Meridian_LITE_for_ESP32/src/main.cpp
 /// @brief   Meridian is a system that smartly realizes the digital twin of a robot.
-/// @details Meridian_LITE for Meridan Board -LITE- with ESP32DecKitC.
+/// @details Meridian_LITE for Meridian Board -LITE- with ESP32DecKitC.
 ///
 /// This code is licensed under the MIT License.
 /// Copyright (c) 2022 Izumi Ninagawa & Project Meridian
@@ -257,11 +257,11 @@ void loop() {
   }
 
   //------------------------------------------------------------------------------------
-  //  [ 3 ] MastarCommand group1 の処理
+  //  [ 3 ] MasterCommand group1 の処理
   //------------------------------------------------------------------------------------
   mrd.monitor_check_flow("[3]", monitor.flow); // デバグ用フロー表示
 
-  // @[3-1] MastarCommand group1 の処理
+  // @[3-1] MasterCommand group1 の処理
   execute_master_command_1(s_udp_meridim, flg.meridim_rcvd);
 
   //------------------------------------------------------------------------------------
@@ -324,7 +324,7 @@ void loop() {
   mrd.monitor_check_flow("[8]", monitor.flow); // デバグ用フロー表示
 
   // @[8-1] サーボ受信値の処理
-  if (!MODE_ESP32_STDALONE) { // サーボ処理を行うかどうか
+  if (!MODE_ESP32_STANDALONE) { // サーボ処理を行うかどうか
     mrd_servos_drive_lite(s_udp_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R,
                           sv); // サーボ動作を実行する
   } else {

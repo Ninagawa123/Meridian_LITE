@@ -104,9 +104,9 @@
 #define MOUNT_PAD     KRR5FH      // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
 
 // 動作モード
-#define MODE_ESP32_STDALONE 0 // ESP32をボードに挿さず動作確認（0:NO, 1:YES）
-#define MODE_UDP_RECEIVE    1 // PCからのデータ受信（0:OFF, 1:ON, 通常は1）
-#define MODE_UDP_SEND       1 // PCへのデータ送信（0:OFF, 1:ON, 通常は1）
+#define MODE_ESP32_STANDALONE 0 // ESP32をボードに挿さず動作確認（0:NO, 1:YES）
+#define MODE_UDP_RECEIVE      1 // PCからのデータ受信（0:OFF, 1:ON, 通常は1）
+#define MODE_UDP_SEND         1 // PCへのデータ送信（0:OFF, 1:ON, 通常は1）
 
 // Wifiの設定(SSID,パスワード等は別途keys.hで指定)
 #define MODE_FIXED_IP 0 // IPアドレスを固定するか（0:NO, 1:YES）

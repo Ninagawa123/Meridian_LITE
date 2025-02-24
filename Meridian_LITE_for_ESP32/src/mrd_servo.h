@@ -93,7 +93,7 @@ bool mrd_servo_all_off(Meridim90Union &a_meridim) {
     a_meridim.sval[i * 2 + 20] = 0; // サーボのコマンドをオフに設定
     a_meridim.sval[i * 2 + 50] = 0; //
   }
-  Serial.println("All servos torq off.");
+  Serial.println("All servos torque off.");
   return true;
 }
 
