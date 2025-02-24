@@ -13,8 +13,12 @@
 		"search.exclude": {
 			"__*": true,
 			".pio/*": true,
-			"**/build": true
+			"**/build": true,
+			"**/lib": true
 		},
+		"editor.rulers": [
+			100
+		],
 		"files.exclude": {
 			"**/.git": true,
 			"**/.svn": true,

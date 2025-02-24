@@ -1,9 +1,9 @@
 #ifndef __MERIDIAN_CONFIG__
 #define __MERIDIAN_CONFIG__
 
-//================================================================================================================
+//==================================================================================================
 //  MERIDIAN - LITE - ESP32の配線
-//================================================================================================================
+//==================================================================================================
 //
 // ESP32devkitC  -  デバイス
 //   3V3         -  BNO005 VIN
@@ -28,9 +28,9 @@
 //   18          -  SPI_CSK
 //   15          -  SPI_CS SD
 
-//================================================================================================================
+//==================================================================================================
 //  サーボIDとロボット部位、軸との対応表 (KHR-3HVの例)
-//================================================================================================================
+//==================================================================================================
 //
 // ID    Parts/Axis　＜ICS_Left_Upper SIO1,SIO2＞
 // [L00] 頭/ヨー
@@ -59,9 +59,9 @@
 // [R09] 右足首/ピッチ
 // [R10] 右足首/ロール
 
-//================================================================================================================
+//==================================================================================================
 //  Meridim90配列 一覧表
-//================================================================================================================
+//==================================================================================================
 //
 // [00]      マスターコマンド デフォルトは90 で配列数も同時に示す
 // [01]      シーケンス番号
@@ -101,7 +101,7 @@
 // 各種ハードウェアのマウント有無
 #define MOUNT_SD      1           // SDカードリーダーの有無 (0:なし, 1:あり)
 #define MOUNT_IMUAHRS BNO055_AHRS // IMU/AHRSの搭載 NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS
-#define MOUNT_PAD     KRR5FH // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
+#define MOUNT_PAD     KRR5FH      // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
 
 // 動作モード
 #define MODE_ESP32_STDALONE 0 // ESP32をボードに挿さず動作確認（0:NO, 1:YES）
@@ -125,18 +125,18 @@
 #define CHECK_EEPROM_RW 0 // 起動時のEEPROMの動作チェック
 
 // シリアルモニタリング
-#define MONITOR_FRAME_DELAY       1 // シリアルモニタでフレーム遅延時間を表示（0:OFF, 1:ON）
-#define MONITOR_FLOW              0 // シリアルモニタでフローを表示（0:OFF, 1:ON）
-#define MONITOR_ERR_SERVO         0 // シリアルモニタでサーボエラーを表示（0:OFF, 1:ON）
-#define MONITOR_ERR_ALL           0 // 全経路の受信エラー率を表示
-#define MONITOR_SEQ               0 // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
-#define MONITOR_PAD               0 // シリアルモニタでリモコンのデータを表示（0:OFF, 1:ON）
+#define MONITOR_FRAME_DELAY       1    // シリアルモニタでフレーム遅延時間を表示（0:OFF, 1:ON）
+#define MONITOR_FLOW              0    // シリアルモニタでフローを表示（0:OFF, 1:ON）
+#define MONITOR_ERR_SERVO         0    // シリアルモニタでサーボエラーを表示（0:OFF, 1:ON）
+#define MONITOR_ERR_ALL           0    // 全経路の受信エラー率を表示
+#define MONITOR_SEQ               0    // シリアルモニタでシーケンス番号チェックを表示（0:OFF, 1:ON）
+#define MONITOR_PAD               0    // シリアルモニタでリモコンのデータを表示（0:OFF, 1:ON）
 #define MONITOR_SUPPRESS_DURATION 8000 // 起動直後のタイムアウトメッセージ抑制時間(単位ms)
 
 // I2C設定, I2Cセンサ関連設定
 #define I2C0_SPEED       400000 // I2Cの速度（400kHz推奨）
 #define IMUAHRS_INTERVAL 10     // IMU/AHRSのセンサの読み取り間隔(ms)
-#define IMUAHRS_STOCK    4 // MPUで移動平均を取る際の元にする時系列データの個数
+#define IMUAHRS_STOCK    4      // MPUで移動平均を取る際の元にする時系列データの個数
 // #define I2C1_SPEED 100000  // I2Cの速度（100kHz推奨?）
 // #define I2C1_MERIMOTE_ADDR 0x58 // MerimoteのI2Cアドレス
 
@@ -149,9 +149,9 @@
 
 // JOYPAD関連設定
 #define PAD_INIT_TIMEOUT 10000 // 起動時のJOYPADの接続確立のタイムアウト(ms)
-#define PAD_INTERVAL     10 // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
-#define PAD_BUTTON_MARGE 1 // 0:JOYPADのボタンデータをMeridim受信値に論理積, 1:Meridim受信値に論理和
-#define PAD_GENERALIZE   1 // ジョイパッドの入力値をPS系に一般化する
+#define PAD_INTERVAL     10    // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
+#define PAD_BUTTON_MARGE 1     // 0:JOYPADのボタンデータをMeridim受信値に論理積, 1:Meridim受信値に論理和
+#define PAD_GENERALIZE   1     // ジョイパッドの入力値をPS系に一般化する
 
 // ピンアサイン
 #define PIN_ERR_LED       25 // LED用 処理が時間内に収まっていない場合に点灯
@@ -181,7 +181,7 @@
 #define SERVO_BAUDRATE_R    1250000 // R系統のICSサーボの通信速度bps
 #define SERVO_TIMEOUT_L     2       // L系統のICS返信待ちのタイムアウト時間
 #define SERVO_TIMEOUT_R     2       // R系統のICS返信待ちのタイムアウト時間
-#define SERVO_LOST_ERR_WAIT 6 // 連続何フレームサーボ信号をロストしたら異常とするか
+#define SERVO_LOST_ERR_WAIT 6       // 連続何フレームサーボ信号をロストしたら異常とするか
 
 // 各サーボ系統の最大サーボマウント数
 #define IXL_MAX 15 // L系統の最大サーボ数. 標準は15.
@@ -358,28 +358,28 @@ float IDR_TRIM[IXR_MAX] = {
 //  固定値, マスターコマンド定義
 //-------------------------------------------------------------------------
 // 固定値, マスターコマンド定義
-#define MCMD_TORQUE_ALL_OFF         0 // すべてのサーボトルクをオフにする（脱力）
+#define MCMD_TORQUE_ALL_OFF         0      // すべてのサーボトルクをオフにする（脱力）
 #define MCMD_DUMMY_DATA             -32768 // SPI送受信用のダミーデータ判定用
 #define MCMD_TEST_VALUE             -32767 // テスト用の仮設変数
-#define MCMD_SENSOR_YAW_CALIB       10002 // センサの推定ヨー軸を現在値センターとしてリセット
-#define MCMD_SENSOR_ALL_CALIB       10003 // センサの3軸について現在値を原点としてリセット
-#define MCMD_ERR_CLEAR_SERVO_ID     10004 // 通信エラーのサーボのIDをクリア(MRD_ERR_l)
-#define MCMD_BOARD_TRANSMIT_ACTIVE  10005 // ボードが定刻で送信を行うモード（PC側が受信待ち）
-#define MCMD_BOARD_TRANSMIT_PASSIVE 10006 // ボードが受信を待ち返信するモード（PC側が定刻送信）
-#define MCMD_FRAMETIMER_RESET       10007 // フレームタイマーを現在時刻にリセット
-#define MCMD_BOARD_STOP_DURING      10008 // ボードの末端処理を[MRD_STOP_FRAMES]ミリ秒止める
-#define MCMD_EEPROM_ENTER_WRITE     10009 // EEPROM書き込みモードのスタート
-#define MCMD_EEPROM_EXIT_WRITE      10010 // EEPROM書き込みモードの終了
-#define MCMD_EEPROM_ENTER_READ      10011 // EEPROM読み出しモードのスタート
-#define MCMD_EEPROM_EXIT_READ       10012 // EEPROM読み出しモードの終了
-#define MCMD_SDCARD_ENTER_WRITE     10013 // SDCARD書き込みモードのスタート
-#define MCMD_SDCARD_EXIT_WRITE      10014 // SDCARD書き込みモードの終了
-#define MCMD_SDCARD_ENTER_READ      10015 // SDCARD読み出しモードのスタート
-#define MCMD_SDCARD_EXIT_READ       10016 // SDCARD読み出しモードの終了
-#define MCMD_EEPROM_SAVE_TRIM       10101 // 現在の姿勢をトリム値としてサーボに書き込む
-#define MCMD_EEPROM_LOAD_TRIM       10102 // EEPROMのトリム値をサーボに反映する
-#define MCMD_NAK                    32766 // コマンド実行の失敗を応答
-#define MCMD_ACK                    32767 // コマンド実行の成功を応答
+#define MCMD_SENSOR_YAW_CALIB       10002  // センサの推定ヨー軸を現在値センターとしてリセット
+#define MCMD_SENSOR_ALL_CALIB       10003  // センサの3軸について現在値を原点としてリセット
+#define MCMD_ERR_CLEAR_SERVO_ID     10004  // 通信エラーのサーボのIDをクリア(MRD_ERR_l)
+#define MCMD_BOARD_TRANSMIT_ACTIVE  10005  // ボードが定刻で送信を行うモード（PC側が受信待ち）
+#define MCMD_BOARD_TRANSMIT_PASSIVE 10006  // ボードが受信を待ち返信するモード（PC側が定刻送信）
+#define MCMD_FRAMETIMER_RESET       10007  // フレームタイマーを現在時刻にリセット
+#define MCMD_BOARD_STOP_DURING      10008  // ボードの末端処理を[MRD_STOP_FRAMES]ミリ秒止める
+#define MCMD_EEPROM_ENTER_WRITE     10009  // EEPROM書き込みモードのスタート
+#define MCMD_EEPROM_EXIT_WRITE      10010  // EEPROM書き込みモードの終了
+#define MCMD_EEPROM_ENTER_READ      10011  // EEPROM読み出しモードのスタート
+#define MCMD_EEPROM_EXIT_READ       10012  // EEPROM読み出しモードの終了
+#define MCMD_SDCARD_ENTER_WRITE     10013  // SDCARD書き込みモードのスタート
+#define MCMD_SDCARD_EXIT_WRITE      10014  // SDCARD書き込みモードの終了
+#define MCMD_SDCARD_ENTER_READ      10015  // SDCARD読み出しモードのスタート
+#define MCMD_SDCARD_EXIT_READ       10016  // SDCARD読み出しモードの終了
+#define MCMD_EEPROM_SAVE_TRIM       10101  // 現在の姿勢をトリム値としてサーボに書き込む
+#define MCMD_EEPROM_LOAD_TRIM       10102  // EEPROMのトリム値をサーボに反映する
+#define MCMD_NAK                    32766  // コマンド実行の失敗を応答
+#define MCMD_ACK                    32767  // コマンド実行の成功を応答
 
 //-------------------------------------------------------------------------
 //  Meridim90 配列アクセス対応キー
@@ -406,36 +406,36 @@ float IDR_TRIM[IXR_MAX] = {
 #define MRD_MOTION_FRAMES 19 // モーション設定のフレーム数
 #define MRD_STOP_FRAMES   19 // ボード停止時のフレーム数(MCMD_BOARD_STOP_DURINGで指定)
 
-#define C_HEAD_Y_CMD     20 // 頭ヨーのコマンド
-#define C_HEAD_Y_VAL     21 // 頭ヨーの値
-#define L_SHOULDER_P_CMD 22 // 左肩ピッチのコマンド
-#define L_SHOULDER_P_VAL 23 // 左肩ピッチの値
-#define L_SHOULDER_R_CMD 24 // 左肩ロールのコマンド
-#define L_SHOULDER_R_VAL 25 // 左肩ロールの値
-#define L_ELBOW_Y_CMD    26 // 左肘ヨーのコマンド
-#define L_ELBOW_Y_VAL    27 // 左肘ヨーの値
-#define L_ELBOW_P_CMD    28 // 左肘ピッチのコマンド
-#define L_ELBOW_P_VAL    29 // 左肘ピッチの値
-#define L_HIPJOINT_Y_CMD 30 // 左股ヨーのコマンド
-#define L_HIPJOINT_Y_VAL 31 // 左股ヨーの値
-#define L_HIPJOINT_R_CMD 32 // 左股ロールのコマンド
-#define L_HIPJOINT_R_VAL 33 // 左股ロールの値
-#define L_HIPJOINT_P_CMD 34 // 左股ピッチのコマンド
-#define L_HIPJOINT_P_VAL 35 // 左股ピッチの値
-#define L_KNEE_P_CMD     36 // 左膝ピッチのコマンド
-#define L_KNEE_P_VAL     37 // 左膝ピッチの値
-#define L_ANKLE_P_CMD    38 // 左足首ピッチのコマンド
-#define L_ANKLE_P_VAL    39 // 左足首ピッチの値
-#define L_ANKLE_R_CMD    40 // 左足首ロールのコマンド
-#define L_ANKLE_R_VAL    41 // 左足首ロールの値
-#define L_SERVO_IX11_CMD 42 // 追加サーボ用のコマンド
-#define L_SERVO_IX11_VAL 43 // 追加サーボ用の値
-#define L_SERVO_IX12_CMD 44 // 追加サーボ用のコマンド
-#define L_SERVO_IX12_VAL 45 // 追加サーボ用の値
-#define L_SERVO_IX13_CMD 46 // 追加サーボ用のコマンド
-#define L_SERVO_IX13_VAL 47 // 追加サーボ用の値
-#define L_SERVO_IX14_CMD 48 // 追加サーボ用のコマンド
-#define L_SERVO_IX14_VAL 49 // 追加サーボ用の値
+#define C_HEAD_Y_CMD     20   // 頭ヨーのコマンド
+#define C_HEAD_Y_VAL     21   // 頭ヨーの値
+#define L_SHOULDER_P_CMD 22   // 左肩ピッチのコマンド
+#define L_SHOULDER_P_VAL 23   // 左肩ピッチの値
+#define L_SHOULDER_R_CMD 24   // 左肩ロールのコマンド
+#define L_SHOULDER_R_VAL 25   // 左肩ロールの値
+#define L_ELBOW_Y_CMD    26   // 左肘ヨーのコマンド
+#define L_ELBOW_Y_VAL    27   // 左肘ヨーの値
+#define L_ELBOW_P_CMD    28   // 左肘ピッチのコマンド
+#define L_ELBOW_P_VAL    29   // 左肘ピッチの値
+#define L_HIPJOINT_Y_CMD 30   // 左股ヨーのコマンド
+#define L_HIPJOINT_Y_VAL 31   // 左股ヨーの値
+#define L_HIPJOINT_R_CMD 32   // 左股ロールのコマンド
+#define L_HIPJOINT_R_VAL 33   // 左股ロールの値
+#define L_HIPJOINT_P_CMD 34   // 左股ピッチのコマンド
+#define L_HIPJOINT_P_VAL 35   // 左股ピッチの値
+#define L_KNEE_P_CMD     36   // 左膝ピッチのコマンド
+#define L_KNEE_P_VAL     s 37 // 左膝ピッチの値
+#define L_ANKLE_P_CMD    38   // 左足首ピッチのコマンド
+#define L_ANKLE_P_VAL    39   // 左足首ピッチの値
+#define L_ANKLE_R_CMD    40   // 左足首ロールのコマンド
+#define L_ANKLE_R_VAL    41   // 左足首ロールの値
+#define L_SERVO_IX11_CMD 42   // 追加サーボ用のコマンド
+#define L_SERVO_IX11_VAL 43   // 追加サーボ用の値
+#define L_SERVO_IX12_CMD 44   // 追加サーボ用のコマンド
+#define L_SERVO_IX12_VAL 45   // 追加サーボ用の値
+#define L_SERVO_IX13_CMD 46   // 追加サーボ用のコマンド
+#define L_SERVO_IX13_VAL 47   // 追加サーボ用の値
+#define L_SERVO_IX14_CMD 48   // 追加サーボ用のコマンド
+#define L_SERVO_IX14_VAL 49   // 追加サーボ用の値
 
 #define C_WAIST_Y_CMD    50 // 腰ヨーのコマンド
 #define C_WAIST_Y_VAL    51 // 腰ヨーの値
@@ -486,7 +486,7 @@ float IDR_TRIM[IXR_MAX] = {
 #define ERRBIT_12_TSY_ESP      12 // Teensy → ESP32 のSPI受信エラー
 #define ERRBIT_11_BOARD_DELAY  11 // Teensy or ESP32の処理ディレイ (末端で捕捉)
 #define ERRBIT_10_UDP_ESP_SKIP 10 // PC → ESP32 のUDPフレームスキップエラー
-#define ERRBIT_9_BOARD_SKIP    9 // PC → ESP32 → Teensy のフレームスキップエラー(末端で捕捉)
-#define ERRBIT_8_PC_SKIP       8 // Teensy → ESP32 → PC のフレームスキップエラー(末端で捕捉)
+#define ERRBIT_9_BOARD_SKIP    9  // PC → ESP32 → Teensy のフレームスキップエラー(末端で捕捉)
+#define ERRBIT_8_PC_SKIP       8  // Teensy → ESP32 → PC のフレームスキップエラー(末端で捕捉)
 
 #endif // __MERIDIAN_CONFIG__

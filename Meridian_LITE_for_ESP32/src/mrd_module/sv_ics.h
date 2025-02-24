@@ -7,9 +7,9 @@
 
 #include "gs2d_krs.h"
 
-//================================================================================================================
+//==================================================================================================
 //  KONDO ICSサーボ関連の処理
-//================================================================================================================
+//==================================================================================================
 
 /// @brief ICSサーボの実行処理を行う関数
 /// @param a_servo_id サーボのインデックス番号
@@ -66,10 +66,10 @@ void mrd_sv_drive_ics_double(Meridim90Union &a_meridim, ServoParam &a_sv) {
   }
 }
 
-//================================================================================================================
+//==================================================================================================
 //  gs2d によるICSサーボの処理
 //  https://github.com/karakuri-products/gs2d
-//================================================================================================================
+//==================================================================================================
 
 /// @brief ICSサーボの実行処理を行う関数
 /// @param a_servo_id サーボのインデックス番号
@@ -81,8 +81,10 @@ void mrd_sv_drive_ics_double(Meridim90Union &a_meridim, ServoParam &a_sv) {
 /// @param a_err_cnt サーボのエラーカウント
 /// @param a_stat サーボのステータス
 /// @param ics サーボクラスのインスタンス
-// float mrd_servo_process_ics_gs2d(int a_servo_id, int a_cmnd, float a_tgt, float a_tgt_past, int a_trim,
-//                             int a_cw, int &a_err_cnt, uint16_t &a_stat, IcsHardSerialClass &ics) {
+// float mrd_servo_process_ics_gs2d(int a_servo_id, int a_cmnd,
+//                                  float a_tgt, float a_tgt_past, int a_trim,
+//                                  int a_cw, int &a_err_cnt, uint16_t &a_stat,
+//                                  IcsHardSerialClass &ics) {
 //   int val_tmp = 0;
 //   if (a_cmnd == 1) { // コマンドが1ならPos指定
 //     val_tmp = ics.setPos(a_servo_id, mrd.Deg2Krs(a_tgt, a_trim, a_cw));

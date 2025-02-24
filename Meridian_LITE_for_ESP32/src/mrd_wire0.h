@@ -8,9 +8,9 @@
 // ライブラリ導入
 #include <Wire.h>
 
-//================================================================================================================
+//==================================================================================================
 //  I2C wire0 関連の処理
-//================================================================================================================
+//==================================================================================================
 
 //------------------------------------------------------------------------------------
 //  初期設定
@@ -185,7 +185,8 @@ void mrd_wire0_Core0_bno055_r(void *args) {
 /// MPU6050, MPU9250を想定していますが, MPU9250は未実装.
 /// 各データは`ahrs.read`配列に格納され, 利用可能な場合は`ahrs.result`にコピーされる.
 bool mrd_wire0_read_ahrs_i2c(AhrsValue &a_ahrs) { // ※wireTimer0.beginの引数のためvoid必須
-  if (MOUNT_IMUAHRS == MPU6050_IMU) {            // MPU6050
+
+  if (MOUNT_IMUAHRS == MPU6050_IMU) {                                // MPU6050
     if (a_ahrs.mpu6050.dmpGetCurrentFIFOPacket(a_ahrs.fifoBuffer)) { // Get new data
       a_ahrs.mpu6050.dmpGetQuaternion(&a_ahrs.q, a_ahrs.fifoBuffer);
       a_ahrs.mpu6050.dmpGetGravity(&a_ahrs.gravity, &a_ahrs.q);
@@ -214,8 +215,8 @@ bool mrd_wire0_read_ahrs_i2c(AhrsValue &a_ahrs) { // ※wireTimer0.beginの引�
       a_ahrs.read[11] = a_ahrs.gravity.z;
 
       // Estimated heading value using DMP.
-      a_ahrs.read[12] = a_ahrs.ypr[2] * 180 / M_PI;                   // Estimated DMP_ROLL
-      a_ahrs.read[13] = a_ahrs.ypr[1] * 180 / M_PI;                   // Estimated DMP_PITCH
+      a_ahrs.read[12] = a_ahrs.ypr[2] * 180 / M_PI;                       // Estimated DMP_ROLL
+      a_ahrs.read[13] = a_ahrs.ypr[1] * 180 / M_PI;                       // Estimated DMP_PITCH
       a_ahrs.read[14] = (a_ahrs.ypr[0] * 180 / M_PI) - a_ahrs.yaw_origin; // Estimated DMP_YAW
 
       // Temperature

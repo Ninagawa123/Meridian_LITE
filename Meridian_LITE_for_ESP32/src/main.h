@@ -86,8 +86,8 @@ enum BinHexDec { // 数値表示タイプの列挙型(Bin, Hex, Dec)
 //------------------------------------------------------------------------------------
 
 // システム用の変数
-const int MRDM_BYTE = MRDM_LEN * 2; // Meridim配列のバイト型の長さ
-const int MRD_ERR = MRDM_LEN - 2; // エラーフラグの格納場所（配列の末尾から2つめ）
+const int MRDM_BYTE = MRDM_LEN * 2;    // Meridim配列のバイト型の長さ
+const int MRD_ERR = MRDM_LEN - 2;      // エラーフラグの格納場所（配列の末尾から2つめ）
 const int MRD_ERR_u = MRD_ERR * 2 + 1; // エラーフラグの格納場所（上位8ビット）
 const int MRD_ERR_l = MRD_ERR * 2;     // エラーフラグの格納場所（下位8ビット）
 const int MRD_CKSM = MRDM_LEN - 1;     // チェックサムの格納場所（配列の末尾）
@@ -105,16 +105,16 @@ typedef union {
   uint8_t bval[+4];                   // byte型で180個の配列データを持つ
   uint8_t ubval[MRDM_BYTE + 4];       // 上記のunsigned byte型
 } Meridim90Union;
-Meridim90Union s_udp_meridim; // Meridim配列データ送信用(short型, センサや角度は100倍値)
+Meridim90Union s_udp_meridim;       // Meridim配列データ送信用(short型, センサや角度は100倍値)
 Meridim90Union r_udp_meridim;       // Meridim配列データ受信用
 Meridim90Union s_udp_meridim_dummy; // SPI送信ダミー用
 
 // フラグ用変数
 struct MrdFlags {
-  bool imuahrs_available = true; // メインセンサ値を読み取る間, サブスレッドによる書き込みを待機
-  bool udp_board_passive = false; // UDP通信の周期制御がボード主導(false) か, PC主導(true)か.
-  bool count_frame_reset = false; // フレーム管理時計をリセットする
-  bool stop_board_during = false; // ボードの末端処理をmeridim[2]秒, meridim[3]ミリ秒だけ止める.
+  bool imuahrs_available = true;        // メインセンサ値を読み取る間, サブスレッドによる書き込みを待機
+  bool udp_board_passive = false;       // UDP通信の周期制御がボード主導(false) か, PC主導(true)か.
+  bool count_frame_reset = false;       // フレーム管理時計をリセットする
+  bool stop_board_during = false;       // ボードの末端処理をmeridim[2]秒, meridim[3]ミリ秒だけ止める.
   bool eeprom_write_mode = false;       // EEPROMへの書き込みモード.
   bool eeprom_read_mode = false;        // EEPROMからの読み込みモード.
   bool eeprom_protect = EEPROM_PROTECT; // EEPROMの書き込みプロテクト.
@@ -124,13 +124,14 @@ struct MrdFlags {
   bool sdcard_read_mode = false;        // SDCARDからの読み込みモード.
   bool wire0_init = false;              // I2C 0系統の初期化合否
   bool wire1_init = false;              // I2C 1系統の初期化合否
-  bool bt_busy = false;  // Bluetoothの受信中フラグ（UDPコンフリクト回避用）
-  bool spi_rcvd = true;  // SPIのデータ受信判定
-  bool udp_rcvd = false; // UDPのデータ受信判定
-  bool udp_busy = false; // UDPスレッドでの受信中フラグ（送信抑制）
+  bool bt_busy = false;                 // Bluetoothの受信中フラグ（UDPコンフリクト回避用）
+  bool spi_rcvd = true;                 // SPIのデータ受信判定
+  bool udp_rcvd = false;                // UDPのデータ受信判定
+  bool udp_busy = false;                // UDPスレッドでの受信中フラグ（送信抑制）
+
   bool udp_receive_mode = MODE_UDP_RECEIVE; // PCからのデータ受信実施（0:OFF, 1:ON, 通常は1）
-  bool udp_send_mode = MODE_UDP_SEND; // PCへのデータ送信実施（0:OFF, 1:ON, 通常は1）
-  bool meridim_rcvd = false;          // Meridimが正しく受信できたか.
+  bool udp_send_mode = MODE_UDP_SEND;       // PCへのデータ送信実施（0:OFF, 1:ON, 通常は1）
+  bool meridim_rcvd = false;                // Meridimが正しく受信できたか.
 };
 MrdFlags flg;
 
@@ -145,9 +146,10 @@ MrdSq mrdsq;
 struct MrdTimer {
   long frame_ms = FRAME_DURATION; // 1フレームあたりの単位時間(ms)
   int count_loop = 0;             // サイン計算用の循環カウンタ
-  int count_loop_dlt = 2; // サイン計算用の循環カウンタを1フレームにいくつ進めるか
-  int count_loop_max = 359999;   // 循環カウンタの最大値
-  unsigned long count_frame = 0; // メインフレームのカウント
+  int count_loop_dlt = 2;         // サイン計算用の循環カウンタを1フレームにいくつ進めるか
+  int count_loop_max = 359999;    // 循環カウンタの最大値
+  unsigned long count_frame = 0;  // メインフレームのカウント
+
   int pad_interval = (PAD_INTERVAL - 1 > 0) ? PAD_INTERVAL - 1 : 1; // パッドの問い合わせ待機時間
 };
 MrdTimer tmr;
@@ -194,29 +196,29 @@ PadValue pad_analog;
 // 6軸or9軸センサーの値
 struct AhrsValue {
   Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28, &Wire); // BNO055のインスタンス
-  MPU6050 mpu6050;                                        // MPU6050のインスタンス
+
+  MPU6050 mpu6050;        // MPU6050のインスタンス
   uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
-  uint8_t devStatus;      // return status after each device operation (0 = success,
-                          // !0 = error)
+  uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
   uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
   uint8_t fifoBuffer[64]; // FIFO storage buffer
   Quaternion q;           // [w, x, y, z]         quaternion container
   VectorFloat gravity;    // [x, y, z]            gravity vector
-  float ypr[3];           // [roll, pitch, yaw]   roll/pitch/yaw container and gravity
-                          // vector
+  float ypr[3];           // [roll, pitch, yaw]   roll/pitch/yaw container and gravity vector
   float yaw_origin = 0;   // ヨー軸の補正センター値
   float yaw_source = 0;   // ヨー軸のソースデータ保持用
-  float read
-      [16]; // mpuからの読み込んだ一次データacc_x,y,z,gyro_x,y,z,mag_x,y,z,gr_x,y,z,rpy_r,p,y,temp
+
+  float read[16]; // mpuからの読み込んだ一次データacc_x,y,z,gyro_x,y,z,mag_x,y,z,gr_x,y,z,rpy_r,p,y,temp
+
   float zeros[16] = {0};               // リセット用
   float ave_data[16];                  // 上記の移動平均値を入れる
   float result[16];                    // 加工後の最新のmpuデータ（二次データ）
   float stock_data[IMUAHRS_STOCK][16]; // 上記の移動平均値計算用のデータストック
-  int stock_count = 0; // 上記の移動平均値計算用のデータストックを輪番させる時の変数
-  VectorInt16 aa;   // [x, y, z]            加速度センサの測定値
-  VectorInt16 gyro; // [x, y, z]            角速度センサの測定値
-  VectorInt16 mag;  // [x, y, z]            磁力センサの測定値
-  long temperature; // センサの温度測定値
+  int stock_count = 0;                 // 上記の移動平均値計算用のデータストックを輪番させる時の変数
+  VectorInt16 aa;                      // [x, y, z]            加速度センサの測定値
+  VectorInt16 gyro;                    // [x, y, z]            角速度センサの測定値
+  VectorInt16 mag;                     // [x, y, z]            磁力センサの測定値
+  long temperature;                    // センサの温度測定値
 };
 AhrsValue ahrs;
 
@@ -270,9 +272,9 @@ MrdMonitor monitor;
 #include "mrd_disp.h"
 MrdMsgHandler mrd_disp(Serial);
 
-//================================================================================================================
+//==================================================================================================
 //  関数各種
-//================================================================================================================
+//==================================================================================================
 
 ///@brief Generate expected sequence number from input.
 ///@param a_previous_num Previous sequence number.
