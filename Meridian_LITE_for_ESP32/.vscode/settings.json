@@ -33,5 +33,6 @@
         "SDCARD",
         "wiimote",
         "XBUS"
-    ]
+    ],
+    "git.detectSubmodules": false
 }
