@@ -11,8 +11,7 @@
 		"editor.formatOnSave": true,
 		"search.exclude": {
 			".pio/*": true,
-			"**/build": true,
-			"**/lib": true
+			"**/build": true
 		},
 		"editor.rulers": [
 			100
