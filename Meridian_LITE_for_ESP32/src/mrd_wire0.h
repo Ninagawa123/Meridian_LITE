@@ -8,9 +8,9 @@
 // ライブラリ導入
 #include <Wire.h>
 
-//================================================================================================================
+//==================================================================================================
 //  I2C wire0 関連の処理
-//================================================================================================================
+//==================================================================================================
 
 //------------------------------------------------------------------------------------
 //  初期設定
@@ -120,10 +120,10 @@ bool mrd_wire0_setup(ImuAhrsType a_imuahrs_type, int a_i2c0_speed, AhrsValue &a_
 void mrd_wire0_Core0_bno055_r(void *args) {
   while (1) {
     // 加速度センサ値の取得と表示 - VECTOR_ACCELEROMETER - m/s^2
-    imu::Vector<3> accelermetor = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-    ahrs.read[0] = (float)accelermetor.x();
-    ahrs.read[1] = (float)accelermetor.y();
-    ahrs.read[2] = (float)accelermetor.z();
+    imu::Vector<3> accelerometer = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+    ahrs.read[0] = (float)accelerometer.x();
+    ahrs.read[1] = (float)accelerometer.y();
+    ahrs.read[2] = (float)accelerometer.z();
 
     // ジャイロセンサ値の取得 - VECTOR_GYROSCOPE - rad/s
     imu::Vector<3> gyroscope = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
@@ -132,10 +132,10 @@ void mrd_wire0_Core0_bno055_r(void *args) {
     ahrs.read[5] = gyroscope.z();
 
     // 磁力センサ値の取得と表示  - VECTOR_MAGNETOMETER - uT
-    imu::Vector<3> magnetmetor = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_MAGNETOMETER);
-    ahrs.read[6] = magnetmetor.x();
-    ahrs.read[7] = magnetmetor.y();
-    ahrs.read[8] = magnetmetor.z();
+    imu::Vector<3> magnetometer = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_MAGNETOMETER);
+    ahrs.read[6] = magnetometer.x();
+    ahrs.read[7] = magnetometer.y();
+    ahrs.read[8] = magnetometer.z();
 
     // センサフュージョンによる方向推定値の取得と表示 - VECTOR_EULER - degrees
     imu::Vector<3> euler = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_EULER);
@@ -185,7 +185,8 @@ void mrd_wire0_Core0_bno055_r(void *args) {
 /// MPU6050, MPU9250を想定していますが, MPU9250は未実装.
 /// 各データは`ahrs.read`配列に格納され, 利用可能な場合は`ahrs.result`にコピーされる.
 bool mrd_wire0_read_ahrs_i2c(AhrsValue &a_ahrs) { // ※wireTimer0.beginの引数のためvoid必須
-  if (MOUNT_IMUAHRS == MPU6050_IMU) {            // MPU6050
+
+  if (MOUNT_IMUAHRS == MPU6050_IMU) {                                // MPU6050
     if (a_ahrs.mpu6050.dmpGetCurrentFIFOPacket(a_ahrs.fifoBuffer)) { // Get new data
       a_ahrs.mpu6050.dmpGetQuaternion(&a_ahrs.q, a_ahrs.fifoBuffer);
       a_ahrs.mpu6050.dmpGetGravity(&a_ahrs.gravity, &a_ahrs.q);
@@ -214,8 +215,8 @@ bool mrd_wire0_read_ahrs_i2c(AhrsValue &a_ahrs) { // ※wireTimer0.beginの引�
       a_ahrs.read[11] = a_ahrs.gravity.z;
 
       // Estimated heading value using DMP.
-      a_ahrs.read[12] = a_ahrs.ypr[2] * 180 / M_PI;                   // Estimated DMP_ROLL
-      a_ahrs.read[13] = a_ahrs.ypr[1] * 180 / M_PI;                   // Estimated DMP_PITCH
+      a_ahrs.read[12] = a_ahrs.ypr[2] * 180 / M_PI;                       // Estimated DMP_ROLL
+      a_ahrs.read[13] = a_ahrs.ypr[1] * 180 / M_PI;                       // Estimated DMP_PITCH
       a_ahrs.read[14] = (a_ahrs.ypr[0] * 180 / M_PI) - a_ahrs.yaw_origin; // Estimated DMP_YAW
 
       // Temperature

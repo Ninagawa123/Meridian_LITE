@@ -5,14 +5,14 @@
 
 /// @file    Meridian_LITE_for_ESP32/src/main.cpp
 /// @brief   Meridian is a system that smartly realizes the digital twin of a robot.
-/// @details Meridian_LITE for Meridan Board -LITE- with ESP32DecKitC.
+/// @details Meridian_LITE for Meridian Board -LITE- with ESP32DecKitC.
 ///
 /// This code is licensed under the MIT License.
 /// Copyright (c) 2022 Izumi Ninagawa & Project Meridian
 
-//================================================================================================================
+//==================================================================================================
 //  初期設定
-//================================================================================================================
+//==================================================================================================
 
 // ヘッダファイルの読み込み
 #include "main.h"
@@ -37,11 +37,11 @@ IcsHardSerialClass ics_R(&Serial2, PIN_EN_R, SERVO_BAUDRATE_R, SERVO_TIMEOUT_R);
 #include <Arduino.h>
 
 // ハードウェアタイマーとカウンタ用変数の定義
-hw_timer_t *timer = NULL;                   // ハードウェアタイマーの設定
-volatile SemaphoreHandle_t timer_semaphore; // ハードウェアタイマー用のセマフォ
+hw_timer_t *timer = NULL;                              // ハードウェアタイマーの設定
+volatile SemaphoreHandle_t timer_semaphore;            // ハードウェアタイマー用のセマフォ
 portMUX_TYPE timer_mux = portMUX_INITIALIZER_UNLOCKED; // ハードウェアタイマー用のミューテックス
-unsigned long count_frame = 0;          // フレーム処理の完了時にカウントアップ
-volatile unsigned long count_timer = 0; // フレーム用タイマーのカウントアップ
+unsigned long count_frame = 0;                         // フレーム処理の完了時にカウントアップ
+volatile unsigned long count_timer = 0;                // フレーム用タイマーのカウントアップ
 
 /// @brief count_timerを保護しつつ1ずつインクリメント
 void IRAM_ATTR frame_timer() {
@@ -51,9 +51,9 @@ void IRAM_ATTR frame_timer() {
   xSemaphoreGiveFromISR(timer_semaphore, NULL); // セマフォを与える
 }
 
-//================================================================================================================
+//==================================================================================================
 //  SETUP
-//================================================================================================================
+//==================================================================================================
 void setup() {
 
   // BT接続確認用LED設定
@@ -80,7 +80,7 @@ void setup() {
   // サーボ値の初期設定
   sv.num_max = max(mrd_max_used_index(IXL_MT, IXL_MAX),  //
                    mrd_max_used_index(IXR_MT, IXR_MAX)); // サーボ処理回数
-  for (int i = 0; i <= sv.num_max; i++) { // configで設定した値を反映させる
+  for (int i = 0; i <= sv.num_max; i++) {                // configで設定した値を反映させる
     sv.ixl_mount[i] = IXL_MT[i];
     sv.ixr_mount[i] = IXR_MT[i];
     sv.ixl_id[i] = IXL_ID[i];
@@ -95,8 +95,8 @@ void setup() {
   mrd_disp.servo_bps_2lines(SERVO_BAUDRATE_L, SERVO_BAUDRATE_R);
 
   // サーボ用UART設定
-  mrd_servo_begin(L, MOUNT_SERVO_TYPE_L); // サーボモータの通信初期設定. Serial2
-  mrd_servo_begin(R, MOUNT_SERVO_TYPE_R); // サーボモータの通信初期設定. Serial3
+  mrd_servo_begin(L, MOUNT_SERVO_TYPE_L);         // サーボモータの通信初期設定. Serial2
+  mrd_servo_begin(R, MOUNT_SERVO_TYPE_R);         // サーボモータの通信初期設定. Serial3
   mrd_disp.servo_protocol(L, MOUNT_SERVO_TYPE_R); // サーボプロトコルの表示
   mrd_disp.servo_protocol(R, MOUNT_SERVO_TYPE_R);
 
@@ -147,8 +147,9 @@ void setup() {
 
   // タイマーの設定
   timer_semaphore = xSemaphoreCreateBinary(); // セマフォの作成
-  timer = timerBegin(0, 80, true); // タイマーの設定（1つ目のタイマーを使用, 分周比80）
-  timerAttachInterrupt(timer, &frame_timer, true); // frame_timer関数をタイマーの割り込みに登録
+  timer = timerBegin(0, 80, true);            // タイマーの設定（1つ目のタイマーを使用, 分周比80）
+
+  timerAttachInterrupt(timer, &frame_timer, true);     // frame_timer関数をタイマーの割り込みに登録
   timerAlarmWrite(timer, FRAME_DURATION * 1000, true); // タイマーを10msごとにトリガー
   timerAlarmEnable(timer);                             // タイマーを開始
 
@@ -162,9 +163,9 @@ void setup() {
   portEXIT_CRITICAL(&timer_mux);
 }
 
-//================================================================================================================
+//==================================================================================================
 // MAIN LOOP
-//================================================================================================================
+//==================================================================================================
 void loop() {
 
   //------------------------------------------------------------------------------------
@@ -245,7 +246,7 @@ void loop() {
     mrd_clearBit16(s_udp_meridim.usval[MRD_ERR], ERRBIT_10_UDP_ESP_SKIP);
     flg.meridim_rcvd = true; // Meridim受信成功フラグをアゲる.
 
-  } else { // 受信シーケンス番号の値が予想と違ったら
+  } else {                                              // 受信シーケンス番号の値が予想と違ったら
     mrdsq.r_expect = int(s_udp_meridim.usval[MRD_SEQ]); // 現在の受信値を予想結果としてキープ
 
     // エラービット10番[ESP受信のスキップ検出]をアゲる
@@ -256,11 +257,11 @@ void loop() {
   }
 
   //------------------------------------------------------------------------------------
-  //  [ 3 ] MastarCommand group1 の処理
+  //  [ 3 ] MasterCommand group1 の処理
   //------------------------------------------------------------------------------------
   mrd.monitor_check_flow("[3]", monitor.flow); // デバグ用フロー表示
 
-  // @[3-1] MastarCommand group1 の処理
+  // @[3-1] MasterCommand group1 の処理
   execute_master_command_1(s_udp_meridim, flg.meridim_rcvd);
 
   //------------------------------------------------------------------------------------
@@ -287,11 +288,11 @@ void loop() {
   }
 
   //------------------------------------------------------------------------------------
-  //  [ 6 ] MastarCommand group2 の処理
+  //  [ 6 ] MasterCommand group2 の処理
   //------------------------------------------------------------------------------------
   mrd.monitor_check_flow("[6]", monitor.flow); // デバグ用フロー表示
 
-  // @[6-1] MastarCommand group2 の処理
+  // @[6-1] MasterCommand group2 の処理
   execute_master_command_2(s_udp_meridim, flg.meridim_rcvd);
 
   //------------------------------------------------------------------------------------
@@ -323,7 +324,7 @@ void loop() {
   mrd.monitor_check_flow("[8]", monitor.flow); // デバグ用フロー表示
 
   // @[8-1] サーボ受信値の処理
-  if (!MODE_ESP32_STDALONE) { // サーボ処理を行うかどうか
+  if (!MODE_ESP32_STANDALONE) { // サーボ処理を行うかどうか
     mrd_servos_drive_lite(s_udp_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R,
                           sv); // サーボ動作を実行する
   } else {
@@ -396,9 +397,9 @@ void loop() {
   mrd.monitor_check_flow("\n", monitor.flow); // 動作チェック用シリアル表示
 }
 
-//================================================================================================================
+//==================================================================================================
 //  コマンド処理
-//================================================================================================================
+//==================================================================================================
 
 /// @brief Master Commandの第1群を実行する. 受信コマンドに基づき, 異なる処理を行う.
 /// @param a_meridim 実行したいコマンドの入ったMeridim配列を渡す.
@@ -428,7 +429,7 @@ bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe) {
   // コマンド:MCMD_BOARD_TRANSMIT_ACTIVE (10005) UDP受信の通信周期制御をボード側主導に（デフォルト）
   if (a_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_ACTIVE) {
     flg.udp_board_passive = false; // UDP送信をアクティブモードに
-    flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをセット
+    flg.count_frame_reset = true;  // フレームの管理時計をリセットフラグをセット
     return true;
   }
 
@@ -490,7 +491,7 @@ bool execute_master_command_2(Meridim90Union a_meridim, bool a_flg_exe) {
       delay(1);
     }
     flg.stop_board_during = false; // ボードの処理停止フラグをクリア
-    flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをセット
+    flg.count_frame_reset = true;  // フレームの管理時計をリセットフラグをセット
     return true;
   }
   return false;

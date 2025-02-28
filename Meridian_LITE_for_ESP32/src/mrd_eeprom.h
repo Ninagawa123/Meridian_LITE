@@ -17,9 +17,9 @@ typedef union {
 UnionEEPROM eeprom_write_data; // EEPROM書き込み用
 UnionEEPROM eeprom_read_data;  // EEPROM読み込み用
 
-//================================================================================================================
+//==================================================================================================
 //  EEPROM関連の処理
-//================================================================================================================
+//==================================================================================================
 
 /// @brief EEPROMの初期化
 /// @param a_eeprom_size EEPROMのバイト長
@@ -137,7 +137,7 @@ bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect) {
     EEPROM.commit(); // 書き込みを確定する
     Serial.print("Value updated ");
     return true;
-  }else{
+  } else {
     Serial.print("Same value ");
   }
   return false;

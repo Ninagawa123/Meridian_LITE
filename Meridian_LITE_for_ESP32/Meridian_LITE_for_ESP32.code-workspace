@@ -1,0 +1,27 @@
+{
+	"folders": [
+		{
+			"name": "Meridian_LITE_for_ESP32",
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.encoding": "utf8",
+		"files.eol": "\n",
+		"editor.formatOnSave": true,
+		"search.exclude": {
+			".pio/*": true,
+			"**/build": true
+		},
+		"editor.rulers": [
+			100
+		],
+		"files.exclude": {
+			"**/.git": true,
+			"**/.svn": true,
+			"**/.hg": true,
+			"**/.DS_Store": true
+		},
+		"git.detectSubmodules": false
+	}
+}
