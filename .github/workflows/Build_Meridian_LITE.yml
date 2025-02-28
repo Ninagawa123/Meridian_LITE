@@ -1,0 +1,25 @@
+name: Build Meridian_LITE
+on:
+  workflow_dispatch:
+    inputs:
+      board_env:
+        description: 'Select environments'
+        required: true
+        default: 'Meridian_LITE_for_ESP32'
+        type: choice
+        options:
+          - Meridian_LITE_for_ESP32
+      build_flags:
+        description: 'Build flags'
+        required: false
+        type: string
+
+jobs:
+  Meridian_LITE_for_ESP32:
+    if: github.event.inputs.board_env == 'Meridian_LITE_for_ESP32'
+    uses: ./.github/workflows/_WORKFLOW_CALL_RunningPlatformIO.yml
+    with:
+      target_dir: Meridian_LITE_for_ESP32
+      board_env: esp32dev
+      build_flags: ${{inputs.build_flags}}
+      firmware_name: esp32dev_firmware
