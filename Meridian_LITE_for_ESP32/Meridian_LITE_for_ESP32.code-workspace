@@ -8,10 +8,8 @@
 	"settings": {
 		"files.encoding": "utf8",
 		"files.eol": "\n",
-		"doxdocgen.file.versionTag": "@version 1.1.1",
 		"editor.formatOnSave": true,
 		"search.exclude": {
-			"__*": true,
 			".pio/*": true,
 			"**/build": true,
 			"**/lib": true
@@ -23,10 +21,7 @@
 			"**/.git": true,
 			"**/.svn": true,
 			"**/.hg": true,
-			"**/CVS": true,
-			"**/.DS_Store": true,
-			"**/.*": false,
-			".vscode": false
+			"**/.DS_Store": true
 		},
 		"git.detectSubmodules": false
 	}
