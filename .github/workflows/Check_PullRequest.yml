@@ -1,0 +1,14 @@
+name: Check pull request
+on:
+  pull_request:
+    branches:
+    - main
+    - develop
+
+jobs:
+  Meridian_LITE_for_ESP32:
+    uses: ./.github/workflows/_WORKFLOW_CALL_RunningPlatformIO.yml
+    with:
+      target_dir: Meridian_LITE_for_ESP32
+      board_env: esp32dev
+      firmware_name: esp32dev_firmware

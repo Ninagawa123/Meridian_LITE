@@ -1,0 +1,60 @@
+name: Create Release Note
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  Build_Meridian_LITE_for_ESP32:
+    uses: ./.github/workflows/_WORKFLOW_CALL_RunningPlatformIO.yml
+    with:
+      target_dir: Meridian_LITE_for_ESP32
+      board_env: esp32dev
+      firmware_name: Meridian_LITE_for_ESP32
+
+  build:
+    permissions:
+      contents: write
+    if: success()
+    needs: Build_Meridian_LITE_for_ESP32
+    name: Build Releases on tags
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Read current version
+      id: current_version
+      run: echo "TAG=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+
+    - name: Download All Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+        pattern: Meridian_LITE_*
+        merge-multiple: true
+
+    - name: List all artifacts
+      run: ls -R artifacts
+
+    - name: Create Release Note
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.current_version.outputs.TAG }}
+        release_name: "Meridian_LITE ${{ steps.current_version.outputs.TAG }}"
+        body: |
+          ## This is a sample file for checking operation.
+        draft: true
+        prerelease: false
+
+    - name: Upload Release Asset (Meridian_LITE_for_ESP32)
+      id: upload-release-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{github.workspace}}/artifacts/Meridian_LITE_for_ESP32.bin
+        asset_name: Meridian_LITE_for_ESP32.bin
+        asset_content_type: application/bin
