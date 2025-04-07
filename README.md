@@ -37,7 +37,6 @@ Meridianは今後も用途に応じて様々なハードウェア, ソフトウ�
 ESP32devkitCを搭載し, 当リポジトリのスクリプトを使用することにより, 手軽に100Hzの更新頻度をもつデジタルツインのロボットを実現することができます.  
 <br>
   
-  
 ### ピンアサイン    
 <img width="800" alt="lite_pinassign" src="./docs/Meridian_Board_LITE_pinassign.png">
 ピンアサインは上記の通りです. <br>
