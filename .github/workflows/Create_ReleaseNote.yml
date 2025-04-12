@@ -11,12 +11,24 @@ jobs:
       target_dir: Meridian_LITE_for_ESP32
       board_env: esp32dev
       firmware_name: Meridian_LITE_for_ESP32
+  Build_Meridian_LITE_for_teensy40:
+    uses: ./.github/workflows/_WORKFLOW_CALL_RunningPlatformIO.yml
+    with:
+      target_dir: Meridian_LITE_for_ESP32
+      board_env: teensy40
+      firmware_name: Meridian_LITE_for_teensy40
+  Build_Meridian_LITE_for_pico:
+    uses: ./.github/workflows/_WORKFLOW_CALL_RunningPlatformIO.yml
+    with:
+      target_dir: Meridian_LITE_for_ESP32
+      board_env: pico
+      firmware_name: Meridian_LITE_for_pico
 
   build:
     permissions:
       contents: write
     if: success()
-    needs: Build_Meridian_LITE_for_ESP32
+    needs: [Build_Meridian_LITE_for_ESP32, Build_Meridian_LITE_for_teensy40, Build_Meridian_LITE_for_pico]
     name: Build Releases on tags
     runs-on: ubuntu-latest
 
@@ -32,8 +44,6 @@ jobs:
         pattern: Meridian_LITE_*
         merge-multiple: true
 
-    - name: List all artifacts
-      run: ls -R artifacts
 
     - name: Create Release Note
       id: create_release
