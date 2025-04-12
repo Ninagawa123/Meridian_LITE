@@ -47,5 +47,8 @@
 **/.vscode/launch.json
 **/.vscode/ipch
 
+# Doxygen files
+doxygen
+
 # My Project
 keys.h
