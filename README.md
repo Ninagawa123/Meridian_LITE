@@ -289,6 +289,9 @@ config.h内のコメントを参考に,
 // 各サーボの内外回転プラスマイナス方向補正(1 or -1)  
 // 各サーボのトリム値(degree)  
 などを設定してください.  
+    
+[![dance](https://img.youtube.com/vi/Wfc9j4Pmr3E/0.jpg)](https://www.youtube.com/watch?v=Wfc9j4Pmr3E)  
+サーボ設定が済んだ上で, ボードに電源を接続し, Meridian consoleからdemoを実行すると, 100Hz更新のヌルヌルとしたダンスを披露します.  
   
 ## Unity版デモを実行する  
 Meridian_LITEとUnityを連携させることができます.  
@@ -377,39 +380,3 @@ BNO_055とのI2C通信がうまくいかない場合は, 写真のように10kΩ
 ├── .clang-format  // VSCODEでのコードフォーマット設定ファイル<br>
 └── platformio.ini<br>
 </details>
-
-
-  
-[![dance](https://img.youtube.com/vi/Wfc9j4Pmr3E/0.jpg)](https://www.youtube.com/watch?v=Wfc9j4Pmr3E)  
-100Hzダンスのデモ動画
-<br>  
-
-
-
-
-### ESP32のシリアル通信ピンの設定  
-ESP32のデフォルトではSerial1のUARTシリアル通信が使う事ができないため, 設定を変更して使えるようにします.  
-  
-PlatformIOを一旦閉じます.  
-  
-https://qiita.com/Ninagawa_Izumi/items/8ce2d55728fd5973087d  
-  
-を参考に,  
-RX1を9番ピンから32番ピンに変更,  
-TX1を10番ピンから27番ピンに変更する設定をしておきます.  
-  
-<img width="512" alt="GettingStarted_10" src="./docs/images/GettingStarted_10.png">
-  
-この設定ができていないと, サーボ通信用のUARTは片方のチャンネルしか機能しません.  
-<br>
-
-### platformio.iniの設定  
-「platformio.ini」を開くと下記のように設定されています.  
-シリアルモニタのスピードを115200bpsとし, 自動インストールするモジュールを指定しています.  
-またOTAという無線でのプログラム書き換え機能を削除してメモリ領域を増やす設定にしています.  
-<br>
-
-
-
-
-<br>
