@@ -1,22 +1,22 @@
 # Meridian_LITE
 
 Meridian_LITEは, ロボットのリアルタイムなデジタルツイン化を実現する**Meridian**(meridian flow system)の一部です.  
-当リポジトリのファイルを書き込んだESP32等のwifi付きマイコンボードをロボットに搭載して使用します.  
+ESP32等のwifi付きマイコンボードに当リポジトリのファイルを書き込み, ロボットに搭載して使用します.  
 センサーやサーボを制御しながら, PC等のデバイスとロボットの状態情報を100Hzの頻度で共有することができるようになります.  
   
 <img width=100% alt="lite_pinassign" src="./docs/images/Meridian_flowsystem_lite.png">  
   
 システムの中核は[Meridim90](https://ninagawa123.github.io/Meridian_info/#Protocol/Meridim90/overview90/)というコンパクトで汎用的なデータ配列です.  
 このデータ配列が中間プロトコルとしてデバイス間を高速に循環することで, リアルタイムな状態データの共有を実現します.  
-Meridim90の介在により, メーカーの異なる複数のコマンドサーボやセンサ, UnityやROSなど既存の開発環境やシミュレータが共存, 連携できるようになるのも大きな強みです.    
+Meridim90の介在により, メーカーの異なる複数のコマンドサーボやセンサ, UnityやROSなど既存のさまざまな開発環境やシミュレータが共存, 連携できるようになるのが大きな強みです.    
   
 [![sync](https://img.youtube.com/vi/4ymSV_Dot-U/0.jpg)](https://www.youtube.com/watch?v=4ymSV_Dot-U)  
   
 Meridianはオープンソースプロジェクトとして2021年に開始し, 現在も様々なハードウェア, ソフトウェアへの対応を進めています.  
   
-<hr>  
+<br><hr>  
 
-# Getting started 1 : ESP32DevKitC 単体動作確認
+# Getting started 1
   
 まず, ESP32DevKitC のみを使用した最小限の構成で動作確認を行います.  
   
@@ -50,7 +50,7 @@ PlatformIOを起動し, 「Platformes」の検索窓で「ESP32」を検索し�
 ## ワークスペースを開く  
 VSCodeのファイルメニューから「ファイルでワークスペースをフォルダを開く...」を選択し, 先ほど準備したMeridian_LITE(Meridian_LITE-main)の中にある「Meridian_LITE_for_ESP32」→「Meridian_LITE_for_ESP32.code-workspace」を開きます.  
 必要なライブラリはファイルを開く際にVSCode上で自動でインストールされます.  
-
+  
 ### keys.hの修正  
 keys.h内の  
 
@@ -96,7 +96,6 @@ VSCodeの画面左下の**チェックマークのボタン**を押すと, ビ�
   
 <img width="600" alt="GettingStarted_9" src="./docs/images/GettingStarted_9.png">
   
-
 ### ESP32-DevKitCへのアップロード
 PCとESP32-DevKitCをUSBケーブルで接続し, チェックマークの隣の**矢印ボタン**を押すと必要なコードがESP32にアップロードされます.  
   
@@ -146,14 +145,14 @@ Meridian consoleを起動し, ESP32DevKitCの電源が入っていると自動�
 - config.hの内容を確認してください.  
 </details>
   
-  <hr>  
+<br><hr>  
 
-# Getting started 2 : KHR-3HV への搭載 
-近藤科学の小型二足ロボットキットKHR-3HVへのMeridian Board搭載を例に, 導入方法を説明します.  
+# Getting started 2
+近藤科学の小型二足ロボットキット**KHR-3HV**へのMeridian Board搭載を例に, 導入方法を説明します.  
   
 ## KHR-3HVのMeridian動作テストの準備物
 - 前述の動作テスト用の準備物
-- KHR-3HV本体
+- [KHR-3HV](https://kondo-robot.com/product-category/robot/khrseries)本体
 - 電源(KHR付属バッテリー, 安定化電源等)
 - Meridian Board - LITE -
   
@@ -162,7 +161,7 @@ Meridian consoleを起動し, ESP32DevKitCの電源が入っていると自動�
   
 "Meridian board -LITE-" はサーボ制御用の半二重通信回路2系統とSPI,I2Cなどの基本的な入出力ピンを備えたボードです.  
 
-### 制作もしくは入手方法　　
+### ボードの制作もしくは入手の方法　　
 - [回路図を公開](docs/Meridian_Board_LITE_schema.pdf)しており, 自作することが可能です.  
 - 完成品ボードの頒布もあります. [https://1985b.booth.pm/](https://1985b.booth.pm/)  
     
@@ -242,10 +241,13 @@ USB経由で給電されシリアルモニタに起動時のステータスが�
 先ほどと同様に, Meridian consoleを起動してください.  
   
 ### 通信の確認  
-通信が始まると,画面下部の **PCframe**と**BOARDframe**がカウントアップされ, **99~100Hz**の表記があれば通信成功です.    
-<img width="400" alt="Meridian_console_py" src="./docs/images/GettingStarted_14.png">  
-今回はサーボを接続していますが, 初期状態では全サーボがトルクオフです.  ロボットの関節を手で動かすと, 現在の角度がMeridian consoleのスライダーに反映されます.  
-
+通信が始まると,画面下部の **PCframe**と**BOARDframe**がカウントアップされ, **99~100Hz**の表記があれば通信成功です.  
+     
+<img width="600" alt="Meridian_console_py" src="./docs/images/GettingStarted_14.png">  
+  
+今回はサーボを接続していますが, 初期状態では全サーボがトルクオフです.  
+ロボットの関節を手で動かすと, 現在の角度がMeridian consoleのスライダーに反映されます.  
+  
 <details>
 <summary>動作がおかしい時</summary>
 <b>通信速度が100Hzにならない : </b><br>
@@ -288,15 +290,18 @@ ESP32にヒートシンクをつけるのもよいですし, 扇風機で風を�
 </details>
 
 ## サーボの設定の調整  
-サーボをオンにすると, USB給電の場合はおそらく電力不足となります.  
-また, サーボのトリムなどが未設定であるため, 初期位置があらぬ方向に設定されている可能性もあります.  
+全てのサーボをオンにすると, USB給電の場合はおそらく電力不足となりますのでご注意ください.  
+サーボの初期位置などが未設定であるため, 起動時に関節があらぬ方向に回転し, 大きな負荷がかかる可能性がありますので注意してください.  
+初期位置の調整後, ロボットを吊るした状態などモーターへの負荷がほとんどない場合であれば, 全サーボオンが可能な場合があります.  
+  
 ID紐付け, 回転方向・トリム調整の仕組みは現在作成中です.  
-config.h内のコメントを参考に, 
+config.h内のコメントを参考に,  
 // 各サーボの内外回転プラスマイナス方向補正(1 or -1)  
 // 各サーボのトリム値(degree)  
 などを設定してください.  
     
 [![dance](https://img.youtube.com/vi/Wfc9j4Pmr3E/0.jpg)](https://www.youtube.com/watch?v=Wfc9j4Pmr3E)  
+  
 サーボ設定が済んだ上で, ボードに電源を接続し, Meridian consoleからdemoを実行すると, 100Hz更新のヌルヌルとしたダンスを披露します.  
   
 # Unity版デモを実行する  
@@ -309,19 +314,19 @@ Meridian_LITEとUnityを連携させることができます.
 # ROS版デモを実行する  
 Meridian_TWINとUnityを連携させることができます.  
 下記のリポジトリより「ROS版デモを実行する」をお試しください.  
-[https://github.com/Ninagawa123/Meridian_TWIN/edit/main/README.md](https://github.com/Ninagawa123/Meridian_TWIN/edit/main/README.md)  
+[https://github.com/Ninagawa123/Meridian_TWIN/tree/main](https://github.com/Ninagawa123/Meridian_TWIN/tree/main)  
   
 # リモコンの使用方法  
 **KRR-5FH/KRC5-FH**  
-config.hの「#define MOUNT_PAD KRR5FH」と設定してボードに書き込みます.  
+config.hにて「#define MOUNT_PAD KRR5FH」と設定してボードにアップロードします.  
 受信機のKRR-5FHはボードの**R系統に接続**します. KRC-5FHのペアリングは製品の説明書の通りです.  
 受信信号はMeridianに格納されるので, Meridian_console.pyでボタンの受信状況が確認できます.  
   
 **WIIリモコン**  
 wiiリモコンはおまけ機能です. (Meridianの通信速度が若干低下します.)  
-config.hの「#define MOUNT_PAD WIIMOTE」と設定してボードに書き込み, 起動直後にWiiリモコンの1,2ボタンを両押しするとペアリングが確立します.ヌンチャクのレバーも左側のアナログ十字スティックとして機能します.  
+config.hにて「#define MOUNT_PAD WIIMOTE」と設定してボードにアップロードします.  
+起動直後にWiiリモコンの1,2ボタンを両押しするとペアリングが確立します.ヌンチャクのレバーも左側のアナログ十字スティックとして機能します.  
 また, HOMEボタンがアナログスティックのキャリブレーション（リセット）として機能します.  
-<br>
   
 # バージョン更新履歴  
   
@@ -384,4 +389,9 @@ BNO_055とのI2C通信がうまくいかない場合は, 写真のように10kΩ
 │<br>
 ├── .clang-format  // VSCODEでのコードフォーマット設定ファイル<br>
 └── platformio.ini<br>
+</details>
+
+<details>
+<summary>フローチャート</summary>
+<img width="600" alt="Meridian_Unity" src="./docs/images/Meridian_Lite_flowchart_20240721.png">
 </details>
