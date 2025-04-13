@@ -143,6 +143,7 @@ Meridian consoleを起動し, ESP32DevKitCの電源が入っていると自動�
 - 送信, 受信のIPアドレスを確認してください.特に3番目の番号など.  
 - wifiルータが2.4Ghz対応で, 2.4Ghz用のSSIDに接続していることを確認してください.  
 - config.hの内容を確認してください.  
+- windowsの場合, firewall設定の変更が必要とされる場合があります.  
 </details>
   
 <br><hr>  
@@ -159,8 +160,8 @@ Meridian consoleを起動し, ESP32DevKitCの電源が入っていると自動�
 ## Meridian Boaard - LITE - について  
 <img width="400" alt="lite_pinassign" src="./docs/images/Meridian_LITE_Board.png">  
   
-"Meridian board -LITE-" はサーボ制御用の半二重通信回路2系統とSPI,I2Cなどの基本的な入出力ピンを備えたボードです.  
-
+"Meridian board -LITE-" はサーボ制御用の半二重通信回路2系統とSPI,I2Cなどの基本的な入出力ピンを備えたボードです. ESP32DevKitCを搭載し, サーボやセンサーを接続して使用します.  
+  
 ### ボードの制作もしくは入手の方法　　
 - [回路図を公開](docs/Meridian_Board_LITE_schema.pdf)しており, 自作することが可能です.  
 - 完成品ボードの頒布もあります. [https://1985b.booth.pm/](https://1985b.booth.pm/)  
