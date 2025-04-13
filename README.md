@@ -1,155 +1,392 @@
-# [Meridian_LITE v1.1.1](https://github.com/Ninagawa123/Meridian_LITE/)
+# Meridian_LITE
+
+Meridian_LITEは, ロボットのリアルタイムなデジタルツイン化を実現する**Meridian**(meridian flow system)の一部です.  
+当リポジトリのファイルを書き込んだESP32等のwifi付きマイコンボードをロボットに搭載することで, センサーやサーボを制御しながら, PC等のデバイスと100Hzの頻度でロボットの状態情報を共有することができます.  
   
-より改良・拡張しやすくするため, 大規模なリファクタリングを行いました.  
-命名規則はLLVM準拠とし, 内容を "Meridian_LITE_for_ESP32/.clang-format" ファイルにコメントしています.  
-またコードを構成要素ごとにヘッダーファイルで切り分け, モジュール化することで, 改造や拡張の見通しを立ちやすくしました.  
-フローチャートもDocsにて公開しています.  
-    
-ライブラリの関数や変数表など, システムの詳細については以下のサイトがあります. 内容はv1.1.1に合わせました.  
-[https://ninagawa123.github.io/Meridian_info/](https://ninagawa123.github.io/Meridian_info/)  
+<img width=100% alt="lite_pinassign" src="./docs/images/Meridian_flowsystem_lite.png">  
   
-<br>  
-  
-## Meridianとは？  
-Meridianはヒューマノイドの制御システムについてのオープンソースプロジェクトです.  
-ホビーロボットのデジタルツイン化を簡単に実現し, PC上のシミュレーション空間とロボット実機をWiFi経由で1/100秒単位の更新頻度でデータリンクすることができます.  
-  
-システムの中核はMeridim配列という軽量で汎用的なデータ配列で, ロボットの状態データをコンパクトに格納できます.  
+システムの中核はMeridim90というコンパクトで汎用的なデータ配列です.  
 このデータ配列がデバイス間を高速に循環することで, リアルタイムな状態データの共有を可能にします.  
-Meridim配列を中間プロトコルとして既存のシステムの間に挟むことで, 複数社のコマンドサーボやセンサ, Unityなどの開発環境などを自由に繋ぐことができ, またROSの入出力にも対応するため, シミュレーターなど多岐にわたるリソースを活用することができます.  
+また, 中間プロトコルとして既存のシステムの間に挟むことで, 複数社のコマンドサーボやセンサ, UnityやROSなどの開発環境などを繋ぐことができるのも強みです.  
   
-当リポジトリで取り扱う ”Meridian_LITE" はESP32DeckitCを使用するタイプで, 対応ボードはMeridian Board -LITE-となります.  
-また, より高度な制御が可能となるESP32DeckitC+Teensy4.0を連携させて動作するMeridian_TWIN(対応ボードはMeridian Board Type.K)も開発済みです.  
-  
-Meridianは今後も用途に応じて様々なハードウェア, ソフトウェアに対応させていく予定です.  
-  
+
 [![sync](https://img.youtube.com/vi/4ymSV_Dot-U/0.jpg)](https://www.youtube.com/watch?v=4ymSV_Dot-U)  
-100Hzデータリンクのデモ動画
+
+Meridianはオープンソースプロジェクトとして2021年に開始し, 現在も様々なハードウェア, ソフトウェアへの対応を進めています.  
   
-[![dance](https://img.youtube.com/vi/Wfc9j4Pmr3E/0.jpg)](https://www.youtube.com/watch?v=Wfc9j4Pmr3E)  
-100Hzダンスのデモ動画
-<br>  
+# Getting started 1 : ESP32DevKit-C 単体動作確認
   
-## Meridian_LITE ボードについて  
-<img width="400" alt="lite_pinassign" src="./docs/images/Meridian_LITE_Board.jpg">  
+まず, ESP32DevKit-C のみを使用した最小限の構成で動作確認を行います.  
+  
+### 動作テスト用の準備物
+- [ESP32-DevKitC](https://www.espressif.com/en/products/devkits/esp32-devkitc/overview) (マイコンボード, ([Espressifの正規品](https://www.espressif.com/en/products/devkits/esp32-devkitc/overview)を使用してください)  
+- WiFi付きPC (Windows, Mac, Ubuntu のいずれか)  
+- WiFiアクセスポイント (2.4Ghz通信対応)  
+- USBケーブル (ESP32devkitCとPCを接続するためのもの)
+- [PlatformIO](https://platformio.org/) 開発およびボード書き込み用のアプリケーション  
+- python環境  
+  
+### PlatformIOのインストール  
+ご利用の環境に合わせてPlatformIOをインストールします.  
+参考URL:  
+https://qiita.com/JotaroS/items/1930f156aab953194c9a  
+https://platformio.org/  
+  
+### ESP32-DevKitC開発環境の導入
+PlatformIOを起動し, 「Platformes」の検索窓で「ESP32」を検索します.  
+  
+<img width="300" alt="GettingStarted_1" src="./docs/images/GettingStarted_1.png">
+  
+「Espressif 32」が見つかるので, バージョン「3.5.0」をインストールします.  
+新しいバージョン(4.x.x)だとwifi関連がうまく動かない可能性が高いです.  
+    
+### ファイルをDLする  
+<img width="400" alt="GettingStarted_Download" src="./docs/images/GettingStarted_Download.png">
+このサイトの右上の「CODE」からzip形式などを選択してDLして適切な場所に解凍します.  
+(もちろんgit cloneなどでもかまいません. )  
+
+### フォルダを開く  
+VSCodeのファイルメニューから「ファイルでワークスペースをフォルダを開く...」を選択し, 先ほど準備したMeridian_LITE(Meridian_LITE-main)の中にある「Meridian_LITE_for_ESP32」→「Meridian_LITE_for_ESP32.code-workspace」を開きます.  
+必要なライブラリはファイルを開く際にVSCode上で自動でインストールされます.  
+
+#### keys.hの修正  
+keys.h内の  
+
+```
+#define AP_SSID "xxxxxx"             // アクセスポイントのAP_SSID  
+#define AP_PASS "xxxxxx"             // アクセスポイントのパスワード  
+#define SEND_IP "192.168.1.xx"       // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）  
+```
+  
+の部分について, 接続するWiFiの**2.4GhzのアクセスポイントのSSID**と**パスワード**を設定します.  
+(※ESP32-DevKitCは5Ghzには対応してません)  
+また, **通信相手となるPCのIPアドレス** も設定します.  
+<details>
+<summary>PCのIPアドレスの調べ方</summary>
+windows : ターミナルを開いてipconfigコマンド<br>
+ubuntu : ターミナルでip aコマンド<br>
+mac : 画面右上のwifiアイコンから"ネットワーク"環境設定...<br>
+で確認できます.  
+</details>
+  
+#### config.hの修正  
+ESP32-DevKitC単独動作テスト用に, config.hの設定を下記のように書き換えます.  
+  
+```config.h:102行目付近
+...
+// 各種ハードウェアのマウント有無
+#define MOUNT_SD      0      // SDカードリーダーの有無 (0:なし, 1:あり)
+#define MOUNT_IMUAHRS NO_IMU // IMU/AHRSの搭載 NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS
+#define MOUNT_PAD     PC     // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
+
+// 動作モード
+#define MODE_ESP32_STANDALONE 1 // ESP32をボードに挿さず動作確認（0:NO, 1:YES）
+#define MODE_UDP_RECEIVE      1 // PCからのデータ受信（0:OFF, 1:ON, 通常は1）
+#define MODE_UDP_SEND         1 // PCへのデータ送信（0:OFF, 1:ON, 通常は1）
+...
+```
+  
+### ビルドの確認とESP32-DevKitCへのアップロード（書き込み）  
+
+#### ビルドの確認
+VSCodeの画面左下の**チェックマークのボタン**を押すと, ビルドが行われます.  
+押下して「====== [SUCCESS] Took x.xx seconds」と表示されればビルド成功です.  
+  
+<img width="600" alt="GettingStarted_9" src="./docs/images/GettingStarted_9.png">
+  
+
+#### ESP32-DevKitCへのアップロード
+PCとESP32-DevKitCをUSBケーブルで接続し, チェックマークの隣の**矢印ボタン**を押すと必要なコードがESP32にアップロードされます.  
+  
+<details>
+<summary>ESP32へのアップロードがうまくいかない場合</summary>
+アップロードが失敗する場合でも, 何度か行うことで成功する場合があるので試してみてください.  
+旧式のESP32DeckitCの場合, アップロード開始時にENボタンを押すことでうまくいく場合もあります.  
+また, ESP32DeckitCのENとGNDの間に10uFのセラミックコンデンサを入れると, ENボタンを押さずとも書き込みができるようになる場合があります.  
+</details>
+  
+### ESP32-DevKitCのIPアドレス確認  
+VSCodeの画面左下の**コンセントマークのボタン**もしくは「ターミナル」のタブで、シリアルモニタを開きます.  
+ESP32-DevKitC本体の**ENボタン**を押すと、ESP32が再起動し, 下記のようなメッセージが表示されます.  
+  
+```
+...
+WiFi connecting to => ********
+WiFi successfully connected.
+PC's IP address target => 192.168.**.**
+ESP32's IP address => 192.168.xx.xx
+
+-) Meridian -LITE- system on ESP32 now flows. (-
+```
+**ESP32's IP address**の番号を書き留めておきます.  
+(見逃した場合はESP32をリセットすればまた表示されます.)  
+  
+### Meridian consoleの導入と起動
+#### Meridian consoleの導入  
+PC側のMeridain通信ソフトの一つである[Meridian console](https://github.com/Ninagawa123/Meridian_console)を起動します.    
+ダウンロードや導入の方法については下記のURLに従ってください.  
+https://github.com/Ninagawa123/Meridian_console  
+
+さきほど書き留めた**ESP32's IP address**が必要となります.  
+
+#### Meridian consoleの起動  
+Meridian consoleを起動し, ESP32DevKit-Cの電源が入っていると自動的に通信が始まります.  
+通信が成功すると, Meridian consoleが動きます.  
+画面下部の **PCframe**と**BOARDframe**がカウントアップされ, **99~100Hz**の表記があれば通信成功です.  
+  
+<img width="600" alt="GettingStarted_Download" src="./docs/images/GettingStarted_12.png">
+
+<details>
+<summary>通信ができない場合</summary>
+- Meridian consoleを起動した状態で, ESP32DevKit-Cを再起動してください.  
+- 送信, 受信のIPアドレスを確認してください.特に3番目の番号など.  
+- wifiルータが2.4Ghz対応で、2.4Ghz用のSSIDに接続していることを確認してください.  
+- config.hの内容を確認してください.  
+</details>
+  
+# Getting started 2 : KHR-3HV   
+近藤科学の小型二足ロボットキットKHR-3HVへのMeridian Board搭載を例に, 導入方法を説明します.  
+  
+### KHR-3HVのMeridian動作テストの準備物
+- 前述の動作テスト用の準備物
+- KHR-3HV本体
+- 電源(KHR付属バッテリー, 安定化電源等)
+- Meridian Board - LITE -
+  
+## Meridian Boaard - LITE - について  
+<img width="400" alt="lite_pinassign" src="./docs/images/Meridian_LITE_Board.png">  
   
 "Meridian board -LITE-" はサーボ制御用の半二重通信回路2系統とSPI,I2Cなどの基本的な入出力ピンを備えたボードです.  
-ESP32devkitCを搭載し, 当リポジトリのスクリプトを使用することにより, 手軽に100Hzの更新頻度をもつデジタルツインのロボットを実現することができます.  
-<br>
-  
-少量ですが完成品ボードの頒布もございます。  
-<br>
-[https://1985b.booth.pm/](https://1985b.booth.pm/)
-  
+
+### 制作もしくは入手方法　　
+- [回路図を公開](docs/Meridian_Board_LITE_schema.pdf)しており, 自作することが可能です.  
+- 完成品ボードの頒布もあります. [https://1985b.booth.pm/](https://1985b.booth.pm/)  
+    
+### Boaard と ESP32DevKit-Cのドッキング  
+
+<img width="400" alt="GettingStarted_Download" src="./docs/images/GettingStarted_13.png">
+
+上図のようにESP32DevkitCのUSBコネクタがMeridian -LITE-のロゴ側を向くように搭載してください.  
+ボードとPCの接続は, ESP32DevkitCのUSBをそのまま使用します.    
   
 ### ピンアサイン    
-<img width="800" alt="lite_pinassign" src="./docs/Meridian_Board_LITE_pinassign.png">
+<img width="800" alt="lite_pinassign" src="./docs/Meridian_Board_LITE_pinassign_20250407.png">
 ピンアサインは上記の通りです. <br>
-IOがESP32DevkitCのピン番号に該当しているので, ESP32Devkitのデータシート等を参考に使用することができます.   
+IOがESP32DevkitCのピン番号に該当しています.  
 またSPIやSDカードを使用しない場合は, アサインされたピンをGNDと組み合わせるなどで他の役割を与えることもできます.   
-Fとなっている箇所は未接続のピンとなっています. 背面で好きな箇所と導線をはんだ付けすることで自由に機能を与えることができます.  
-搭載するESP32DevkitCはUSBコネクタがMeridian -LITE-のロゴ側を向くように設置してください.  
+Fとなっている箇所は未接続のピンとなっています. ESP32DevkitCのデータシート等を参考に背面で好きな箇所と導線をはんだ付けすることで自由に機能を与えることができます.  
   
-特にサーボコネクタを逆やズラして刺すと半二重回路に負荷がかかりボード上のICが一発で壊れるので, 接続は十分ご注意ください.   
-<br>  
-  
+特にサーボコネクタを逆やズラして刺すと半二重回路に負荷がかかりボード上のICが一発で壊れます. 接続は十分ご注意ください.  
+    
 ### KHR-3HVへのマウントと機能拡張  
 <img width="400" alt="Mount_KHR37" src="./docs/images/Meridian_LITE_Mount_KHR3.png">
 
 上図のようにKHR-3HVのランドセルに本体無改造で固定することができます.  
-ランドセル側とボードの間に1~2mm程度のスペーサーが入れるとボード底面の干渉を回避できます.  
-秋月電子で販売のSDカードホルダ[AE-MICRO-SD-DIP]をSPI端子にそのまま接続することができます. その場合は, SDカードホルダ側にメスのピンヘッダを取り付けてください.   
-９軸センサについては秋月で販売のBNO055[AE-BNO055-BO]をI2Cに接続することを標準としています.  
-またリモコン受信機KRR-5FHも内臓できます. 左下のビス穴のみを使いた簡易固定ができます.  
-蓋もギリギリですが閉じることができます.  
-Wiiリモコンにも対応しており, すぐに使うことができます.    
-<br>
-
-## Meridian_LITE インストール方法  
-Meridian LITE のボードを使う方法です.   
-開発環境として, VScodeとPlatformIOを使用します.  
-※ArduinoIDEを使用した場合, ESP32のWIFIライブラリの関係で無線通信が低速になる可能性が高いです.  
-<br>
-
-### PlatformIOのインストール  
-ご利用の環境にPlatformIOをインストールしてください.  
-参考URL  
-https://qiita.com/JotaroS/items/1930f156aab953194c9a  
-https://platformio.org/  
-<br>
-
-### 開発環境のインストール  
-PlatformIOを起動し, 「Platformes」の検索窓で「ESP32」を検索します.  
+ランドセルとボードの間に1~2mm程度のスペーサーを入れると, ボード底面の干渉を回避できます.  
+ピンアサイン図を参考に, サーボコネクタを接続してください.  
+サーボの信号線（コネクタの羽）が内側を向くように接続してください.  
+電源ケーブルについては, 初回のテスト時は接続不要です.(USB経由の5Vで動作します)  
   
-<img width="300" alt="GettingStarted_1" src="./docs/images/GettingStarted_1.png">
+<details>
+<summary>周辺機器の拡張について</summary>
+秋月電子で販売のSDカードホルダ[AE-MICRO-SD-DIP]をSPI端子にそのまま接続することができます. その場合は, SDカードホルダ側にメスのピンヘッダを取り付けてください.<br>
+９軸センサについては秋月で販売のBNO055[AE-BNO055-BO]をI2Cに接続することを標準としています.<br>
+またリモコン受信機KRR-5FHも内臓できます. 左下のビス穴のみを使いた簡易固定ができます.<br>
+蓋もギリギリですが閉じることができます.<br>
+Wiiリモコンにも対応しており, config.hの#define MOUNT_PAD WIIMOTEと設定変更することですぐに使うことができます.<br>
+</details>
+  
+### config.hの修正  
+config.hの内容について, お手持ちのKHR-3HVの状況にあわせ適度に更新してください.  
+設定の内容については, コード内にコメントを記しています.  
+主な修正点は下記の通りです.  
 
-<br>「Espressif 32」が見つかるので, バージョン「3.5.0」をインストールします.  
-新しいバージョン(4.x.x)だとwifi関連がうまく動かない可能性が高いです.  
-<br>
-  
-### ファイルをDLする  
-<img width="400" alt="GettingStarted_Download" src="./docs/images/GettingStarted_Download.png">
-このサイトの右上の「CODE」からzip形式などを選択してDLし, 適切な場所に解凍, 展開してください.  
-慣れてている方はもちろんgit cloneなどでもかまいません.  
-ファイル構造は以下の通りです.  
-<br>
-  
 ```  
-Meridian_LITE_for_ESP32
-│
-├── lib
-│   ├── IcsClass_V210  // KONDOサーボのライブラリ
-│   ├── wiimote        // WIIリモコンのライブラリ
-│   └── gs2d           // 今後対応予定のサーボライブラリ
-│
-├── src
-│   ├── config.h       // Meridianの主なconfig設定
-│   ├── keys.h         // wifiのSSIDやパスワード
-│   ├── main.cpp       // メインプログラム
-│   ├── main.h         // メインプログラムのヘッダファイル
-│   │
-│   ├── mrd_eeprom.h   // EEPROM関連
-│   ├── mrd_move.h     // モーション設定
-│   ├── mrd_disp.h     // メッセージ関連
-│   ├── mrd_bt_pad.h   // リモコンパッド関連
-│   ├── mrd_sd.h       // SDメモリ関連
-│   ├── mrd_servo.h    // サーボ処理
-│   ├── mrd_wifi.h     // WiFi関連
-│   ├── mrd_wire0.h    // I2C関連
-│   ├── mrd_util.h     // 細かい関数
-│   └── mrd_module     // モジュールディレクトリ
-│       ├── mv_firstIK.h    // 簡易IK関連（未定義）
-│       ├── mv_motionplay.h // モーション再生（未定義）
-│       ├── sv_dxl2.h       // ダイナミクセル制御（未定義）
-│       ├── sv_ftbrx.h      // 双葉サーボ制御（未定義）
-│       ├── sv_ftc.h        // Feetechサーボ制御（未定義）
-│       └── sv_ics.h        // KONDOサーボ制御  
-│
-├── .clang-format  // VSCODEでのコードフォーマット設定ファイル
-└── platformio.ini
-  
-```  
-  
-### フォルダを開く  
-VSCodeのファイルメニューから「フォルダを開く...」を選択し, 展開したファイルの中にある「Meridian_LITE_for_ESP32」を開きます.  
-<br>
-  
-### ライブラリのインストール  
-必要なライブラリはVSCode上で自動でインストールされます.  
-もし, 自動でインストールされない場合には, 下記を参考に必要なモジュールをインストールしてください.  
-<br>
+...
+// 各種ハードウェアのマウント有無
+#define MOUNT_SD      1      // SDカードリーダーの有無 (0:なし, 1:あり)
+#define MOUNT_IMUAHRS BNO055 // IMU/AHRSの搭載 NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS
+#define MOUNT_PAD     KRR5FH // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
 
-#### Meridianのライブラリを導入する   
-アリ頭のアイコンから「QUICK ACCESS」→「PIO Home」→「Open」を開きます.  
-右画面PIO Homeのタグの左メニューから「Libraries」を選択します.  
-「Search libraries」となっている検索枠に「Meridian」と入力し, 「Meridian by Ninagawa123」を選択して「Add to Project」を押します. バージョンは0.1.0以上を使用してください.  
-次に開くウインドの「Select a project」で今回のプロジェクト（Meridian_LITE_for_ESP32）を選択し, Addボタンを押します.  
+// 動作モード
+#define MODE_ESP32_STANDALONE 0 // ESP32をボードに挿さず動作確認（0:NO, 1:YES）
+#define MODE_UDP_RECEIVE      1 // PCからのデータ受信（0:OFF, 1:ON, 通常は1）
+#define MODE_UDP_SEND         1 // PCへのデータ送信（0:OFF, 1:ON, 通常は1）
+...
+
+// 各サーボ系統の最大サーボマウント数
+#define IXL_MAX 15 // L系統の最大サーボ数. 標準は15.
+#define IXR_MAX 15 // R系統の最大サーボ数. 標準は15.
+
+// L系統のサーボのマウントの設定
+int IXL_MT[IXL_MAX] = {... // サーボを設定している箇所に43, それ以外は0を設定.
+
+// R系統のサーボのマウントの設定
+int IXR_MT[IXR_MAX] = {... // サーボを設定している箇所に43, それ以外は0を設定.  
+...
+
+```
+
+#### ESP32-DevKitCへのアップロード
+PCとボードをUSBで接続し, 内容をマイコンにアップロードしてください.  
+USB経由で給電されシリアルモニタに起動時のステータスがメッセージとして表示されます.  
+これでボード側の準備が整いました.  
+
+#### Meridian consoleの起動  
+先ほどと同様に, Meridian consoleを起動してください.  
+  
+## 通信の確認  
+通信が始まると,画面下部の **PCframe**と**BOARDframe**がカウントアップされ, **99~100Hz**の表記があれば通信成功です.    
+<img width="400" alt="Meridian_console_py" src="./docs/images/GettingStarted_14.png">  
+今回はサーボを接続していますが, 初期状態では全サーボがトルクオフです.  ロボットの関節を手で動かすと, 現在の角度がMeridian consoleのスライダーに反映されます.  
+
+<details>
+<summary>動作がおかしい時</summary>
+<b>通信速度が100Hzにならない : </b><br>
+・WiFiルーターが近くにあることを確認してください.<br>
+・サーボが多すぎる場合に, 通信速度が100Hzに届かない場合があります.サーボ線や電源供給を確かめてください.<br>
+・KHR-3HVの場合, 応答しないサーボが1つでもあると通信速度が大きく低下します.<br>
+・サーボの通信速度が遅かったり, 接続するサーボが多すぎても100Hzを達成できない場合があります.<br>
+・サーボのマウント設定を左右1個ずつにするなども試してみてください.<br>
+・WIIリモコンを接続した際にも速度が低下します.これらは仕様です.<br>
+<br>
+<b>サーボの値がすごく暴れる : </b><br>
+・サーボケーブルが長すぎると通信が安定しません.<br>
+<br>
+<b>L系統もしくはR系統しか動かない :  </b><br>
+・半二重回路が故障している可能性があります.<br>
+・PlatformIO.iniでのピン設定が反映されていない可能性があります.<br>
+<br>
+<b>一部のサーボが反応しない : </b><br>
+なんらかの原因でサーボがファクトリーリセットなどを起こし, IDが0に書き変わったり, 通信設定が変更になってしまう場合があります.<br>  
+該当のサーボが反応しなくなるだけでなく, トルクが勝手にオンになったり, ID競合により他のサーボまで誤動作することもあります.<br>
+config.hで該当のサーボマウントを0に設定して再起動し, 問題箇所を特定してください.<br>
+<br>
+<b>PC連携時に数%の通信エラーが出る :  </b><br>
+原因１: 仕様の範囲内<br>
+特にサーボとのシリアル通信はESP32のスピードの限界ギリギリで動作しています.<br>
+数秒に1フレーム程度のエラーが1%未満発生する場合がありますが, 正常な動作で, これをソフトウェア的に補完しています.<br>
+原因２: サーボへの電力供給不足<br>
+サーボへの電源供給が不足していると, サーボとの通信が不安定になります. その場合はサーボに正しく電力を供給してください.<br>
+USBポートからの電力供給でもサーボが反応する場合もありますが, 反応しないサーボも多いです.<br>
+原因３: ボードの加熱<br>
+ESP32が発熱しすぎた場合も誤動作の原因となります.<br>  
+ESP32にヒートシンクをつけるのもよいですし, 扇風機で風を当てるのも効果的です.<br>
+原因４: ESP32へのBTリモコン接続<br>
+おまけ機能でWIIリモコンのESP32接続に対応していますが, 数%のエラーが発生します.(現時点での正常動作です.どなたか改善を!)<br>
+<br>
+<b>ESP32が不定期にリセットする :  </b><br>
+一時的な電力不足などにより使用中に強制リセットがかかる場合があります. ボードに十分な電力を供給してください.<br>  
+サーボの電量をボードの通信用USBケーブルから供給している場合は, サーボをトルクオンすることは難しいでしょう.<br>
+ボードのESP32の電源ソースにコンデンサを追加することでも, 電力不足によるリセットを軽減することができます.<br>
+</details>
+
+## サーボの設定の調整  
+サーボをオンにすると, USB給電の場合はおそらく電力不足となります.  
+また、サーボのトリムなどが未設定であるため, 初期位置があらぬ方向に設定されている可能性もあります.  
+ID紐付け、回転方向・トリム調整の仕組みは現在作成中です.  
+config.h内のコメントを参考に, 
+// 各サーボの内外回転プラスマイナス方向補正(1 or -1)  
+// 各サーボのトリム値(degree)  
+などを設定してください.  
+  
+## Unity版デモを実行する  
+Meridian_LITEとUnityを連携させることができます.  
+下記のリポジトリの内容をお試しください.  
+[https://github.com/Ninagawa123/Meridian_Unity/tree/main](https://github.com/Ninagawa123/Meridian_Unity/tree/main)  
+    
+<img width="400" alt="Meridian_Unity" src="./docs/images/Meridian_unity.png">
+  
+## ROS版デモを実行する  
+Meridian_TWINとUnityを連携させることができます.  
+下記のリポジトリより「ROS版デモを実行する」をお試しください.  
+[https://github.com/Ninagawa123/Meridian_TWIN/edit/main/README.md](https://github.com/Ninagawa123/Meridian_TWIN/edit/main/README.md)  
+  
+## リモコンの使用方法  
+**KRR-5FH/KRC5-FH**  
+config.hの「#define MOUNT_PAD KRR5FH」と設定してボードに書き込みます.  
+受信機のKRR-5FHはボードの**R系統に接続**します. KRC-5FHのペアリングは製品の説明書の通りです.  
+受信信号はMeridianに格納されるので, Meridian_console.pyでボタンの受信状況が確認できます.  
+  
+**WIIリモコン**  
+wiiリモコンはおまけ機能です. (Meridianの通信速度が若干低下します.)  
+config.hの「#define MOUNT_PAD WIIMOTE」と設定してボードに書き込み, 起動直後にWiiリモコンの1,2ボタンを両押しするとペアリングが確立します.ヌンチャクのレバーも左側のアナログ十字スティックとして機能します.  
+また、HOMEボタンがアナログスティックのキャリブレーション（リセット）として機能します.  
 <br>
   
-#### Adafruit_BNO055のライブラリを導入する  
-上記と同様手順で, 「Search libraries」となっている検索枠に「BNO055」と入力し, Adafruit BNO055を選択して「Add to Project」を押します.  
-<br>
+## バージョン更新履歴  
   
+#### 2024.08.18 v1.1.1  
+コードをモジュールに分割し, Meridian_TWIN v1.1.0 と同等の構成にしました.  
+命名規則を導入し, 大規模なリファクタリングを行いました.  
+コードについて, Meridian_TWIN v1.1.1 との共通部分を増やしました.  
+  
+#### 2024.08.19 v1.0.2  
+大幅なリファクタリングを施したv1.1.1のリリースにあたり, 旧版の最新版をv1.0.2 としました.  
+  
+#### 2023.09.15 v1.0.1  
+\#define ESP32_STDALONE 0 をconfig.hに追加し, 値を1に設定することでESP32単体で通信テストが行えるようにしました.
+その際, サーボ値は調べず, 代わりにL0番のサーボ値として+-30度のサインカーブを代入しつづけます. 
+  
+## トラブルシューティング    
+  
+### BNO055でデータが取得できない!  
+**原因: プルアップが必要です**  
+BNO_055とのI2C通信がうまくいかない場合は, 写真のように10kΩ程度の抵抗でプルアップすることでI2Cの通信品質が改善する場合があります.  
+<img width="400" alt="pullup" src="./docs/images/pullup.jpg">  
+  
+## その他の情報    
+コードの命名規則はLLVM準拠とし, 内容を "Meridian_LITE_for_ESP32/.clang-format" ファイルにコメントしています.    
+フローチャートもDocsにて公開していますので改造の際にご利用ください.      
+ライブラリの関数や変数表など, システムの詳細については以下のサイトがあります. 
+[https://ninagawa123.github.io/Meridian_info/](https://ninagawa123.github.io/Meridian_info/)  
+
+
+<details>
+<summary>ファイル構造</summary>
+  Meridian_LITE_for_ESP32<br>
+│<br>
+├── lib<br>
+│   ├── IcsClass_V210  // KONDOサーボのライブラリ<br>
+│   ├── wiimote        // WIIリモコンのライブラリ<br>
+│   └── gs2d           // 今後対応予定のサーボライブラリ<br>
+│<br>
+├── src<br>
+│   ├── config.h       // Meridianの主なconfig設定<br>
+│   ├── keys.h         // wifiのSSIDやパスワード<br>
+│   ├── main.cpp       // メインプログラム<br>
+│   ├── main.h         // メインプログラムのヘッダファイル<br>
+│   │<br>
+│   ├── mrd_eeprom.h   // EEPROM関連<br>
+│   ├── mrd_move.h     // モーション設定<br>
+│   ├── mrd_disp.h     // メッセージ関連<br>
+│   ├── mrd_bt_pad.h   // リモコンパッド関連<br>
+│   ├── mrd_sd.h       // SDメモリ関連<br>
+│   ├── mrd_servo.h    // サーボ処理<br>
+│   ├── mrd_wifi.h     // WiFi関連<br>
+│   ├── mrd_wire0.h    // I2C関連<br>
+│   ├── mrd_util.h     // 細かい関数<br>
+│   └── mrd_module     // モジュールディレクトリ<br>
+│       ├── mv_firstIK.h    // 簡易IK関連（未定義）<br>
+│       ├── mv_motionplay.h // モーション再生（未定義）<br>
+│       ├── sv_dxl2.h       // ダイナミクセル制御（未定義）<br>
+│       ├── sv_ftbrx.h      // 双葉サーボ制御（未定義）<br>
+│       ├── sv_ftc.h        // Feetechサーボ制御（未定義）<br>
+│       └── sv_ics.h        // KONDOサーボ制御  <br>
+│<br>
+├── .clang-format  // VSCODEでのコードフォーマット設定ファイル<br>
+└── platformio.ini<br>
+</details>
+
+
+  
+[![dance](https://img.youtube.com/vi/Wfc9j4Pmr3E/0.jpg)](https://www.youtube.com/watch?v=Wfc9j4Pmr3E)  
+100Hzダンスのデモ動画
+<br>  
+
+
+
+
 ### ESP32のシリアル通信ピンの設定  
 ESP32のデフォルトではSerial1のUARTシリアル通信が使う事ができないため, 設定を変更して使えるようにします.  
   
@@ -171,169 +408,8 @@ TX1を10番ピンから27番ピンに変更する設定をしておきます.
 シリアルモニタのスピードを115200bpsとし, 自動インストールするモジュールを指定しています.  
 またOTAという無線でのプログラム書き換え機能を削除してメモリ領域を増やす設定にしています.  
 <br>
-  
-### keys.hの修正  
-keys.h内の  
 
-```
-#define AP_SSID "xxxxxx"             // アクセスポイントのAP_SSID  
-#define AP_PASS "xxxxxx"             // アクセスポイントのパスワード  
-#define SEND_IP "192.168.1.xx"       // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）  
-```
-  
-を使用環境に合わせて変更してください.  
-送り先のPCのIPアドレスは,  
-windowsならターミナルを開いてipconfigコマンド  
-ubuntuならip aコマンド  
-macなら画面右上のwifiアイコンから"ネットワーク"環境設定...  
-で確認できます.  
-<br>
 
-### config.hの修正  
-config.hの内容について, お手持ちの環境にあわせ適度に更新してください.  
-設定の内容については, コード内にコメントを記しています.  
-主な修正点は下記の通りです.  
 
-```  
-#define MOUNT_SD  1  
-→ SDリーダーの搭載 (0:なし, 1:あり)  
-  
-#define MOUNT_IMUAHRS 1  
-→ 6軸or9軸センサーの搭載 (0:なし, 1:BNO055, 2:MPU6050(未実装))  
-  
-// JOYPAD関連設定  
-#define MOUNT_PAD KRR5FH (KHR-3HV標準のリモコン)  
-#define MOUNT_PAD WIIMOTE (WIIリモコン, Meridianの通信速度が若干低下します.)  
-  
-// 各サーボのマウントの設定  
-サーボを搭載しているIDにメーカーの番号を割り振ります. ※現在は43: KONDOのみ対応  
-  
-// 各サーボの内外回転プラスマイナス方向補正(1 or -1)  
-// 各サーボのトリム値(degree)  
-サーボのトリム値を設定します. ※トリム調整機能は未搭載.  
-```
-  
-<br>
 
-## ビルドとアップロード  
-<img width="600" alt="GettingStarted_9" src="./docs/images/GettingStarted_9.png">
-
-画面左下のチェックマークを押すと, ビルドが行われます.  
-押下して「====== [SUCCESS] Took x.xx seconds」と表示されればビルド成功です.  
-  
-PCとESP32をUSBケーブルで接続し, 矢印ボタンを押すとESP32の内容が上書きされます.  
 <br>
-  
-##### ESP32のアップロードがうまくいかない場合  
-アップロードが失敗する場合でも, 何度か行うことで成功する場合があるので試してみてください.  
-アップロード開始時にESP32DeckitCのENボタンを押すことでアップロードがうまくいく場合もあります.  
-また, ESP32DeckitCのENとGNDの間に10uFのセラミックコンデンサを入れると, ENボタンを押さずとも書き込みができるようになる場合があります.
-<br>
-  
-## ボードとロボットの起動  
-これでボード側の準備が整いました.  
-PCとボードをUSBで接続した状態でボードを起動すると,シリアルモニタに起動時のステータスがメッセージとして表示されます.  
-ただし,PCとの連携にはPC側でMeridian Consolenを立ち上げておくなどの準備が必要になります.  
-<br>
-  
-## Meridian consoleを実行する  
-Meridianで受け取るデータを表示できるコンソールを用意しました.python3が使える環境で実行可能です.
-下記のリポジトリより, PC側の設定を行い, 実行してください.
-https://github.com/Ninagawa123/Meridian_console
-<img width="400" alt="Meridian_console_py" src="./docs/images/Meridian_console_py.png">
-  
-<br>
-  
-## Unity版デモを実行する    
-Meridian_LITEとUnityを連携させることができます.  
-下記のリポジトリの内容をお試しください.  
-[https://github.com/Ninagawa123/Meridian_Unity/tree/main](https://github.com/Ninagawa123/Meridian_Unity/tree/main)  
-  
-<img width="400" alt="Meridian_Unity" src="./docs/images/Meridian_unity.png">
-  
-<br>
-
-## ROS版デモを実行する    
-Meridian_TWINとUnityを連携させることができます.  
-下記のリポジトリより「ROS版デモを実行する」をお試しください.  
-[https://github.com/Ninagawa123/Meridian_TWIN/edit/main/README.md](https://github.com/Ninagawa123/Meridian_TWIN/edit/main/README.md)  
-<br>  
-  
-## リモコンの使用方法  
-**KRR-5FH/KRC5-FH**  
-config.hの「#define MOUNT_PAD KRR5FH」と設定してボードに書き込みます.  
-受信機のKRR-5FHはボードの**R系統に接続**します. KRC-5FHのペアリングは製品の説明書の通りです.  
-受信信号はMeridianに格納されるので, Meridian_console.pyでボタンの受信状況が確認できます.  
-  
-**WIIリモコン**  
-v1.1.1 からwiiリモコンをおまけ機能として復活しました. (Meridianの通信速度が若干低下します.)  
-config.hの「#define MOUNT_PAD WIIMOTE」と設定してボードに書き込み, 起動直後にWiiリモコンの1,2ボタンを両押しするとペアリングが確立します.ヌンチャクのレバーも左側のアナログ十字スティックとして機能します.  
-また、HOMEボタンがアナログスティックのキャリブレーション（リセット）として機能します.  
-<br>
-  
-## バージョン更新履歴  
-  
-#### 2024.08.18 v1.1.1  
-コードをモジュールに分割し, Meridian_TWIN v1.1.0 と同等の構成にしました.  
-命名規則を導入し, 大規模なリファクタリングを行いました.  
-コードについて, Meridian_TWIN v1.1.1 との共通部分を増やしました.  
-  
-#### 2024.08.19 v1.0.2  
-大幅なリファクタリングを施したv1.1.1のリリースにあたり, 旧版の最新版をv1.0.2 としました.  
-  
-#### 2023.09.15 v1.0.1  
-\#define ESP32_STDALONE 0 をconfig.hに追加し, 値を1に設定することでESP32単体で通信テストが行えるようにしました.
-その際, サーボ値は調べず, 代わりにL0番のサーボ値として+-30度のサインカーブを代入しつづけます. 
-  
-## トラブルシューティング  
-
-### WiFiが繋がらない!  
-
-ESP32は2.4GHzにしか対応していません.  
-5Ghzにしか対応していないアクセスポイントに接続しようとしていないかご確認ください.  
-またESP32にPC側のIPアドレス, PC側にESP32の正しいIPアドレスを設定する必要があります.  
-  
-### サーボ通信が片方しか使えない!  
-  
-**原因１: ESP32のピン設定が反映されてていない**  
-ESP32DeckitCはデフォルト状態ではMeridianBoard-LITE-でシリアルを2チャンネル使うことはできません.  
-上記「ESP32のシリアル通信ピンの設定」から, ESP32DevkitCのピン設定を確認してください. PlatformIO側の自動更新などで設定が戻ることもあるかもしれません.  
-**2024.05.08追記：ピンアサインの設定方法が変更になったようです。対応方法は[こちら](https://qiita.com/Ninagawa123/items/8ce2d55728fd5973087d)をご覧ください。**  
-  
-**原因２: 半二重回路の故障**  
-サーボと接続する半二重回路は繊細で, サーボコネクタの逆挿しやズラし挿しなどで故障してしまします.  
-ちょっと大変ですが表面実装を修理できる道具やスキルがある方はご自身で修理することも可能です. 修理用のチップをBOOTHにて頒布しています.   
-  
-### 一部のサーボが反応しない!  
-なんらかの原因でサーボがファクトリーリセットなどを起こし, IDが0に書き変わったり, 通信設定が変更になってしまう場合があります.  
-該当のサーボが反応しなくなるだけでなく, トルクが勝手にオンになったり, ID競合により他のサーボまで誤動作することもあります.  
-config.hで該当のサーボマウントを0に設定して再起動し, 問題箇所を特定してください.  
-  
-### 通信速度が100Hzにならない!  
-サーボが多すぎる場合に, 通信速度が100Hzに届かない場合があります.サーボ線や電源供給を確かめてください.  
-KHR-3HVの場合, 応答しないサーボが1つでもあると通信速度が大きく低下します.  
-またサーボの通信速度が遅かったり, 接続するサーボが多すぎても100Hzを達成できない場合があります.  
-WIIリモコンを接続した際にも速度が低下します.これらは仕様です.  
-  
-### BNO055でデータが取得できない!  
-**原因: プルアップが必要です**  
-BNO_055とのI2C通信がうまくいかない場合は, 写真のように10kΩ程度の抵抗でプルアップすることでI2Cの通信品質が改善する場合があります.  
-<img width="400" alt="pullup" src="./docs/images/pullup.jpg">  
-  
-### PC連携時に数%の通信エラーが出る!  
-**原因１: 仕様の範囲内**  
-特にサーボとのシリアル通信はESP32のスピードの限界ギリギリで動作しています.  
-数秒に1フレーム程度のエラーが1%未満発生する場合がありますが, 正常な動作で, これをソフトウェア的に補完しています.  
-**原因２: サーボへの電力供給不足**  
-サーボへの電源供給が不足していると, サーボとの通信が不安定になります. その場合はサーボに正しく電力を供給してください.  
-USBポートからの電力供給でもサーボが反応する場合もありますが, 反応しないサーボも多いです.  
-**原因３: ボードの加熱**  
-ESP32が発熱しすぎた場合も誤動作の原因となります.  
-ESP32にヒートシンクをつけるのもよいですし, 扇風機で風を当てるのも効果的です.  
-**原因４: ESP32へのBTリモコン接続**  
-おまけ機能でWIIリモコンのESP32接続に対応していますが, 数%のエラーが発生します.(現時点での正常動作です.どなたか改善を!)  
-  
-### ESP32が不定期にリセットする!  
-一時的な電力不足などにより使用中に強制リセットがかかる場合があります. ボードにも十分な電力を供給してください.  
-サーボの電量をボードの通信用USBケーブルから供給している場合は, サーボをトルクオンすることは難しいでしょう.  
-ボードのESP32の電源ソースにコンデンサを追加することでも, 電力不足によるリセットを軽減することができます.  
