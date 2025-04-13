@@ -341,7 +341,7 @@ BNO_055とのI2C通信がうまくいかない場合は, 写真のように10kΩ
 ## その他の情報    
 コードの命名規則はLLVM準拠とし, 内容を "Meridian_LITE_for_ESP32/.clang-format" ファイルにコメントしています.    
 フローチャートもDocsにて公開していますので改造の際にご利用ください.      
-ライブラリの関数や変数表など, システムの詳細については以下のサイトがあります. 
+ライブラリの関数や変数表など, システムの詳細については以下のサイトがあります.  
 [https://ninagawa123.github.io/Meridian_info/](https://ninagawa123.github.io/Meridian_info/)  
 
 
