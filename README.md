@@ -222,8 +222,8 @@ config.hの内容について, お手持ちのKHR-3HVの状況にあわせ適度
 ```  
 ...
 // 各種ハードウェアのマウント有無
-#define MOUNT_SD      1      // SDカードリーダーの有無 (0:なし, 1:あり)
-#define MOUNT_IMUAHRS BNO055 // IMU/AHRSの搭載 NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS
+#define MOUNT_SD      0      // SDカードリーダーの有無 (0:なし, 1:あり)
+#define MOUNT_IMUAHRS NO_IMU // IMU/AHRSの搭載 NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS
 #define MOUNT_PAD     KRR5FH // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
 
 // 動作モード
