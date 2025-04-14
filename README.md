@@ -25,9 +25,9 @@ Meridian_LITEの動作確認にあたり,
 - Arduinoを使った電子工作の経験 (LチカレベルでOK)  
 - pythonのコードを実行した経験 (コーディングの知識は不要)  
   
-というごく基本的な知識が必要となります.  
-もしわからない部分がある人はこの機会に入門書や入門動画などで情報を得てください.  
-それ以外の部分はなるべく全て解説するようにしています.  
+など, ごく初歩的な前提知識が必要となります.  
+もしわからない部分がある方はこの機会にぜひ入門書や入門動画などで情報を得てください.  
+それ以外の部分はなるべく全て解説するようにします.  
     
 ## 動作テスト用の準備物
 - [ESP32-DevKitC](https://www.espressif.com/en/products/devkits/esp32-devkitc/overview) (マイコンボード, ([Espressifの正規品](https://www.espressif.com/en/products/devkits/esp32-devkitc/overview)を使用してください)  
@@ -148,11 +148,11 @@ Meridian consoleを起動し, ESP32DevKitCの電源が入っていると自動�
 
 <details>
 <summary>通信ができない場合</summary>
-- Meridian consoleを起動した状態で, ESP32DevKitCを再起動してください.  
-- 送信, 受信のIPアドレスを確認してください.特に3番目の番号など.  
-- wifiルータが2.4Ghz対応で, 2.4Ghz用のSSIDに接続していることを確認してください.  
-- config.hの内容を確認してください.  
-- windowsの場合, firewall設定の変更が必要とされる場合があります.  
+- Meridian consoleを起動した状態で, ESP32DevKitCを再起動してください.<br>
+- 送信, 受信のIPアドレスを確認してください.特に3番目の番号など.<br>
+- wifiルータが2.4Ghz対応で, 2.4Ghz用のSSIDに接続していることを確認してください.<br>
+- config.hの内容を確認してください.<br>
+- windowsの場合, firewall設定の変更が必要とされる場合があります.<br>
 </details>
   
 <br><hr>  
@@ -202,8 +202,11 @@ Fとなっている箇所は未接続のピンとなっています. ESP32Devkit
   
 <details>
 <summary>周辺機器の拡張について</summary>
+<b>SDカード:</b><br>
 秋月電子で販売のSDカードホルダ[AE-MICRO-SD-DIP]をSPI端子にそのまま接続することができます. その場合は, SDカードホルダ側にメスのピンヘッダを取り付けてください.<br>
-９軸センサについては秋月で販売のBNO055[AE-BNO055-BO]をI2Cに接続することを標準としています.<br>
+<b>９軸センサ:</b><br>
+秋月で販売のBNO055[AE-BNO055-BO]をI2Cに接続することを標準としています.<br>
+<b>リモコン:</b><br>
 またリモコン受信機KRR-5FHも内臓できます. 左下のビス穴のみを使いた簡易固定ができます.<br>
 蓋もギリギリですが閉じることができます.<br>
 Wiiリモコンにも対応しており, config.hの#define MOUNT_PAD WIIMOTEと設定変更することですぐに使うことができます.<br>
