@@ -20,6 +20,14 @@ Meridianはオープンソースプロジェクトとして2021年に開始し, 
   
 まず, ESP32DevKitC のみを使用した最小限の構成で動作確認を行います.  
   
+## 導入の前提となる知識  
+Meridian_LITEの動作確認にあたり,  
+- Arduinoを使った電子工作の経験がある(LチカレベルでOK)  
+- pythonのコードを実行したことがある(コーディングの知識は不要)  
+というごく基本的な知識が必要となります.  
+もしわからない部分がある人はこの機会に入門書や入門動画などで情報を得てください.  
+それ以外の部分はなるべく全て解説するようにしています.  
+    
 ## 動作テスト用の準備物
 - [ESP32-DevKitC](https://www.espressif.com/en/products/devkits/esp32-devkitc/overview) (マイコンボード, ([Espressifの正規品](https://www.espressif.com/en/products/devkits/esp32-devkitc/overview)を使用してください)  
 - WiFi付きPC (Windows, Mac, Ubuntu のいずれか)  
