@@ -103,11 +103,23 @@ void setup() {
   // マウントされたサーボIDの表示
   mrd_disp.servo_mounts_2lines(sv);
 
-  // EEPROMの開始, ダンプ表示
-  mrd_eeprom_init(EEPROM_SIZE);                                   // EEPROMの初期化
-  mrd_eeprom_dump_at_boot(EEPROM_DUMP, EEPROM_STYLE);             // 内容のダンプ表示
-  mrd_eeprom_write_read_check(mrd_eeprom_make_data_from_config(), // EEPROMのリードライトテスト
-                              CHECK_EEPROM_RW, EEPROM_PROTECT, EEPROM_STYLE);
+  // EEPROMの開始
+  Serial.print("Initializing EEPROM... ");
+  if (mrd_eeprom_init(EEPROM_SIZE)) { // EEPROMの初期化
+    Serial.println("OK");
+  } else {
+    Serial.println("Failed");
+  }
+
+  // EEPROMのへの内容書き込み
+  if (EEPROM_SET) {
+    mrd_eeprom_make_data_from_config(sv); // 書き込みデータの作成
+  }
+
+  // EEPROMの内容ダンプ表示
+  mrd_eeprom_dump_at_boot(EEPROM_DUMP, EEPROM_STYLE, Serial); //
+  // mrd_eeprom_write_read_check(mrd_eeprom_make_data_from_config(), // EEPROMのリードライトテスト
+  //                             CHECK_EEPROM_RW, EEPROM_PROTECT, EEPROM_STYLE);
 
   // SDカードの初期設定とチェック
   mrd_sd_init(MOUNT_SD, PIN_CHIPSELECT_SD);

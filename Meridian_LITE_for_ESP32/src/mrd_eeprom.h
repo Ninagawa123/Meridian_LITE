@@ -25,29 +25,43 @@ UnionEEPROM eeprom_read_data;  // EEPROM読み込み用
 /// @param a_eeprom_size EEPROMのバイト長
 /// @return 初期化が成功すればtrue, 失敗ならfalseを返す.
 bool mrd_eeprom_init(int a_eeprom_size) {
-  Serial.print("Initializing EEPROM... ");
   if (EEPROM.begin(a_eeprom_size)) {
-    Serial.println("OK.");
     return true;
   } else {
-    Serial.println("Failed.");
   }
   return false;
 }
 
 /// @brief config.hにあるサーボの諸設定からEEPROM格納用の配列データを作成する.
 /// @return config.hから作成したEEPROM格納用の配列データを返す.
-UnionEEPROM mrd_eeprom_make_data_from_config() {
+// UnionEEPROM mrd_eeprom_make_data_from_config() {
+//   UnionEEPROM array_tmp = {0};
+//   for (int i = 0; i < 15; i++) {
+//     // 各サーボのマウントありなし（0:サーボなし, +:サーボあり順転, -:サーボあり逆転）
+//     // 例: IXL_MT[20] = -21; → FUTABA_RSxTTLサーボを逆転設定でマウント
+//     array_tmp.saval[0][20 + i * 2] = short(sv.ixl_mount[i] * sv.ixl_cw[i]);
+//     array_tmp.saval[0][50 + i * 2] = short(sv.ixr_mount[i] * sv.ixr_cw[i]);
+//     // 各サーボの直立デフォルト値 degree
+//     array_tmp.saval[1][21 + i * 2] = mrd.float2HfShort(sv.ixl_trim[i]);
+//     array_tmp.saval[1][51 + i * 2] = mrd.float2HfShort(sv.ixr_trim[i]);
+//   };
+//   return array_tmp;
+// }
+
+/// @brief サーボ設定構造体からEEPROM格納用の配列データを作成する
+/// @param a_sv サーボ設定を保持する構造体
+/// @return EEPROM格納用の配列データ（UnionEEPROM型）
+UnionEEPROM mrd_eeprom_make_data_from_config(const ServoParam &a_sv) {
   UnionEEPROM array_tmp = {0};
   for (int i = 0; i < 15; i++) {
-    // 各サーボのマウントありなし（0:サーボなし, +:サーボあり順転, -:サーボあり逆転）
-    // 例: IXL_MT[20] = -21; → FUTABA_RSxTTLサーボを逆転設定でマウント
-    array_tmp.saval[0][20 + i * 2] = short(sv.ixl_mount[i] * sv.ixl_cw[i]);
-    array_tmp.saval[0][50 + i * 2] = short(sv.ixr_mount[i] * sv.ixr_cw[i]);
-    // 各サーボの直立デフォルト値 degree
-    array_tmp.saval[1][21 + i * 2] = mrd.float2HfShort(sv.ixl_trim[i]);
-    array_tmp.saval[1][51 + i * 2] = mrd.float2HfShort(sv.ixr_trim[i]);
-  };
+    // 各サーボのマウント有無と方向（正転・逆転）
+    array_tmp.saval[0][20 + i * 2] = short(a_sv.ixl_mount[i] * a_sv.ixl_cw[i]);
+    array_tmp.saval[0][50 + i * 2] = short(a_sv.ixr_mount[i] * a_sv.ixr_cw[i]);
+
+    // 各サーボの直立デフォルト角度（degree → 半精度float short）
+    array_tmp.saval[1][21 + i * 2] = mrd.float2HfShort(a_sv.ixl_trim[i]);
+    array_tmp.saval[1][51 + i * 2] = mrd.float2HfShort(a_sv.ixr_trim[i]);
+  }
   return array_tmp;
 }
 
@@ -66,24 +80,24 @@ UnionEEPROM mrd_eeprom_read() {
 /// @param a_data EEPROM用の配列データ.
 /// @param a_bhd ダンプリストの表示形式.(0:Bin, 1:Hex, 2:Dec)
 /// @return 終了時にtrueを返す.
-bool mrd_eeprom_dump_to_serial(UnionEEPROM a_data, int a_bhd) {
+bool mrd_eeprom_dump_to_serial(UnionEEPROM a_data, int a_bhd, HardwareSerial &a_serial) {
   int len_tmp = EEPROM.length(); // EEPROMの長さ
-  Serial.print("EEPROM Length ");
-  Serial.print(len_tmp); // EEPROMの長さ表示
-  Serial.println("byte, 16bit Dump;");
+  a_serial.print("EEPROM Length ");
+  a_serial.print(len_tmp); // EEPROMの長さ表示
+  a_serial.println("byte, 16bit Dump;");
   for (int i = 0; i < 270; i++) // 読み込むデータはshort型で作成
   {
     if (a_bhd == 0) {
-      Serial.print(a_data.sval[i], BIN);
+      a_serial.print(a_data.sval[i], BIN);
     } else if (a_bhd == 1) {
-      Serial.print(a_data.sval[i], HEX);
+      a_serial.print(a_data.sval[i], HEX);
     } else {
-      Serial.print(a_data.sval[i], DEC);
+      a_serial.print(a_data.sval[i], DEC);
     }
     if ((i == 89) or (i == 179) or (i == 269)) {
-      Serial.println();
+      a_serial.println();
     } else {
-      Serial.print("/");
+      a_serial.print("/");
     }
   }
   return true;
@@ -93,9 +107,9 @@ bool mrd_eeprom_dump_to_serial(UnionEEPROM a_data, int a_bhd) {
 /// @param a_do_dump 実施するか否か.
 /// @param a_bhd ダンプリストの表示形式.(0:Bin, 1:Hex, 2:Dec)
 /// @return 終了時にtrueを返す.
-bool mrd_eeprom_dump_at_boot(bool a_do_dump, int a_bhd) {
+bool mrd_eeprom_dump_at_boot(bool a_do_dump, int a_bhd, HardwareSerial &a_serial) {
   if (a_do_dump) {
-    mrd_eeprom_dump_to_serial(mrd_eeprom_read(), a_bhd);
+    mrd_eeprom_dump_to_serial(mrd_eeprom_read(), a_bhd, a_serial);
     return true;
   }
   return false;
@@ -157,7 +171,7 @@ bool mrd_eeprom_write_read_check(UnionEEPROM a_write_data, bool a_do, bool a_pro
 
   // EEPROM書き込みを実行
   Serial.println("Try to write EEPROM: ");
-  mrd_eeprom_dump_to_serial(a_write_data, a_bhd); // 書き込み内容をダンプ表示
+  mrd_eeprom_dump_to_serial(a_write_data, a_bhd, Serial); // 書き込み内容をダンプ表示
 
   if (mrd_eeprom_write(a_write_data, a_protect)) {
     Serial.println("...Write OK.");
@@ -169,7 +183,7 @@ bool mrd_eeprom_write_read_check(UnionEEPROM a_write_data, bool a_do, bool a_pro
   // EEPROM読み込みを実行
   Serial.println("Read EEPROM: ");
   UnionEEPROM read_data_tmp = mrd_eeprom_read();
-  mrd_eeprom_dump_to_serial(read_data_tmp, a_bhd); // 読み込み内容をダンプ表示
+  mrd_eeprom_dump_to_serial(read_data_tmp, a_bhd, Serial); // 読み込み内容をダンプ表示
   Serial.println("...Read completed.");
 
   return true;
