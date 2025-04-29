@@ -243,6 +243,10 @@ struct ServoParam {
   float ixl_trim[IXL_MAX]; // L系統
   float ixr_trim[IXR_MAX]; // R系統
 
+  // 各サーボのベンダーと型番(config.hで設定)
+  float ixl_type[IXL_MAX]; // L系統
+  float ixr_type[IXR_MAX]; // R系統
+
   // 各サーボのポジション値(degree)
   float ixl_tgt[IXL_MAX] = {0};      // L系統の目標値
   float ixr_tgt[IXR_MAX] = {0};      // R系統の目標値
@@ -287,9 +291,5 @@ uint16_t mrd_seq_predict_num(uint16_t a_previous_num) {
   }
   return x_tmp;
 }
-
-// 予約用
-bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe);
-bool execute_master_command_2(Meridim90Union a_meridim, bool a_flg_exe);
 
 #endif //__MERIDIAN_MAIN_FUNC__

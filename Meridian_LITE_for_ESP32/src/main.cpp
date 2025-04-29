@@ -1,7 +1,7 @@
 #ifndef __MERIDIAN_LITE_MAIN__
 #define __MERIDIAN_LITE_MAIN__
 
-#define VERSION "Meridian_LITE_v1.1.1_2024_08.18" // バージョン表示
+#define VERSION "Meridian_LITE_v1.1.1_2025_04.29" // バージョン表示
 
 /// @file    Meridian_LITE_for_ESP32/src/main.cpp
 /// @brief   Meridian is a system that smartly realizes the digital twin of a robot.
@@ -20,6 +20,7 @@
 #include "keys.h"
 
 #include "mrd_bt_pad.h"
+#include "mrd_command.h"
 #include "mrd_disp.h"
 #include "mrd_eeprom.h"
 #include "mrd_move.h"
@@ -111,14 +112,28 @@ void setup() {
     Serial.println("Failed");
   }
 
-  // EEPROMのへの内容書き込み
+  // EEPROMにconfigのサーボ設定値を書き込む場合
   if (EEPROM_SET) {
-    mrd_eeprom_make_data_from_config(sv); // 書き込みデータの作成
+    Serial.println("Set EEPROM data from config.");
+    // 書き込みデータの作成と書き込み
+    if (
+        mrd_eeprom_write(mrd_eeprom_make_data_from_config(sv), EEPROM_PROTECT)) {
+      Serial.println("Write EEPROM succeed.");
+    } else {
+      Serial.println("Write EEPROM failed.");
+    };
   }
 
-  // EEPROMの内容ダンプ表示
+  // EEPROMからサーボ設定の内容を読み込んで反映する場合
+  if (EEPROM_LOAD) {
+    mrd_eeprom_load_servosettings(sv, true, Serial);
+  }
+
+  // EEPROMの内容ダンプ表示をする場合
   mrd_eeprom_dump_at_boot(EEPROM_DUMP, EEPROM_STYLE, Serial); //
-  // mrd_eeprom_write_read_check(mrd_eeprom_make_data_from_config(), // EEPROMのリードライトテスト
+
+  // EEPROMのリードライトテスト
+  // mrd_eeprom_write_read_check(mrd_eeprom_make_data_from_config(),
   //                             CHECK_EEPROM_RW, EEPROM_PROTECT, EEPROM_STYLE);
 
   // SDカードの初期設定とチェック
@@ -274,7 +289,7 @@ void loop() {
   mrd.monitor_check_flow("[3]", monitor.flow); // デバグ用フロー表示
 
   // @[3-1] MasterCommand group1 の処理
-  execute_master_command_1(s_udp_meridim, flg.meridim_rcvd);
+  execute_master_command_1(s_udp_meridim, flg.meridim_rcvd, Serial);
 
   //------------------------------------------------------------------------------------
   //  [ 4 ] センサー類読み取り
@@ -305,7 +320,7 @@ void loop() {
   mrd.monitor_check_flow("[6]", monitor.flow); // デバグ用フロー表示
 
   // @[6-1] MasterCommand group2 の処理
-  execute_master_command_2(s_udp_meridim, flg.meridim_rcvd);
+  execute_master_command_2(s_udp_meridim, flg.meridim_rcvd, Serial);
 
   //------------------------------------------------------------------------------------
   //  [ 7 ] ESP32内部で位置制御する場合の処理
@@ -407,106 +422,6 @@ void loop() {
   }
 
   mrd.monitor_check_flow("\n", monitor.flow); // 動作チェック用シリアル表示
-}
-
-//==================================================================================================
-//  コマンド処理
-//==================================================================================================
-
-/// @brief Master Commandの第1群を実行する. 受信コマンドに基づき, 異なる処理を行う.
-/// @param a_meridim 実行したいコマンドの入ったMeridim配列を渡す.
-/// @param a_flg_exe Meridimの受信成功判定フラグを渡す.
-/// @return コマンドを実行した場合はtrue, しなかった場合はfalseを返す.
-bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe) {
-  if (!a_flg_exe) {
-    return false;
-  }
-
-  // コマンド[90]: 1~999は MeridimのLength. デフォルトは90
-
-  // コマンド:MCMD_ERR_CLEAR_SERVO_ID (10004) 通信エラーサーボIDのクリア
-  if (a_meridim.sval[MRD_MASTER] == MCMD_ERR_CLEAR_SERVO_ID) {
-    r_udp_meridim.bval[MRD_ERR_l] = 0;
-    s_udp_meridim.bval[MRD_ERR_l] = 0;
-    for (int i = 0; i < IXL_MAX; i++) {
-      sv.ixl_err[i] = 0;
-    }
-    for (int i = 0; i < IXR_MAX; i++) {
-      sv.ixr_err[i] = 0;
-    }
-    Serial.println("Servo Error ID reset.");
-    return true;
-  }
-
-  // コマンド:MCMD_BOARD_TRANSMIT_ACTIVE (10005) UDP受信の通信周期制御をボード側主導に（デフォルト）
-  if (a_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_ACTIVE) {
-    flg.udp_board_passive = false; // UDP送信をアクティブモードに
-    flg.count_frame_reset = true;  // フレームの管理時計をリセットフラグをセット
-    return true;
-  }
-
-  // コマンド:MCMD_EEPROM_ENTER_WRITE (10009) EEPROMの書き込みモードスタート
-  if (a_meridim.sval[MRD_MASTER] == MCMD_EEPROM_ENTER_WRITE) {
-    flg.eeprom_write_mode = true; // 書き込みモードのフラグをセット
-    flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをセット
-    return true;
-  }
-  return false;
-}
-
-/// @brief Master Commandの第2群を実行する. 受信コマンドに基づき, 異なる処理を行う.
-/// @param a_meridim 実行したいコマンドの入ったMeridim配列を渡す.
-/// @param a_flg_exe Meridimの受信成功判定フラグを渡す.
-/// @return コマンドを実行した場合はtrue, しなかった場合はfalseを返す.
-bool execute_master_command_2(Meridim90Union a_meridim, bool a_flg_exe) {
-  if (!a_flg_exe) {
-    return false;
-  }
-  // コマンド[90]: 1~999は MeridimのLength. デフォルトは90
-
-  // コマンド:[0] 全サーボ脱力
-  if (a_meridim.sval[MRD_MASTER] == 0) {
-    mrd_servo_all_off(s_udp_meridim);
-    return true;
-  }
-
-  // コマンド:[1] サーボオン 通常動作
-
-  // コマンド:MCMD_SENSOR_YAW_CALIB(10002) IMU/AHRSのヨー軸リセット
-  if (a_meridim.sval[MRD_MASTER] == MCMD_SENSOR_YAW_CALIB) {
-    ahrs.yaw_origin = ahrs.yaw_source;
-    Serial.println("cmd: yaw reset.");
-    return true;
-  }
-
-  // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10006) UDP受信の通信周期制御をPC側主導に（SSH的な動作）
-  if (a_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_PASSIVE) {
-    flg.udp_board_passive = true; // UDP送信をパッシブモードに
-    flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをセット
-    return true;
-  }
-
-  // コマンド:MCMD_FRAMETIMER_RESET) (10007) フレームカウンタを現在時刻にリセット
-  if (a_meridim.sval[MRD_MASTER] == MCMD_FRAMETIMER_RESET) {
-    flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをセット
-    return true;
-  }
-
-  // コマンド:MCMD_BOARD_STOP_DURING (10008) ボードの末端処理を指定時間だけ止める.
-  if (a_meridim.sval[MRD_MASTER] == MCMD_BOARD_STOP_DURING) {
-    flg.stop_board_during = true; // ボードの処理停止フラグをセット
-    // ボードの末端処理をmeridim[2]ミリ秒だけ止める.
-    Serial.print("Stop ESP32's processing during ");
-    Serial.print(int(a_meridim.sval[MRD_STOP_FRAMES]));
-    Serial.println(" ms.");
-    for (int i = 0; i < int(a_meridim.sval[MRD_STOP_FRAMES]); i++) {
-      delay(1);
-    }
-    flg.stop_board_during = false; // ボードの処理停止フラグをクリア
-    flg.count_frame_reset = true;  // フレームの管理時計をリセットフラグをセット
-    return true;
-  }
-  return false;
 }
 
 #endif // __MERIDIAN_LITE_MAIN__

@@ -48,6 +48,43 @@ inline void mrd_setBit8(uint8_t &value, uint8_t a_bit_pos) { value |= (1 << a_bi
 inline void mrd_clearBit8(uint8_t &value, uint8_t a_bit_pos) { value &= ~(1 << a_bit_pos); }
 
 //------------------------------------------------------------------------------------
+//  表示用
+//------------------------------------------------------------------------------------
+/// @brief 数値をシリアルモニタ表示するときにパディングする.
+/// @param num 表示したい値.
+/// @param total_width 桁数.
+/// @param rac_Width 小数点以下の桁数(0ならば小数点以下非表示).
+/// @param show_plus +記号の有無.
+/// @return 整形されたストリング.
+String mrd_pddstr(float num, int total_width, int frac_width, bool show_plus = true) {
+  char buf[30];
+  char sign = (num < 0) ? '-' : (show_plus ? '+' : '\0');
+  if (num < 0)
+    num = -num;
+
+  // 小数あり/なし
+  if (frac_width) {
+    if (sign)
+      sprintf(buf, "%c%d.%0*d", sign, (int)num, frac_width, (int)((num - (int)num) * pow(10, frac_width) + 0.5));
+    else
+      sprintf(buf, "%d.%0*d", (int)num, frac_width, (int)((num - (int)num) * pow(10, frac_width) + 0.5));
+  } else {
+    if (sign)
+      sprintf(buf, "%c%d", sign, (int)(num + 0.5));
+    else
+      sprintf(buf, "%d", (int)(num + 0.5));
+  }
+
+  // パディング
+  String result = "";
+  int pad = total_width - strlen(buf);
+  for (int i = 0; i < pad; i++)
+    result += ' ';
+  result += buf;
+  return result;
+}
+
+//------------------------------------------------------------------------------------
 //  タイムアウト監視用タイマー
 //------------------------------------------------------------------------------------
 // タイマーの開始状態を保持するための静的変数
