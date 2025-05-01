@@ -378,6 +378,12 @@ float IDR_TRIM[IXR_MAX] = {
 #define MCMD_SDCARD_EXIT_READ       10016  // SDCARD読み出しモードの終了
 #define MCMD_EEPROM_SAVE_TRIM       10101  // 現在の姿勢をトリム値としてサーボに書き込む
 #define MCMD_EEPROM_LOAD_TRIM       10102  // EEPROMのトリム値をサーボに反映する
+#define MCMD_EEPROM_BOARDTOPC_DATA0 10200  // EEPROMの[0][*]をボードからPCにMeridimで送信する
+#define MCMD_EEPROM_BOARDTOPC_DATA1 10201  // EEPROMの[1][*]をボードからPCにMeridimで送信する
+#define MCMD_EEPROM_BOARDTOPC_DATA2 10202  // EEPROMの[2][*]をボードからPCにMeridimで送信する
+#define MCMD_EEPROM_PCTOBOARD_DATA0 10300  // EEPROM用の[0][*]をPCからボードにMeridimで送信する
+#define MCMD_EEPROM_PCTOBOARD_DATA1 10301  // EEPROM用の[1][*]をPCからボードにMeridimで送信する
+#define MCMD_EEPROM_PCTOBOARD_DATA2 10302  // EEPROM用の[2][*]をPCからボードにMeridimで送信する
 #define MCMD_NAK                    32766  // コマンド実行の失敗を応答
 #define MCMD_ACK                    32767  // コマンド実行の成功を応答
 

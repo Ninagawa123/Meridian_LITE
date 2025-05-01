@@ -140,4 +140,36 @@ bool execute_master_command_2(Meridim90Union a_meridim, bool a_flg_exe, Hardware
   return false;
 }
 
+/// @brief Master Commandの第2群を実行する. 受信コマンドに基づき, 異なる処理を行う.
+/// @param a_meridim 実行したいコマンドの入ったMeridim配列を渡す.
+/// @param a_flg_exe Meridimの受信成功判定フラグを渡す.
+/// @return コマンドを実行した場合はtrue, しなかった場合はfalseを返す.
+bool execute_master_command_3(Meridim90Union a_r_meridim, Meridim90Union &a_s_meridim, bool a_flg_exe, HardwareSerial &a_serial) {
+  if (!a_flg_exe) {
+    return false;
+  }
+  // コマンド[90]: 1~999は MeridimのLength. デフォルトは90
+
+  // コマンド:[0] 全サーボ脱力
+  if (a_r_meridim.sval[MRD_MASTER] == 0) {
+    mrd_servo_all_off(s_udp_meridim);
+    return true;
+  }
+
+  // コマンド:[1] サーボオン 通常動作
+
+  // コマンド:MCMD_EEPROM_BOARDTOPC_DATA2(10201) EEPROMの[1][*]をボードからPCにMeridimで送信する
+  if (a_r_meridim.sval[MRD_MASTER] == MCMD_EEPROM_BOARDTOPC_DATA1) {
+    // eepromをs_meridimに代入する
+    UnionEEPROM array_tmp = mrd_eeprom_read();
+    for (int i = 0; i < sv.num_max; i++) {
+      a_s_meridim.sval[i] = array_tmp.saval[1][i];
+    }
+    a_s_meridim.sval[0] = MCMD_EEPROM_BOARDTOPC_DATA1;
+    a_serial.println("Read EEPROM[1][*] and send to PC.");
+    return true;
+  }
+  return false;
+}
+
 #endif // __MERIDIAN_COMMAND_H__

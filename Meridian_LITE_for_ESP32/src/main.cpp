@@ -381,27 +381,34 @@ void loop() {
   mrd_disp.all_err(MONITOR_ERR_ALL, err);
 
   //------------------------------------------------------------------------------------
-  //  [ 11 ] UDP送信信号作成
+  //  [ 11 ] MasterCommand group3 の処理
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[11]", monitor.flow); // デバグ用フロー表示
+  mrd.monitor_check_flow("[12]", monitor.flow); // デバグ用フロー表示
 
-  // @[11-1] フレームスキップ検出用のカウントをカウントアップして送信用に格納
+  execute_master_command_3(r_udp_meridim, s_udp_meridim, flg.meridim_rcvd, Serial);
+
+  //------------------------------------------------------------------------------------
+  //  [ 12 ] UDP送信信号作成
+  //------------------------------------------------------------------------------------
+  mrd.monitor_check_flow("[12]", monitor.flow); // デバグ用フロー表示
+
+  // @[12-1] フレームスキップ検出用のカウントをカウントアップして送信用に格納
   mrdsq.s_increment = mrd.seq_increase_num(mrdsq.s_increment);
   s_udp_meridim.usval[1] = mrdsq.s_increment;
 
-  // @[11-2] エラーが出たサーボのインデックス番号を格納
+  // @[12-2] エラーが出たサーボのインデックス番号を格納
   s_udp_meridim.ubval[MRD_ERR_l] = mrd_servos_make_errcode_lite(sv);
 
-  // @[11-3] チェックサムを計算して格納
+  // @[12-3] チェックサムを計算して格納
   // s_udp_meridim.sval[MRD_CKSM] = mrd.cksm_val(s_udp_meridim.sval, MRDM_LEN);
   mrd_meriput90_cksm(s_udp_meridim);
 
   //------------------------------------------------------------------------------------
-  //   [ 12 ] フレーム終端処理
+  //   [ 13 ] フレーム終端処理
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[12]", monitor.flow); // 動作チェック用シリアル表示
+  mrd.monitor_check_flow("[13]", monitor.flow); // 動作チェック用シリアル表示
 
-  // @[12-1] count_timerがcount_frameに追いつくまで待機
+  // @[13-1] count_timerがcount_frameに追いつくまで待機
   count_frame++;
   while (true) {
     if (xSemaphoreTake(timer_semaphore, 0) == pdTRUE) {
@@ -414,7 +421,7 @@ void loop() {
     }
   }
 
-  // @[12-2] 必要に応じてフレームの遅延累積時間frameDelayをリセット
+  // @[13-2] 必要に応じてフレームの遅延累積時間frameDelayをリセット
   if (flg.count_frame_reset) {
     portENTER_CRITICAL(&timer_mux);
     count_frame = count_timer;
