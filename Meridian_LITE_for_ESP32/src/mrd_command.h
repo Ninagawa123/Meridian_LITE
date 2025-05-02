@@ -19,7 +19,10 @@
 /// @return コマンドを実行した場合はtrue, しなかった場合はfalseを返す.
 bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe, HardwareSerial &a_serial) {
   if (!a_flg_exe) {
+    Serial.println("execute_master_command_1 failed:::"); // ★
     return false;
+  } else {
+    Serial.println("recv ok."); // ★
   }
 
   // コマンド[90]: 1~999は MeridimのLength. デフォルトは90
@@ -54,24 +57,49 @@ bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe, Hardware
 
   // コマンド:MCMD_EEPROM_SAVE_TRIM (10101) EEPROMに現在のサーボ値をTRIM値として書き込む
   if (a_meridim.sval[MRD_MASTER] == MCMD_EEPROM_SAVE_TRIM) {
-
-    // EEPROMのへの内容書き込み
     a_serial.println("Set EEPROM data from current trim.");
 
-    // 現在のサーボ位置を, サーボ値構造体(sv)内のトリム設定値として再設定する
-    UnionEEPROM array_tmp = mrd_eeprom_read();
+    // 空のUnionEEPROM構造体を作成し初期化
+    UnionEEPROM array_tmp = {0};
+
+    // サーボの設定情報をsaval[1]にコピー
     for (int i = 0; i < sv.num_max; i++) {
-      array_tmp.saval[1][21 + i * 2] = mrd.float2HfShort(sv.ixl_trim[i] + sv.ixl_tgt[i]);
-      array_tmp.saval[1][51 + i * 2] = mrd.float2HfShort(sv.ixr_trim[i] + sv.ixr_tgt[i]);
+      array_tmp.saval[1][20 + i * 2] = a_meridim.sval[20 + i * 2];
+      array_tmp.saval[1][21 + i * 2] = a_meridim.sval[21 + i * 2];
+      array_tmp.saval[1][50 + i * 2] = a_meridim.sval[50 + i * 2];
+      array_tmp.saval[1][51 + i * 2] = a_meridim.sval[51 + i * 2];
     }
+
+    // デバッグ用の追加表示
+    // a_serial.println("EEPROM data to save (first few values):");
+    // for (int i = 0; i < 3; i++) {
+    //   a_serial.print("L");
+    //   a_serial.print(i);
+    //   a_serial.print(" Settings: ");
+    //   a_serial.print(array_tmp.saval[1][20 + i * 2]);
+    //   a_serial.print(", Trim: ");
+    //   a_serial.println(array_tmp.saval[1][21 + i * 2]);
+    // }
 
     // 書き込みデータの作成と書き込み
     if (mrd_eeprom_write(array_tmp, EEPROM_PROTECT)) {
       a_serial.println("Write EEPROM succeed.");
+      // a_serial.print("EEPROM data updated at address 1: ");
+
+      // // // 一部の値を確認として表示
+      // UnionEEPROM check_data = mrd_eeprom_read();
+      // for (int i = 0; i < 3; i++) {
+      //   a_serial.print("[");
+      //   a_serial.print(20 + i * 2);
+      //   a_serial.print("]=");
+      //   a_serial.print(check_data.saval[1][20 + i * 2]);
+      //   a_serial.print(" ");
+      // }
+      // a_serial.println();
     } else {
       a_serial.println("Write EEPROM failed.");
       return false;
-    };
+    }
     return true;
   }
 
@@ -178,9 +206,25 @@ bool execute_master_command_3(Meridim90Union a_r_meridim, Meridim90Union &a_s_me
       a_s_meridim.sval[i] = array_tmp.saval[1][i];
     }
     a_s_meridim.sval[MRD_MASTER] = MCMD_EEPROM_BOARDTOPC_DATA1;
+
+    Serial.println("revd:");
+    for (int i = 0; i < MRDM_LEN; i++) {
+      Serial.print(a_r_meridim.sval[i]);
+      Serial.print(",");
+    }
+    Serial.println();
+
+    Serial.println("send:");
+    for (int i = 0; i < MRDM_LEN; i++) {
+      Serial.print(a_s_meridim.sval[i]);
+      Serial.print(",");
+    }
+    Serial.println();
+
     a_serial.println("Read EEPROM[1][*] and send to PC.");
     return true;
   }
+
   // コマンド:MCMD_EEPROM_BOARDTOPC_DATA2(10202) EEPROMの[2][*]をボードからPCにMeridimで送信する
   if (a_r_meridim.sval[MRD_MASTER] == MCMD_EEPROM_BOARDTOPC_DATA2) {
     // eepromをs_meridimに代入する

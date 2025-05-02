@@ -63,7 +63,7 @@ UnionEEPROM mrd_eeprom_make_data_from_config(const ServoParam &a_sv) {
     array_tmp.saval[1][20 + i * 2] = l_tmp;
     array_tmp.saval[1][50 + i * 2] = r_tmp;
 
-    // 各サーボの直立デフォルト角度（degree → 半精度float short）の格納
+    // 各サーボの直立デフォルト角度（degree → float short*100）の格納
     array_tmp.saval[1][21 + i * 2] = mrd.float2HfShort(a_sv.ixl_trim[i]);
     array_tmp.saval[1][51 + i * 2] = mrd.float2HfShort(a_sv.ixr_trim[i]);
   }
@@ -73,7 +73,7 @@ UnionEEPROM mrd_eeprom_make_data_from_config(const ServoParam &a_sv) {
 /// @brief EEPROMの内容を読み込んで返す.
 /// @return UnionEEPROM のフォーマットで配列を返す.
 UnionEEPROM mrd_eeprom_read() {
-  UnionEEPROM read_data_tmp;
+  UnionEEPROM read_data_tmp = {0};      // ゼロ初期化を明示的に行う
   for (int i = 0; i < EEPROM_SIZE; i++) // データを読み込む時はbyte型
   {
     read_data_tmp.bval[i] = EEPROM.read(i);
@@ -90,18 +90,22 @@ bool mrd_eeprom_load_servosettings(ServoParam &a_sv, bool a_monitor, HardwareSer
   a_serial.println("Load and set servo settings from EEPROM.");
   UnionEEPROM array_tmp = mrd_eeprom_read();
   for (int i = 0; i < a_sv.num_max; i++) {
+    a_serial.print("Check:A");
     // 各サーボのマウント有無
     a_sv.ixl_mount[i] = static_cast<bool>(array_tmp.saval[1][20 + i * 2] & 0x0001); // bit0:マウント有無
     a_sv.ixr_mount[i] = static_cast<bool>(array_tmp.saval[1][50 + i * 2] & 0x0001); // bit0:マウント有無
     // 各サーボの実サーボ呼び出しID番号
     a_sv.ixl_id[i] = static_cast<uint8_t>(array_tmp.saval[1][20 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
     a_sv.ixr_id[i] = static_cast<uint8_t>(array_tmp.saval[1][50 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
+    a_serial.print("Check:B");
     // 各サーボの回転方向（正転・逆転）
     a_sv.ixl_cw[i] = static_cast<int8_t>((array_tmp.saval[1][20 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
     a_sv.ixr_cw[i] = static_cast<int8_t>((array_tmp.saval[1][50 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
     // 各サーボの直立デフォルト角度,トリム値(degree小数2桁までを100倍した値で格納されているものを展開)
     a_sv.ixl_trim[i] = array_tmp.saval[1][21 + i * 2] / 100.0f;
     a_sv.ixr_trim[i] = array_tmp.saval[1][51 + i * 2] / 100.0f;
+    a_serial.print("Check:C");
+
     if (a_monitor) {
       a_serial.print("L-idx:");
       a_serial.print(mrd_pddstr(i, 2, 0, false));
@@ -124,7 +128,9 @@ bool mrd_eeprom_load_servosettings(ServoParam &a_sv, bool a_monitor, HardwareSer
       a_serial.print(", trm:");
       a_serial.println(mrd_pddstr(sv.ixr_trim[i], 7, 2, true));
     }
+    a_serial.print("Check:D");
   }
+  a_serial.print("Check:E");
   return true;
 }
 

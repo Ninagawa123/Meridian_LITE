@@ -95,7 +95,7 @@
 
 // Meridimの基本設定
 #define MRDM_LEN       90  // Meridim配列の長さ設定（デフォルトは90）
-#define FRAME_DURATION 10  // 1フレームあたりの単位時間（単位ms）
+#define FRAME_DURATION 10  // 1フレームあたりの単位時間（単位ms, デフォルトは10）
 #define CHARGE_TIME    200 // 起動時のコンデンサチャージ待機時間（単位ms）
 
 // 各種ハードウェアのマウント有無
@@ -114,10 +114,10 @@
 
 // EEPROMの設定
 #define EEPROM_SIZE    540 // 使用するEEPROMのサイズ(バイト)
-#define EEPROM_SET     0   // 起動時にEEPROMにconfig.hの内容をセット(mrd_set_eeprom)
+#define EEPROM_SET     1   // 起動時にEEPROMにconfig.hの内容をセット(mrd_set_eeprom)
 #define EEPROM_PROTECT 0   // EEPROMの書き込み保護(0:保護しない, 1:書き込み禁止)
 #define EEPROM_LOAD    1   // 起動時にEEPROMの内容を諸設定にロードする
-#define EEPROM_DUMP    0   // 起動時のEEPROM内容のダンプ表示
+#define EEPROM_DUMP    1   // 起動時のEEPROM内容のダンプ表示
 #define EEPROM_STYLE   Dec // 起動時のEEPROM内容のダンプ表示の書式(Bin,Hex,Dec)
 
 // 動作チェックモード
@@ -319,14 +319,14 @@ int IXR_CW[IXR_MAX] = {
 // L系統のトリム値(degree)
 float IDL_TRIM[IXL_MAX] = {
     0,   // [00]頭ヨー
-    0,   // [01]左肩ピッチ
-    -90, // [02]左肩ロール
+    -4,  // [01]左肩ピッチ
+    -37, // [02]左肩ロール
     0,   // [03]左肘ヨー
-    90,  // [04]左肘ピッチ
+    37,  // [04]左肘ピッチ
     0,   // [05]左股ヨー
     0,   // [06]左股ロール
     0,   // [07]左股ピッチ
-    0,   // [08]左膝ピッチ
+    -50, // [08]左膝ピッチ
     0,   // [09]左足首ピッチ
     0,   // [10]左足首ロール
     0,   // [11]追加サーボ用
@@ -339,13 +339,13 @@ float IDL_TRIM[IXL_MAX] = {
 float IDR_TRIM[IXR_MAX] = {
     0,   // [00]腰ヨー
     0,   // [01]右肩ピッチ
-    -90, // [02]右肩ロール
+    -35, // [02]右肩ロール
     0,   // [03]右肘ヨー
-    90,  // [04]右肘ピッチ
+    39,  // [04]右肘ピッチ
     0,   // [05]右股ヨー
-    0,   // [06]右股ロール
+    5,   // [06]右股ロール
     0,   // [07]右股ピッチ
-    0,   // [08]右膝ピッチ
+    -90, // [08]右膝ピッチ
     0,   // [09]右足首ピッチ
     0,   // [10]右足首ロール
     0,   // [11]追加サーボ用

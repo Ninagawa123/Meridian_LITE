@@ -252,6 +252,10 @@ void loop() {
     // @[2-4a] エラービット14番(ESP32のPCからのUDP受信エラー検出)をサゲる
     mrd_clearBit16(s_udp_meridim.usval[MRD_ERR], ERRBIT_14_PC_ESP);
 
+    if (s_udp_meridim.sval[0] == MCMD_EEPROM_SAVE_TRIM) {
+      Serial.println(r_udp_meridim.sval[0]);
+    }
+
   } else // チェックサムがNGならバッファから転記せず前回のデータを使用する
   {
 
@@ -260,6 +264,8 @@ void loop() {
     err.pc_esp++;
     mrd.monitor_check_flow("CsErr*", monitor.flow); // デバグ用フロー表示
   }
+  Serial.print("SQ:");                    // ★
+  Serial.println(r_udp_meridim.usval[1]); // ★
 
   // @[2-5] シーケンス番号チェック
   mrdsq.r_expect = mrd_seq_predict_num(mrdsq.r_expect); // シーケンス番号予想値の生成

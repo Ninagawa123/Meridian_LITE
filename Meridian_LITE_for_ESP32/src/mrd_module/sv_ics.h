@@ -51,18 +51,18 @@ float mrd_servo_process_ics(int a_servo_id, int a_cmd, float a_tgt, float a_tgt_
 void mrd_sv_drive_ics_double(Meridim90Union &a_meridim, ServoParam &a_sv) {
   for (int i = 0; i < a_sv.num_max; i++) {
     // L系統サーボの処理
-    if (a_sv.ixl_mount[i]) {
+    if (a_sv.ixl_mount[i]) { // 43は近藤科学のICSサーボ
       a_sv.ixl_tgt[i] = mrd_servo_process_ics(
           a_sv.ixl_id[i], a_meridim.sval[(i * 2) + 20], a_sv.ixl_tgt[i], a_sv.ixl_tgt_past[i],
           a_sv.ixl_trim[i], a_sv.ixl_cw[i], a_sv.ixl_err[i], a_sv.ixl_stat[i], ics_L);
     }
     // R系統サーボの処理
-    if (a_sv.ixr_mount[i]) {
+    if (a_sv.ixr_mount[i]) { // 43は近藤科学のICSサーボ
       a_sv.ixr_tgt[i] = mrd_servo_process_ics(
           a_sv.ixr_id[i], a_meridim.sval[(i * 2) + 50], a_sv.ixr_tgt[i], a_sv.ixr_tgt_past[i],
           a_sv.ixr_trim[i], a_sv.ixr_cw[i], a_sv.ixr_err[i], a_sv.ixr_stat[i], ics_R);
     }
-    // delayMicroseconds(2); //Teensyの場合には必要かも
+    delayMicroseconds(2); // Teensyの場合には必要かも
   }
 }
 
