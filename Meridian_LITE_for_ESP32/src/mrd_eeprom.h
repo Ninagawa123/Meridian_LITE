@@ -37,12 +37,12 @@ bool mrd_eeprom_init(int a_eeprom_size) {
 
 /// @brief サーボ設定構造体からEEPROM格納用の配列データを作成する
 /// @param a_sv サーボ設定を保持する構造体
-/// @return EEPROM格納用の配列データ（UnionEEPROM型）
+/// @return EEPROM格納用の配列データ(UnionEEPROM型)
 UnionEEPROM mrd_eeprom_make_data_from_config(const ServoParam &a_sv) {
   UnionEEPROM array_tmp = {0};
 
   for (int i = 0; i < 15; i++) {
-    // 各サーボのマウント有無と方向（正転・逆転）
+    // 各サーボのマウント有無と方向(正転・逆転)
     uint16_t l_tmp = 0;
     uint16_t r_tmp = 0;
 
@@ -66,7 +66,7 @@ UnionEEPROM mrd_eeprom_make_data_from_config(const ServoParam &a_sv) {
     array_tmp.saval[1][20 + i * 2] = l_tmp;
     array_tmp.saval[1][50 + i * 2] = r_tmp;
 
-    // 各サーボの直立デフォルト角度（degree → float short*100）の格納
+    // 各サーボの直立デフォルト角度(degree → float short*100)の格納
     array_tmp.saval[1][21 + i * 2] = mrd.float2HfShort(a_sv.ixl_trim[i]);
     array_tmp.saval[1][51 + i * 2] = mrd.float2HfShort(a_sv.ixr_trim[i]);
   }
@@ -99,7 +99,7 @@ bool mrd_eeprom_load_servosettings(ServoParam &a_sv, bool a_monitor, HardwareSer
     // 各サーボの実サーボ呼び出しID番号
     a_sv.ixl_id[i] = static_cast<uint8_t>(array_tmp.saval[1][20 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
     a_sv.ixr_id[i] = static_cast<uint8_t>(array_tmp.saval[1][50 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
-    // 各サーボの回転方向（正転・逆転）
+    // 各サーボの回転方向(正転・逆転)
     a_sv.ixl_cw[i] = static_cast<int8_t>((array_tmp.saval[1][20 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
     a_sv.ixr_cw[i] = static_cast<int8_t>((array_tmp.saval[1][50 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
     // 各サーボの直立デフォルト角度,トリム値(degree小数2桁までを100倍した値で格納されているものを展開)

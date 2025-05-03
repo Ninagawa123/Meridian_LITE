@@ -174,7 +174,7 @@ void setup() {
 
   // タイマーの設定
   timer_semaphore = xSemaphoreCreateBinary(); // セマフォの作成
-  timer = timerBegin(0, 80, true);            // タイマーの設定（1つ目のタイマーを使用, 分周比80）
+  timer = timerBegin(0, 80, true);            // タイマーの設定(1つ目のタイマーを使用, 分周比80)
 
   timerAttachInterrupt(timer, &frame_timer, true);     // frame_timer関数をタイマーの割り込みに登録
   timerAlarmWrite(timer, FRAME_DURATION * 1000, true); // タイマーを10msごとにトリガー
@@ -201,7 +201,7 @@ void loop() {
   mrd.monitor_check_flow("[1]", monitor.flow); // デバグ用フロー表示
 
   // @[1-1] UDP送信の実行
-  if (flg.udp_send_mode) // UDPの送信実施フラグの確認（モード確認）
+  if (flg.udp_send_mode) // UDPの送信実施フラグの確認(モード確認)
   {
     flg.udp_busy = true; // UDP使用中フラグをアゲる
     mrd_wifi_udp_send(s_udp_meridim.bval, MRDM_BYTE, udp);
@@ -215,7 +215,7 @@ void loop() {
   mrd.monitor_check_flow("[2]", monitor.flow); // デバグ用フロー表示
 
   // @[2-1] UDPの受信待ち受けループ
-  if (flg.udp_receive_mode) // UDPの受信実施フラグの確認（モード確認）
+  if (flg.udp_receive_mode) // UDPの受信実施フラグの確認(モード確認)
   {
     unsigned long start_tmp = millis();
     flg.udp_busy = true;  // UDP使用中フラグをアゲる
@@ -342,7 +342,7 @@ void loop() {
   }
 
   // @[7-2] ESP32による次回動作の計算
-  // 以下はリモコンの左十字キー左右でL系統0番サーボ（首部）を30度左右にふるサンプル
+  // 以下はリモコンの左十字キー左右でL系統0番サーボ(首部)を30度左右にふるサンプル
   if (s_udp_meridim.sval[MRD_PAD_BUTTONS] == PAD_RIGHT) {
     sv.ixl_tgt[0] = -30.00; // -30度
   } else if (s_udp_meridim.sval[MRD_PAD_BUTTONS] == PAD_LEFT) {
@@ -357,9 +357,8 @@ void loop() {
   mrd.monitor_check_flow("[8]", monitor.flow); // デバグ用フロー表示
 
   // @[8-1] サーボ受信値の処理
-  if (!MODE_ESP32_STANDALONE) { // サーボ処理を行うかどうか
-    mrd_servos_drive_lite(s_udp_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R,
-                          sv); // サーボ動作を実行する
+  if (!MODE_ESP32_STANDALONE) {                                                       // サーボ処理を行うかどうか
+    mrd_servos_drive_lite(s_udp_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, sv); // サーボ動作を実行する
   } else {
     // ボード単体動作モードの場合はサーボ処理をせずL0番サーボ値として+-30度のサインカーブ値を返す
     sv.ixl_tgt[0] = sin(tmr.count_loop * M_PI / 180.0) * 30;
@@ -389,7 +388,7 @@ void loop() {
   //------------------------------------------------------------------------------------
   //  [ 11 ] MasterCommand group3 の処理
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[12]", monitor.flow); // デバグ用フロー表示
+  mrd.monitor_check_flow("[11]", monitor.flow); // デバグ用フロー表示
 
   execute_master_command_3(r_udp_meridim, s_udp_meridim, flg.meridim_rcvd, Serial);
 

@@ -37,7 +37,7 @@ bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe, Hardware
     return true;
   }
 
-  // コマンド:MCMD_BOARD_TRANSMIT_ACTIVE (10005) UDP受信の通信周期制御をボード側主導に（デフォルト）
+  // コマンド:MCMD_BOARD_TRANSMIT_ACTIVE (10005) UDP受信の通信周期制御をボード側主導に(デフォルト)
   if (a_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_ACTIVE) {
     flg.udp_board_passive = false; // UDP送信をアクティブモードに
     flg.count_frame_reset = true;  // フレームの管理時計をリセットフラグをセット
@@ -129,7 +129,7 @@ bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe, Hardware
     //     // 各サーボの実サーボ呼び出しID番号
     //     a_sv.ixl_id[i] = static_cast<uint8_t>(array_tmp.saval[1][20 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
     //     a_sv.ixr_id[i] = static_cast<uint8_t>(array_tmp.saval[1][50 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
-    //     // 各サーボの回転方向（正転・逆転）
+    //     // 各サーボの回転方向(正転・逆転)
     //     a_sv.ixl_cw[i] = static_cast<int8_t>((array_tmp.saval[1][20 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
     //     a_sv.ixr_cw[i] = static_cast<int8_t>((array_tmp.saval[1][50 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
     //     // 各サーボの直立デフォルト角度,トリム値(degree小数2桁までを100倍した値で格納されているものを展開)
@@ -229,7 +229,7 @@ bool execute_master_command_2(Meridim90Union a_meridim, bool a_flg_exe, Hardware
     return true;
   }
 
-  // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10006) UDP受信の通信周期制御をPC側主導に（SSH的な動作）
+  // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10006) UDP受信の通信周期制御をPC側主導に(SSH的な動作)
   if (a_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_PASSIVE) {
     flg.udp_board_passive = true; // UDP送信をパッシブモードに
     flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをセット
@@ -276,6 +276,69 @@ bool execute_master_command_3(Meridim90Union a_r_meridim, Meridim90Union &a_s_me
   }
 
   // コマンド:[1] サーボオン 通常動作
+
+  // コマンド:MCMD_START_TRIM_SETTIN (10003) TRIM設定のスタート(Meridian_console連携)
+  if (a_s_meridim.sval[MRD_MASTER] == MCMD_START_TRIM_SETTING) {
+
+    // EEPROMのデータを展開する
+    mrd_eeprom_load_servosettings(sv, true, Serial);
+
+    // サーボをEEPROMのTRIM値で補正されたHOME(原点)に移動する
+    for (int i = 0; i < MRD_SERVO_SLOTS; i++) {
+      a_s_meridim.sval[MRD_L_ORIGIDX + 1 + i * 2] = 0; // L系統の目標値を原点に
+      a_s_meridim.sval[MRD_R_ORIGIDX + 1 + i * 2] = 0; // R系統の目標値を原点に
+      sv.ixl_tgt_past[i] = sv.ixl_tgt[i];              // 前回のdegreeをキープ
+      sv.ixr_tgt_past[i] = sv.ixr_tgt[i];
+      sv.ixl_tgt[i] = 0; //
+      sv.ixr_tgt[i] = 0;
+    }
+
+    // サーボ動作を実行する
+    if (!MODE_ESP32_STANDALONE) {
+      mrd_servos_drive_lite(a_s_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, sv);
+    }
+
+    // サーボの目標値として現在のTRIM値をセットする
+    for (int i = 0; i < MRD_SERVO_SLOTS; i++) {
+      a_s_meridim.sval[MRD_L_ORIGIDX + 1 + i * 2] = sv.ixl_trim[i];
+      a_s_meridim.sval[MRD_R_ORIGIDX + 1 + i * 2] = sv.ixr_trim[i];
+    }
+
+    // サーボのTRIM値をゼロリセットする
+    for (int i = 0; i < MRD_SERVO_SLOTS; i++) {
+      sv.ixl_trim[i] = 0;
+      sv.ixr_trim[i] = 0;
+    }
+
+    // サーボ動作を実行する. サーボはTRIM値を0としつつ, tgtとしてこれまでのTRIM値の角度をキープする
+    if (!MODE_ESP32_STANDALONE) {
+      mrd_servos_drive_lite(a_s_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, sv); // サーボ動作を実行する
+    }
+
+    // サーボ設定を格納する
+    for (int i = 0; i < MRD_SERVO_SLOTS; i++) {
+      a_s_meridim.sval[MRD_L_ORIGIDX + i * 2] = sv.ixl_trim[i];
+      a_s_meridim.sval[MRD_R_ORIGIDX + i * 2] = sv.ixr_trim[i];
+    }
+
+    // サーボの設定値とTRIM値をPCに送信する
+
+    UnionEEPROM array_tmp = mrd_eeprom_read();
+    for (int i = 0; i < MRDM_LEN; i++) {
+      a_s_meridim.sval[i] = array_tmp.saval[1][i];
+    }
+    a_s_meridim.sval[MRD_MASTER] = MCMD_EEPROM_BOARDTOPC_DATA1;
+
+    Serial.println("send:");
+    for (int i = 0; i < MRDM_LEN; i++) {
+      Serial.print(a_s_meridim.sval[i]);
+      Serial.print(",");
+    }
+    Serial.println();
+
+    a_serial.println("Enter Trim Setting mode and send EEPROM[1][*] to PC.");
+    return true;
+  }
 
   // コマンド:MCMD_EEPROM_BOARDTOPC_DATA2(10200) EEPROMの[0][*]をボードからPCにMeridimで送信する
   if (a_r_meridim.sval[MRD_MASTER] == MCMD_EEPROM_BOARDTOPC_DATA0) {

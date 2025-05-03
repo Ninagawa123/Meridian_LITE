@@ -16,7 +16,7 @@
 //------------------------------------------------------------------------------------
 
 /// @brief 指定されたUARTラインとサーボタイプに基づいてサーボの通信プロトコルを設定する.
-/// @param a_line UART通信ライン（L, R, またはC）.
+/// @param a_line UART通信ライン(L, R, またはC).
 /// @param a_servo_type サーボのタイプを示す整数値.
 /// @return サーボがサポートされている場合はtrueを, サポートされていない場合はfalseを返す.
 bool mrd_servo_begin(UartLine a_line, int a_servo_type) {
@@ -85,7 +85,7 @@ bool mrd_servos_drive_lite(Meridim90Union &a_meridim, int a_L_type, int a_R_type
 //  各種オペレーション
 //------------------------------------------------------------------------------------
 
-/// @brief 第一引数のMeridim配列のすべてのサーボモーターをオフ（フリー状態）に設定する.
+/// @brief 第一引数のMeridim配列のすべてのサーボモーターをオフ(フリー状態)に設定する.
 /// @param a_meridim サーボの動作パラメータを含むMeridim配列.
 /// @return 設定完了時にtrueを返す.
 bool mrd_servo_all_off(Meridim90Union &a_meridim) {
