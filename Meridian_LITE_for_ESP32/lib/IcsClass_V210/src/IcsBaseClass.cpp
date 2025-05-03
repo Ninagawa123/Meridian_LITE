@@ -16,14 +16,11 @@
  * @return 送られてきたid
  * @retval 0xFF 範囲外
  **/
-byte IcsBaseClass::idMax(byte id)
-{
-  if ((char)id < MIN_ID)
-  {
+byte IcsBaseClass::idMax(byte id) {
+  if ((char)id < MIN_ID) {
     id = 0xFF;
   }
-  if (id > MAX_ID)
-  {
+  if (id > MAX_ID) {
     id = 0xFF;
   }
   return id;
@@ -37,14 +34,11 @@ byte IcsBaseClass::idMax(byte id)
  * @param[in,out] val 現在値
  * @return リミットがかかったポジションデータ
  **/
-bool IcsBaseClass::maxMin(int maxPos, int minPos, int val)
-{
-  if (val > maxPos)
-  {
+bool IcsBaseClass::maxMin(int maxPos, int minPos, int val) {
+  if (val > maxPos) {
     return false;
   }
-  if (val < minPos)
-  {
+  if (val < minPos) {
     return false;
   }
   return true;
@@ -57,14 +51,11 @@ bool IcsBaseClass::maxMin(int maxPos, int minPos, int val)
  * @return ポジションデータ
  * @retval -1 範囲外
  **/
-int IcsBaseClass::degPos(float deg)
-{
-  if (deg > MAX_DEG)
-  {
+int IcsBaseClass::degPos(float deg) {
+  if (deg > MAX_DEG) {
     return -1;
   }
-  if (deg < MIN_DEG)
-  {
+  if (deg < MIN_DEG) {
     return -1;
   }
   int pos = deg * 29.633;
@@ -80,17 +71,14 @@ int IcsBaseClass::degPos(float deg)
  * @retval #ANGLE_F_FALSE  正方向範囲外
  * @retval -#ANGLE_F_FALSE (0x8000) 負方向範囲外
  **/
-float IcsBaseClass::posDeg(int pos)
-{
+float IcsBaseClass::posDeg(int pos) {
   pos = pos - 7500;
   float deg = pos / 29.633;
 
-  if (deg > MAX_DEG)
-  {
+  if (deg > MAX_DEG) {
     return ANGLE_F_FALSE;
   }
-  if (deg < MIN_DEG)
-  {
+  if (deg < MIN_DEG) {
     return -ANGLE_F_FALSE;
   }
 
@@ -104,14 +92,11 @@ float IcsBaseClass::posDeg(int pos)
  * @return 変換されたポジションデータ
  * @retval -1 範囲外
  **/
-int IcsBaseClass::degPos100(int deg)
-{
-  if (deg > MAX_100DEG)
-  {
+int IcsBaseClass::degPos100(int deg) {
+  if (deg > MAX_100DEG) {
     return -1;
   }
-  if (deg < MIN_100DEG)
-  {
+  if (deg < MIN_100DEG) {
     return -1;
   }
   long a = ((long)deg * 2963) / 10000;
@@ -127,17 +112,14 @@ int IcsBaseClass::degPos100(int deg)
  * @retval #ANGLE_I_FALSE 正方向範囲外
  * @retval -#ANGLE_I_FALSE 負方向範囲外
  **/
-int IcsBaseClass::posDeg100(int pos)
-{
+int IcsBaseClass::posDeg100(int pos) {
   long a = pos - 7500;
   int deg = (a * 1000) / 296;
 
-  if (deg > MAX_100DEG)
-  {
+  if (deg > MAX_100DEG) {
     return ANGLE_I_FALSE;
   }
-  if (deg < MIN_100DEG)
-  {
+  if (deg < MIN_100DEG) {
     return -ANGLE_I_FALSE;
   }
   return deg;
@@ -151,8 +133,7 @@ int IcsBaseClass::posDeg100(int pos)
  * @return ポジションデータ
  * @retval -1 範囲外、通信失敗
  **/
-int IcsBaseClass::setPos(byte id, unsigned int pos)
-{
+int IcsBaseClass::setPos(byte id, unsigned int pos) {
   byte txCmd[3];
   byte rxCmd[3];
   unsigned int rePos;
@@ -170,8 +151,7 @@ int IcsBaseClass::setPos(byte id, unsigned int pos)
   // 送受信
 
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return ICS_FALSE;
   }
 
@@ -187,8 +167,7 @@ int IcsBaseClass::setPos(byte id, unsigned int pos)
  * @return ポジションデータ
  * @retval -1 範囲外、通信失敗
  **/
-int IcsBaseClass::setFree(byte id)
-{
+int IcsBaseClass::setFree(byte id) {
   byte txCmd[3];
   byte rxCmd[3];
   unsigned int rePos;
@@ -205,8 +184,7 @@ int IcsBaseClass::setFree(byte id)
 
   // 送受信
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return ICS_FALSE;
   }
 
@@ -222,10 +200,9 @@ int IcsBaseClass::setFree(byte id)
  * @param[in] strc ストレッチのデータ(1～127)
  * @return 書き込んだストレッチのデータ
  * @retval -1 通信失敗
- * @note ストレッチ書込 1～127  1(弱）      127(強）
+ * @note ストレッチ書込 1～127  1(弱)      127(強)
  **/
-int IcsBaseClass::setStrc(byte id, unsigned int strc)
-{
+int IcsBaseClass::setStrc(byte id, unsigned int strc) {
   byte txCmd[3];
   byte rxCmd[3];
   unsigned int reData;
@@ -242,8 +219,7 @@ int IcsBaseClass::setStrc(byte id, unsigned int strc)
 
   // 送受信
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return ICS_FALSE;
   }
   reData = rxCmd[2];
@@ -260,8 +236,7 @@ int IcsBaseClass::setStrc(byte id, unsigned int strc)
  * @retval -1 通信失敗
  * @note スピード書込   1～127  1(遅い)     127(速い)
  **/
-int IcsBaseClass::setSpd(byte id, unsigned int spd)
-{
+int IcsBaseClass::setSpd(byte id, unsigned int spd) {
   byte txCmd[3];
   byte rxCmd[3];
   unsigned int reData;
@@ -278,8 +253,7 @@ int IcsBaseClass::setSpd(byte id, unsigned int spd)
 
   // 送受信
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return ICS_FALSE;
   }
 
@@ -290,15 +264,14 @@ int IcsBaseClass::setSpd(byte id, unsigned int spd)
 
 // 電流リミット値書込み　1～63 ///////////////////////////////////////////////////////////////////////////////
 /**
- * @brief サーボモータの電流リミット（電流制限）値を変更します
+ * @brief サーボモータの電流リミット(電流制限)値を変更します
  * @param[in] id サーボモータのID番号
  * @param[in] curlim 電流値のデータ
  * @return サーボモータの電流リミット値
  * @retval -1 通信失敗
  * @note 電流制限値書込 1～63   1(低い)     63 (高い)
  **/
-int IcsBaseClass::setCur(byte id, unsigned int curlim)
-{
+int IcsBaseClass::setCur(byte id, unsigned int curlim) {
   byte txCmd[3];
   byte rxCmd[3];
   unsigned int reData;
@@ -315,8 +288,7 @@ int IcsBaseClass::setCur(byte id, unsigned int curlim)
 
   // 送受信
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return ICS_FALSE;
   }
 
@@ -327,15 +299,14 @@ int IcsBaseClass::setCur(byte id, unsigned int curlim)
 
 // 温度リミット値書込み 　1～127 /////////////////////////////////////////////////////////////////////////////
 /**
- * @brief サーボモータの温度リミット（温度制限）値を変更します
+ * @brief サーボモータの温度リミット(温度制限)値を変更します
  * @param[in] id サーボモータのID番号
  * @param[in] tmplim 温度リミット値のデータ
  * @return サーボモータの温度リミット値
  * @retval -1 通信失敗
- * @note 温度上限書込   1～127  127(低温）  1(高温)
+ * @note 温度上限書込   1～127  127(低温)  1(高温)
  **/
-int IcsBaseClass::setTmp(byte id, unsigned int tmplim)
-{
+int IcsBaseClass::setTmp(byte id, unsigned int tmplim) {
   byte txCmd[3];
   byte rxCmd[3];
   unsigned int reData;
@@ -357,8 +328,7 @@ int IcsBaseClass::setTmp(byte id, unsigned int tmplim)
 
   // 送受信
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return ICS_FALSE;
   }
 
@@ -373,10 +343,9 @@ int IcsBaseClass::setTmp(byte id, unsigned int tmplim)
  * @param[in] id サーボモータのID番号
  * @return 読み込んだストレッチのデータ
  * @retval -1 通信失敗
- * @note ストレッチ読込    1～127  1(弱）      127(強）
+ * @note ストレッチ読込    1～127  1(弱)      127(強)
  **/
-int IcsBaseClass::getStrc(byte id)
-{
+int IcsBaseClass::getStrc(byte id) {
   byte txCmd[2];
   byte rxCmd[3];
   unsigned int reData;
@@ -391,8 +360,7 @@ int IcsBaseClass::getStrc(byte id)
 
   // 送受信
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return ICS_FALSE;
   }
 
@@ -409,8 +377,7 @@ int IcsBaseClass::getStrc(byte id)
  * @retval -1 通信失敗
  * @note スピード読込      1～127  1(遅い)     127(速い)
  **/
-int IcsBaseClass::getSpd(byte id)
-{
+int IcsBaseClass::getSpd(byte id) {
   byte txCmd[2];
   byte rxCmd[3];
   unsigned int reData;
@@ -424,8 +391,7 @@ int IcsBaseClass::getSpd(byte id)
 
   // 送受信
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return ICS_FALSE;
   }
 
@@ -442,8 +408,7 @@ int IcsBaseClass::getSpd(byte id)
  * @retval -1 通信失敗
  * @note 電流値読込      正転時0～63、逆転時64～127
  **/
-int IcsBaseClass::getCur(byte id)
-{
+int IcsBaseClass::getCur(byte id) {
   byte txCmd[2];
   byte rxCmd[3];
   unsigned int reData;
@@ -457,8 +422,7 @@ int IcsBaseClass::getCur(byte id)
 
   // 送受信
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return ICS_FALSE;
   }
 
@@ -475,8 +439,7 @@ int IcsBaseClass::getCur(byte id)
  * @retval -1 通信失敗
  * @note 現在温度読込	0(高温) ～ 127(低温
  **/
-int IcsBaseClass::getTmp(byte id)
-{
+int IcsBaseClass::getTmp(byte id) {
   byte txCmd[2];
   byte rxCmd[3];
   unsigned int reData;
@@ -490,8 +453,7 @@ int IcsBaseClass::getTmp(byte id)
 
   // 送受信
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return ICS_FALSE;
   }
 
@@ -508,8 +470,7 @@ int IcsBaseClass::getTmp(byte id)
  * @retval -1 通信失敗
  * @attention ICS3.6から有効です。ICS3.5のサーボモータに送った場合は返事を返しません
  **/
-int IcsBaseClass::getPos(byte id)
-{
+int IcsBaseClass::getPos(byte id) {
   byte txCmd[2];
   byte rxCmd[4];
   unsigned int reData;
@@ -523,8 +484,7 @@ int IcsBaseClass::getPos(byte id)
 
   // 送受信
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return ICS_FALSE;
   }
 
@@ -541,8 +501,7 @@ int IcsBaseClass::getPos(byte id)
  * @date 2020/02/20 Ver2.1.0から追加
  * @attention IDコマンドは１対１でのみ接続してください。多数つないだ場合は意図しないデータが返って来ます。
  **/
-int IcsBaseClass::getID()
-{
+int IcsBaseClass::getID() {
   byte txCmd[4];
   byte rxCmd[1];
   int id;
@@ -556,8 +515,7 @@ int IcsBaseClass::getID()
   // 送受信
 
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return ICS_FALSE;
   }
 
@@ -577,8 +535,7 @@ int IcsBaseClass::getID()
  * @date 2020/02/20 Ver2.1.0から追加
  * @attention IDコマンドは１対１でのみ接続してください。多数つないだ場合はすべてのIDが書き変わります。
  **/
-int IcsBaseClass::setID(byte id)
-{
+int IcsBaseClass::setID(byte id) {
   byte txCmd[4];
   byte rxCmd[1];
   int reID;
@@ -592,8 +549,7 @@ int IcsBaseClass::setID(byte id)
   // 送受信
 
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return ICS_FALSE;
   }
 
@@ -610,8 +566,7 @@ int IcsBaseClass::setID(byte id)
  * @return #KRR_BUTTON を参照
  * @retval -1 通信失敗
  **/
-unsigned short IcsBaseClass::getKrrButton()
-{
+unsigned short IcsBaseClass::getKrrButton() {
   byte txCmd[4];
   byte rxCmd[8];
   unsigned short btn;
@@ -624,8 +579,7 @@ unsigned short IcsBaseClass::getKrrButton()
 
   // 送受信
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return KRR_BUTTON_FALSE;
   }
 
@@ -644,8 +598,7 @@ unsigned short IcsBaseClass::getKrrButton()
  * @retval -1 通信失敗
  * @attention KRC5のアナログポートは1～4になります
  **/
-int IcsBaseClass::getKrrAnalog(int paCh)
-{
+int IcsBaseClass::getKrrAnalog(int paCh) {
   byte txCmd[4];
   byte rxCmd[6];
   int adData;
@@ -663,8 +616,7 @@ int IcsBaseClass::getKrrAnalog(int paCh)
 
   // 送受信
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return ICS_FALSE;
   }
 
@@ -683,8 +635,7 @@ int IcsBaseClass::getKrrAnalog(int paCh)
  * @attention KRC5のアナログポートは1～4になります
  * @attention 配列サイズは4固定です
  **/
-bool IcsBaseClass::getKrrAllData(unsigned short *button, int adData[4])
-{
+bool IcsBaseClass::getKrrAllData(unsigned short *button, int adData[4]) {
   byte txCmd[4];
   byte rxCmd[18];
   unsigned short btn;
@@ -697,8 +648,7 @@ bool IcsBaseClass::getKrrAllData(unsigned short *button, int adData[4])
   ;
   // 送受信
   flg = synchronize(txCmd, sizeof txCmd, rxCmd, sizeof rxCmd);
-  if (flg == false)
-  {
+  if (flg == false) {
     return false;
   }
 
@@ -708,8 +658,7 @@ bool IcsBaseClass::getKrrAllData(unsigned short *button, int adData[4])
   *button = btn;
 
   // アナログデータ
-  for (int i = 0; i < 4; i++)
-  {
+  for (int i = 0; i < 4; i++) {
     adData[i] = ((rxCmd[8 + i * 2] << 4) & 0xF0) + (rxCmd[9 + i * 2] & 0x0F);
   }
   return true;
