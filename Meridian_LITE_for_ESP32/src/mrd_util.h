@@ -27,29 +27,41 @@ int mrd_max_used_index(const int a_arr[], int a_size) {
 /// @param a_byte ビットをセットする16ビットの変数.参照渡し.
 /// @param a_bit_pos セットするビットの位置(0から15).
 /// @return なし.
-inline void mrd_setBit16(uint16_t &a_byte, uint16_t a_bit_pos) { a_byte |= (1 << a_bit_pos); }
+inline void mrd_set_bit16(uint16_t &a_byte, uint16_t a_bit_pos) { a_byte |= (1 << a_bit_pos); }
 
 /// @brief 指定された位置のビットをクリアする(16ビット変数用).
 /// @param a_byte ビットをクリアする16ビットの変数.参照渡し.
 /// @param a_bit_pos クリアするビットの位置(0から15).
 /// @return なし.
-inline void mrd_clearBit16(uint16_t &a_byte, uint16_t a_bit_pos) { a_byte &= ~(1 << a_bit_pos); }
+inline void mrd_clear_bit16(uint16_t &a_byte, uint16_t a_bit_pos) { a_byte &= ~(1 << a_bit_pos); }
 
 /// @brief 指定された位置のビットをセットする(8ビット変数用).
 /// @param value ビットをセットする8ビットの変数.参照渡し.
 /// @param a_bit_pos セットするビットの位置(0から7).
 /// @return なし.
-inline void mrd_setBit8(uint8_t &value, uint8_t a_bit_pos) { value |= (1 << a_bit_pos); }
+inline void mrd_set_bit8(uint8_t &value, uint8_t a_bit_pos) { value |= (1 << a_bit_pos); }
 
 /// @brief 指定された位置のビットをクリアする(8ビット変数用).
 /// @param value ビットをクリアする8ビットの変数.参照渡し.
 /// @param a_bit_pos クリアするビットの位置(0から7).
 /// @return なし.
-inline void mrd_clearBit8(uint8_t &value, uint8_t a_bit_pos) { value &= ~(1 << a_bit_pos); }
+inline void mrd_clear_bit8(uint8_t &value, uint8_t a_bit_pos) { value &= ~(1 << a_bit_pos); }
+
+/// @brief 任意の整数値から、任意幅のビット列を取り出す汎用関数.
+/// @tparam T 型テンプレート.任意の整数型（符号付き・符号無しどちらでも可）
+/// @param value 抽出元となる値.
+/// @param pos   取り出し開始位置（LSB＝0, 右から数え, 最初は0番）
+/// @param len   取り出すビット幅
+/// @return unsigned 取り出したビット列（0〜 2^len−1 の範囲）
+template <class T> // 型テンプレート
+unsigned mrd_slice_bits(T value, unsigned pos, unsigned len) {
+  return (static_cast<unsigned>(value) >> pos) & ((1u << len) - 1u);
+}
 
 //------------------------------------------------------------------------------------
 //  表示用
 //------------------------------------------------------------------------------------
+
 /// @brief 数値をシリアルモニタ表示するときにパディングする.
 /// @param num 表示したい値.
 /// @param total_width 桁数.

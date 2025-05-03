@@ -19,12 +19,8 @@
 /// @return コマンドを実行した場合はtrue, しなかった場合はfalseを返す.
 bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe, HardwareSerial &a_serial) {
   if (!a_flg_exe) {
-    Serial.println("execute_master_command_1 failed:::"); // ★
     return false;
-  } else {
-    Serial.println("recv ok."); // ★
   }
-
   // コマンド[90]: 1~999は MeridimのLength. デフォルトは90
 
   // コマンド:MCMD_ERR_CLEAR_SERVO_ID (10004) 通信エラーサーボIDのクリア
@@ -62,13 +58,108 @@ bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe, Hardware
     // 空のUnionEEPROM構造体を作成し初期化
     UnionEEPROM array_tmp = {0};
 
+    Serial.println("a_meridim:");
+    for (int i = 0; i < 90; i++) {
+      Serial.print(a_meridim.sval[i]);
+      Serial.print(", ");
+    }
+    Serial.println();
+
     // サーボの設定情報をsaval[1]にコピー
     for (int i = 0; i < sv.num_max; i++) {
       array_tmp.saval[1][20 + i * 2] = a_meridim.sval[20 + i * 2];
       array_tmp.saval[1][21 + i * 2] = a_meridim.sval[21 + i * 2];
-      array_tmp.saval[1][50 + i * 2] = a_meridim.sval[50 + i * 2];
-      array_tmp.saval[1][51 + i * 2] = a_meridim.sval[51 + i * 2];
+      array_tmp.saval[1][50 + i * 2] = a_meridim.sval[50 + i * 2]; // - int(sv.ixl_trim[i] * 100);
+      array_tmp.saval[1][51 + i * 2] = a_meridim.sval[51 + i * 2]; // - int(sv.ixr_trim[i] * 100);
     }
+
+    Serial.println("array_tmp:");
+    for (int i = 0; i < 90; i++) {
+      Serial.print(array_tmp.saval[1][i]);
+      Serial.print(", ");
+    }
+    Serial.println();
+
+    // UnionEEPROM array_tmp = {0};
+
+    // for (int i = 0; i < sv.num_max; ++i) {
+    //   //------------------------------------------------------------------
+    //   // 1) 左右サーボ共通 ― ビットフィールドを組み立て
+    //   //------------------------------------------------------------------
+    //   uint16_t l_tmp = 0;
+    //   uint16_t r_tmp = 0;
+
+    //   // bit0 : マウント有無
+    //   if (sv.ixl_mount[i])
+    //     l_tmp |= 0x0001;
+    //   if (sv.ixr_mount[i])
+    //     r_tmp |= 0x0001;
+
+    //   // bits1-7 : サーボ ID (7 bit)
+    //   l_tmp |= static_cast<uint16_t>(sv.ixl_id[i] & 0x7F) << 1;
+    //   r_tmp |= static_cast<uint16_t>(sv.ixr_id[i] & 0x7F) << 1;
+
+    //   // bit8 : 回転方向 (1 = CW, 0 = CCW) ※CCW を −1 で受けている想定
+    //   if (sv.ixl_cw[i] > 0)
+    //     l_tmp |= 0x0100;
+    //   if (sv.ixr_cw[i] > 0)
+    //     r_tmp |= 0x0100;
+
+    //   //------------------------------------------------------------------
+    //   // 2) 16-bit ワードへ格納
+    //   //------------------------------------------------------------------
+    //   array_tmp.saval[1][20 + i * 2] = l_tmp;
+    //   array_tmp.saval[1][50 + i * 2] = r_tmp;
+
+    //   //------------------------------------------------------------------
+    //   // 3) トリム角度 (degree ×100) を隣接ワードへ格納
+    //   //     例: 12.34° → 1234
+    //   //------------------------------------------------------------------
+    //   array_tmp.saval[1][21 + i * 2] = static_cast<uint16_t>(std::lround(sv.ixl_trim[i] * 100.0f));
+    //   array_tmp.saval[1][51 + i * 2] = static_cast<uint16_t>(std::lround(sv.ixr_trim[i] * 100.0f));
+    // }
+
+    // bool mrd_eeprom_load_servosettings(ServoParam & a_sv, bool a_monitor, HardwareSerial &a_serial) {
+    //   a_serial.println("Load and set servo settings from EEPROM.");
+    //   UnionEEPROM array_tmp = mrd_eeprom_read();
+    //   for (int i = 0; i < a_sv.num_max; i++) {
+    //     // 各サーボのマウント有無
+    //     a_sv.ixl_mount[i] = static_cast<bool>(array_tmp.saval[1][20 + i * 2] & 0x0001); // bit0:マウント有無
+    //     a_sv.ixr_mount[i] = static_cast<bool>(array_tmp.saval[1][50 + i * 2] & 0x0001); // bit0:マウント有無
+    //     // 各サーボの実サーボ呼び出しID番号
+    //     a_sv.ixl_id[i] = static_cast<uint8_t>(array_tmp.saval[1][20 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
+    //     a_sv.ixr_id[i] = static_cast<uint8_t>(array_tmp.saval[1][50 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
+    //     // 各サーボの回転方向（正転・逆転）
+    //     a_sv.ixl_cw[i] = static_cast<int8_t>((array_tmp.saval[1][20 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
+    //     a_sv.ixr_cw[i] = static_cast<int8_t>((array_tmp.saval[1][50 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
+    //     // 各サーボの直立デフォルト角度,トリム値(degree小数2桁までを100倍した値で格納されているものを展開)
+    //     a_sv.ixl_trim[i] = array_tmp.saval[1][21 + i * 2] / 100.0f;
+    //     a_sv.ixr_trim[i] = array_tmp.saval[1][51 + i * 2] / 100.0f;
+
+    //   if (a_monitor) {
+    //     a_serial.print("L-idx:");
+    //     a_serial.print(mrd_pddstr(i, 2, 0, false));
+    //     a_serial.print(", id:");
+    //     a_serial.print(mrd_pddstr(sv.ixl_id[i], 2, 0, false));
+    //     a_serial.print(", mt:");
+    //     a_serial.print(mrd_pddstr(sv.ixl_mount[i], 1, 0, false));
+    //     a_serial.print(", cw:");
+    //     a_serial.print(mrd_pddstr(sv.ixl_cw[i], 1, 0, true));
+    //     a_serial.print(", trm:");
+    //     a_serial.print(mrd_pddstr(sv.ixl_trim[i], 7, 2, true));
+    //     a_serial.print("  R-idx: ");
+    //     a_serial.print(mrd_pddstr(i, 2, 0, false));
+    //     a_serial.print(", id:");
+    //     a_serial.print(mrd_pddstr(sv.ixr_id[i], 2, 0, false));
+    //     a_serial.print(", mt:");
+    //     a_serial.print(mrd_pddstr(sv.ixr_mount[i], 1, 0, false));
+    //     a_serial.print(", cw:");
+    //     a_serial.print(mrd_pddstr(sv.ixr_cw[i], 1, 0, true));
+    //     a_serial.print(", trm:");
+    //     a_serial.println(mrd_pddstr(sv.ixr_trim[i], 7, 2, true));
+    //   }
+    // }
+    // return true;
 
     // デバッグ用の追加表示
     // a_serial.println("EEPROM data to save (first few values):");
@@ -82,7 +173,7 @@ bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe, Hardware
     // }
 
     // 書き込みデータの作成と書き込み
-    if (mrd_eeprom_write(array_tmp, EEPROM_PROTECT)) {
+    if (mrd_eeprom_write(array_tmp, EEPROM_PROTECT, Serial)) {
       a_serial.println("Write EEPROM succeed.");
       // a_serial.print("EEPROM data updated at address 1: ");
 

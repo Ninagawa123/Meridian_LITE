@@ -4,15 +4,18 @@
 // ヘッダファイルの読み込み
 #include "config.h"
 #include "main.h"
+#include "mrd_util.h"
 
 // ライブラリ導入
 #include <EEPROM.h>
 
 // EEPROM読み書き用共用体
 typedef union {
-  uint8_t bval[EEPROM_SIZE];            // 1バイト単位で540個のデータを持つ
-  short saval[3][int(EEPROM_SIZE / 4)]; // short型で3*90個の配列データを持つ
-  short sval[int(EEPROM_SIZE / 2)];     // short型で270個のデータを持つ
+  uint8_t bval[EEPROM_SIZE]; // 1バイト単位で540個のデータを持つ
+  int16_t saval[3][90];      // short型で3*90個の配列データを持つ
+  uint16_t usaval[3][90];    // unsigned short型で3*90個の配列データを持つ
+  int16_t sval[270];         // short型で270個のデータを持つ
+  uint16_t usval[270];       // unsigned short型で270個のデータを持つ
 } UnionEEPROM;
 UnionEEPROM eeprom_write_data; // EEPROM書き込み用
 UnionEEPROM eeprom_read_data;  // EEPROM読み込み用
@@ -90,21 +93,18 @@ bool mrd_eeprom_load_servosettings(ServoParam &a_sv, bool a_monitor, HardwareSer
   a_serial.println("Load and set servo settings from EEPROM.");
   UnionEEPROM array_tmp = mrd_eeprom_read();
   for (int i = 0; i < a_sv.num_max; i++) {
-    a_serial.print("Check:A");
     // 各サーボのマウント有無
     a_sv.ixl_mount[i] = static_cast<bool>(array_tmp.saval[1][20 + i * 2] & 0x0001); // bit0:マウント有無
     a_sv.ixr_mount[i] = static_cast<bool>(array_tmp.saval[1][50 + i * 2] & 0x0001); // bit0:マウント有無
     // 各サーボの実サーボ呼び出しID番号
     a_sv.ixl_id[i] = static_cast<uint8_t>(array_tmp.saval[1][20 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
     a_sv.ixr_id[i] = static_cast<uint8_t>(array_tmp.saval[1][50 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
-    a_serial.print("Check:B");
     // 各サーボの回転方向（正転・逆転）
     a_sv.ixl_cw[i] = static_cast<int8_t>((array_tmp.saval[1][20 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
     a_sv.ixr_cw[i] = static_cast<int8_t>((array_tmp.saval[1][50 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
     // 各サーボの直立デフォルト角度,トリム値(degree小数2桁までを100倍した値で格納されているものを展開)
     a_sv.ixl_trim[i] = array_tmp.saval[1][21 + i * 2] / 100.0f;
     a_sv.ixr_trim[i] = array_tmp.saval[1][51 + i * 2] / 100.0f;
-    a_serial.print("Check:C");
 
     if (a_monitor) {
       a_serial.print("L-idx:");
@@ -128,9 +128,7 @@ bool mrd_eeprom_load_servosettings(ServoParam &a_sv, bool a_monitor, HardwareSer
       a_serial.print(", trm:");
       a_serial.println(mrd_pddstr(sv.ixr_trim[i], 7, 2, true));
     }
-    a_serial.print("Check:D");
   }
-  a_serial.print("Check:E");
   return true;
 }
 
@@ -177,7 +175,7 @@ bool mrd_eeprom_dump_at_boot(bool a_do_dump, int a_bhd, HardwareSerial &a_serial
 /// @param a_write_data EEPROM書き込み用の配列データ.
 /// @param a_flg_protect EEPROMの書き込み許可があるかどうかのブール値.
 /// @return EEPROMの書き込みと読み込みが成功した場合はtrueを, 書き込まなかった場合はfalseを返す.
-bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect) {
+bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect, HardwareSerial &a_serial) {
   if (a_flg_protect) { // EEPROM書き込み実施フラグをチェック
     return false;
   }
@@ -204,6 +202,32 @@ bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect) {
       flg_renew_tmp = true;
     }
   }
+
+  if (true) {
+    for (int i = 0; i < 15; i++) { // データを書き込む時はbyte型
+      a_serial.print("L-idx:");
+      a_serial.print(mrd_pddstr(i, 2, 0, false));
+      a_serial.print(", id:");
+      a_serial.print(mrd_pddstr(mrd_slice_bits(a_write_data.usaval[1][20 + i * 2], 1, 7), 2, 0, false)); // 2bit-7bit目:サーボID
+      a_serial.print(", mt:");
+      a_serial.print(mrd_pddstr(mrd_slice_bits(a_write_data.usaval[1][20 + i * 2], 0, 1), 1, 0, false)); // 1bit目:マウント有無
+      a_serial.print(", cw:");
+      a_serial.print(mrd_pddstr(mrd_slice_bits(a_write_data.usaval[1][20 + i * 2], 8, 1), 1, 0, false)); // 9bit目:正転逆転
+      a_serial.print(", trm:");
+      a_serial.print(mrd_pddstr(float(a_write_data.saval[1][21 + i * 2] / 100), 7, 2, true));
+      a_serial.print("  R-idx: ");
+      a_serial.print(mrd_pddstr(i, 2, 0, false));
+      a_serial.print(", id:");
+      a_serial.print(mrd_pddstr(mrd_slice_bits(a_write_data.usaval[1][50 + i * 2], 1, 7), 2, 0, false)); // 2bit-7bit目:サーボID
+      a_serial.print(", mt:");
+      a_serial.print(mrd_pddstr(mrd_slice_bits(a_write_data.usaval[1][50 + i * 2], 0, 1), 1, 0, false)); // 1bit目:マウント有無
+      a_serial.print(", cw:");
+      a_serial.print(mrd_pddstr(mrd_slice_bits(a_write_data.usaval[1][50 + i * 2], 8, 1), 1, 0, false)); // 9bit目:正転逆転
+      a_serial.print(", trm:");
+      a_serial.println(mrd_pddstr(float(a_write_data.saval[1][51 + i * 2] / 100), 7, 2, true));
+    }
+  }
+
   if (flg_renew_tmp) // 変更箇所があれば書き込みを実施
   {
     EEPROM.commit(); // 書き込みを確定する
@@ -231,7 +255,7 @@ bool mrd_eeprom_write_read_check(UnionEEPROM a_write_data, bool a_do, bool a_pro
   Serial.println("Try to write EEPROM: ");
   mrd_eeprom_dump_to_serial(a_write_data, a_bhd, Serial); // 書き込み内容をダンプ表示
 
-  if (mrd_eeprom_write(a_write_data, a_protect)) {
+  if (mrd_eeprom_write(a_write_data, a_protect, Serial)) {
     Serial.println("...Write OK.");
   } else {
     Serial.println("...Write failed.");
