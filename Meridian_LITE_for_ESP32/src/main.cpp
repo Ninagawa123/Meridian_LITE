@@ -264,8 +264,6 @@ void loop() {
     err.pc_esp++;
     mrd.monitor_check_flow("CsErr*", monitor.flow); // デバグ用フロー表示
   }
-  // Serial.print("SQ:");                    // ★
-  // Serial.println(r_udp_meridim.usval[1]); // ★
 
   // @[2-5] シーケンス番号チェック
   mrdsq.r_expect = mrd_seq_predict_num(mrdsq.r_expect); // シーケンス番号予想値の生成
@@ -295,7 +293,7 @@ void loop() {
   mrd.monitor_check_flow("[3]", monitor.flow); // デバグ用フロー表示
 
   // @[3-1] MasterCommand group1 の処理
-  execute_master_command_1(s_udp_meridim, flg.meridim_rcvd, Serial);
+  execute_master_command_1(s_udp_meridim, flg.meridim_rcvd, sv, Serial);
 
   //------------------------------------------------------------------------------------
   //  [ 4 ] センサー類読み取り
@@ -326,7 +324,7 @@ void loop() {
   mrd.monitor_check_flow("[6]", monitor.flow); // デバグ用フロー表示
 
   // @[6-1] MasterCommand group2 の処理
-  execute_master_command_2(s_udp_meridim, flg.meridim_rcvd, Serial);
+  execute_master_command_2(s_udp_meridim, flg.meridim_rcvd, sv, Serial);
 
   //------------------------------------------------------------------------------------
   //  [ 7 ] ESP32内部で位置制御する場合の処理
@@ -390,7 +388,7 @@ void loop() {
   //------------------------------------------------------------------------------------
   mrd.monitor_check_flow("[11]", monitor.flow); // デバグ用フロー表示
 
-  execute_master_command_3(r_udp_meridim, s_udp_meridim, flg.meridim_rcvd, Serial);
+  execute_master_command_3(s_udp_meridim, flg.meridim_rcvd, sv, Serial);
 
   //------------------------------------------------------------------------------------
   //  [ 12 ] UDP送信信号作成
