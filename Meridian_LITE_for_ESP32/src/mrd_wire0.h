@@ -31,7 +31,7 @@ bool mrd_wire0_init_i2c(int a_i2c0_speed, int a_pinSDA = -1, int a_pinSCL = -1) 
   return true;
 }
 
-/// @brief MPU6050センサーのDMP（デジタルモーションプロセッサ）を初期化し,
+/// @brief MPU6050センサーのDMP(デジタルモーションプロセッサ)を初期化し,
 ///        ジャイロスコープと加速度センサーのオフセットを設定する.
 /// @param a_ahrs AHRSの値を保持する構造体.
 /// @return DMPの初期化が成功した場合はtrue, 失敗した場合はfalseを返す.
@@ -79,7 +79,7 @@ bool mrd_wire0_init_bno055(AhrsValue &a_ahrs) {
 }
 
 /// @brief 指定されたIMU/AHRSタイプに応じて適切なセンサの初期化を行います.
-/// @param a_imuahrs_type 使用するセンサのタイプを示す列挙型です（MPU6050, MPU9250, BNO055）.
+/// @param a_imuahrs_type 使用するセンサのタイプを示す列挙型です(MPU6050, MPU9250, BNO055).
 /// @param a_i2c0_speed I2C通信のクロック速度です.
 /// @param a_ahrs AHRSの値を保持する構造体.
 /// @param a_pinSDA SDAのピン番号.下記と合わせて省略可.
@@ -241,7 +241,7 @@ bool mrd_wire0_read_ahrs_i2c(AhrsValue &a_ahrs) { // ※wireTimer0.beginの引�
 //------------------------------------------------------------------------------------
 
 /// @brief 指定されたIMU/AHRSタイプに基づいて, 計測したAHRSデータを読み込む.
-/// @param a_type 使用するセンサのタイプを示す列挙（MPU6050, MPU9250, BNO055）.
+/// @param a_type 使用するセンサのタイプを示す列挙(MPU6050, MPU9250, BNO055).
 /// @param a_ahrs_result AHRSから読み取った結果を格納した配列.
 /// @return データの書き込みが成功した場合はtrue, それ以外の場合はfalseを返す.
 bool meriput90_ahrs(Meridim90Union &a_meridim, float a_ahrs_result[], int a_type) {

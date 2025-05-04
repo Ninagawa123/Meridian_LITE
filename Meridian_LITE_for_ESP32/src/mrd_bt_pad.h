@@ -28,7 +28,7 @@ constexpr unsigned short PAD_TABLE_KRC5FH_TO_COMMON[16] = { //
 //----------------------------------------------------------------------
 
 /// @brief KRC-5FHジョイパッドからデータを読み取り, 指定された間隔でデータを更新する.
-/// @param a_interval 読み取り間隔（ミリ秒）.
+/// @param a_interval 読み取り間隔(ミリ秒).
 /// @return 更新されたジョイパッドの状態を64ビット整数で返す.
 uint64_t mrd_pad_read_krc(uint a_interval, IcsHardSerialClass &a_ics) {
   static uint64_t pre_val_tmp = 0; // 前回の値を保持する静的変数
@@ -183,7 +183,7 @@ uint64_t mrd_bt_read_wiimote() {
 //==================================================================================================
 
 /// @brief 指定されたジョイパッドタイプに応じて最新データを読み取り, 64ビット整数で返す.
-/// @param a_pad_type ジョイパッドのタイプを示す列挙型（MERIMOTE, BLUERETRO, SBDBT, KRR5FH）.
+/// @param a_pad_type ジョイパッドのタイプを示す列挙型(MERIMOTE, BLUERETRO, SBDBT, KRR5FH).
 /// @param a_pad_data 64ビットのボタンデータ
 /// @return 64ビット整数に変換された受信データ
 /// @note WIIMOTEの場合は, スレッドがpad_array.ui64valを自動更新.

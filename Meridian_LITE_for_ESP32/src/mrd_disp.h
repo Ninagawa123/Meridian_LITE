@@ -106,7 +106,7 @@ public:
   }
 
   /// @brief 指定されたUARTラインとサーボタイプに基づいてサーボの通信プロトコルを表示する.
-  /// @param a_line UART通信ライン（L, R, またはC）.
+  /// @param a_line UART通信ライン(L, R, またはC).
   /// @param a_servo_type サーボのタイプを示す整数値.
   /// @return サーボがサポートされている場合はtrueを, サポートされていない場合はfalseを返す.
   bool servo_protocol(UartLine a_line, int a_servo_type) {
@@ -245,7 +245,7 @@ public:
   }
 
   /// @brief サーボモーターのエラーを検出した場合にエラーメッセージを表示する.
-  /// @param a_line サーボモーターが接続されているUARTライン（L, R, C）.
+  /// @param a_line サーボモーターが接続されているUARTライン(L, R, C).
   /// @param a_num エラーが発生しているサーボの番号.
   /// @param a_flg_disp エラーメッセージを表示するかどうかのブール値.
   /// @return エラーメッセージが表示された場合はtrueを, 表示されなかった場合はfalseを返す.

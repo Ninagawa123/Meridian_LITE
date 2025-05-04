@@ -87,10 +87,10 @@ enum BinHexDec { // 数値表示タイプの列挙型(Bin, Hex, Dec)
 
 // システム用の変数
 const int MRDM_BYTE = MRDM_LEN * 2;    // Meridim配列のバイト型の長さ
-const int MRD_ERR = MRDM_LEN - 2;      // エラーフラグの格納場所（配列の末尾から2つめ）
-const int MRD_ERR_u = MRD_ERR * 2 + 1; // エラーフラグの格納場所（上位8ビット）
-const int MRD_ERR_l = MRD_ERR * 2;     // エラーフラグの格納場所（下位8ビット）
-const int MRD_CKSM = MRDM_LEN - 1;     // チェックサムの格納場所（配列の末尾）
+const int MRD_ERR = MRDM_LEN - 2;      // エラーフラグの格納場所(配列の末尾から2つめ)
+const int MRD_ERR_u = MRD_ERR * 2 + 1; // エラーフラグの格納場所(上位8ビット)
+const int MRD_ERR_l = MRD_ERR * 2;     // エラーフラグの格納場所(下位8ビット)
+const int MRD_CKSM = MRDM_LEN - 1;     // チェックサムの格納場所(配列の末尾)
 const int PAD_LEN = 5;                 // リモコン用配列の長さ
 TaskHandle_t thp[4];                   // マルチスレッドのタスクハンドル格納用
 
@@ -124,13 +124,13 @@ struct MrdFlags {
   bool sdcard_read_mode = false;        // SDCARDからの読み込みモード.
   bool wire0_init = false;              // I2C 0系統の初期化合否
   bool wire1_init = false;              // I2C 1系統の初期化合否
-  bool bt_busy = false;                 // Bluetoothの受信中フラグ（UDPコンフリクト回避用）
+  bool bt_busy = false;                 // Bluetoothの受信中フラグ(UDPコンフリクト回避用)
   bool spi_rcvd = true;                 // SPIのデータ受信判定
   bool udp_rcvd = false;                // UDPのデータ受信判定
-  bool udp_busy = false;                // UDPスレッドでの受信中フラグ（送信抑制）
+  bool udp_busy = false;                // UDPスレッドでの受信中フラグ(送信抑制)
 
-  bool udp_receive_mode = MODE_UDP_RECEIVE; // PCからのデータ受信実施（0:OFF, 1:ON, 通常は1）
-  bool udp_send_mode = MODE_UDP_SEND;       // PCへのデータ送信実施（0:OFF, 1:ON, 通常は1）
+  bool udp_receive_mode = MODE_UDP_RECEIVE; // PCからのデータ受信実施(0:OFF, 1:ON, 通常は1)
+  bool udp_send_mode = MODE_UDP_SEND;       // PCへのデータ送信実施(0:OFF, 1:ON, 通常は1)
   bool meridim_rcvd = false;                // Meridimが正しく受信できたか.
 };
 MrdFlags flg;
@@ -156,10 +156,10 @@ MrdTimer tmr;
 
 // エラーカウント用
 struct MrdErr {
-  int esp_pc = 0;   // PCの受信エラー（ESP32からのUDP）
-  int pc_esp = 0;   // ESP32の受信エラー（PCからのUDP）
-  int esp_tsy = 0;  // Teensyの受信エラー（ESP32からのSPI）
-  int tsy_esp = 0;  // ESP32の受信エラー（TeensyからのSPI）
+  int esp_pc = 0;   // PCの受信エラー(ESP32からのUDP)
+  int pc_esp = 0;   // ESP32の受信エラー(PCからのUDP)
+  int esp_tsy = 0;  // Teensyの受信エラー(ESP32からのSPI)
+  int tsy_esp = 0;  // ESP32の受信エラー(TeensyからのSPI)
   int esp_skip = 0; // UDP→ESP受信のカウントの連番スキップ回数
   int tsy_skip = 0; // ESP→Teensy受信のカウントの連番スキップ回数
   int pc_skip = 0;  // PC受信のカウントの連番スキップ回数
@@ -212,7 +212,7 @@ struct AhrsValue {
 
   float zeros[16] = {0};               // リセット用
   float ave_data[16];                  // 上記の移動平均値を入れる
-  float result[16];                    // 加工後の最新のmpuデータ（二次データ）
+  float result[16];                    // 加工後の最新のmpuデータ(二次データ)
   float stock_data[IMUAHRS_STOCK][16]; // 上記の移動平均値計算用のデータストック
   int stock_count = 0;                 // 上記の移動平均値計算用のデータストックを輪番させる時の変数
   VectorInt16 aa;                      // [x, y, z]            加速度センサの測定値
@@ -224,7 +224,7 @@ AhrsValue ahrs;
 
 // サーボ用変数
 struct ServoParam {
-  // サーボの最大接続 (サーボ送受信のループ処理数）
+  // サーボの最大接続 (サーボ送受信のループ処理数)
   int num_max;
 
   // 各サーボのマウントありなし(config.hで設定)
@@ -242,6 +242,10 @@ struct ServoParam {
   // 各サーボの直立ポーズトリム値(config.hで設定)
   float ixl_trim[IXL_MAX]; // L系統
   float ixr_trim[IXR_MAX]; // R系統
+
+  // 各サーボのベンダーと型番(config.hで設定)
+  float ixl_type[IXL_MAX]; // L系統
+  float ixr_type[IXR_MAX]; // R系統
 
   // 各サーボのポジション値(degree)
   float ixl_tgt[IXL_MAX] = {0};      // L系統の目標値
@@ -287,9 +291,5 @@ uint16_t mrd_seq_predict_num(uint16_t a_previous_num) {
   }
   return x_tmp;
 }
-
-// 予約用
-bool execute_master_command_1(Meridim90Union a_meridim, bool a_flg_exe);
-bool execute_master_command_2(Meridim90Union a_meridim, bool a_flg_exe);
 
 #endif //__MERIDIAN_MAIN_FUNC__
