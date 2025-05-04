@@ -307,12 +307,9 @@ ESP32にヒートシンクをつけるのもよいですし, 扇風機で風を�
 サーボの初期位置などが未設定であるため, 起動時に関節があらぬ方向に回転し, 大きな負荷がかかる可能性がありますので注意してください.  
 初期位置の調整後, ロボットを吊るした状態などモーターへの負荷がほとんどない場合であれば, 全サーボオンが可能な場合があります.  
   
-ID紐付け, 回転方向・トリム調整の仕組みは現在作成中です.  
-config.h内のコメントを参考に,  
-// 各サーボの内外回転プラスマイナス方向補正(1 or -1)  
-// 各サーボのトリム値(degree)  
-などを設定してください.  
-    
+ID紐付け, 回転方向・トリム調整は[Meridan_console](https://github.com/Ninagawa123/Meridian_console)で行うことができます.  
+設定方法は[Meridan_consoleのREADME](https://github.com/Ninagawa123/Meridian_console)に記載しています.  
+  
 [![dance](https://img.youtube.com/vi/Wfc9j4Pmr3E/0.jpg)](https://www.youtube.com/watch?v=Wfc9j4Pmr3E)  
   
 サーボ設定が済んだ上で, ボードに電源を接続し, Meridian consoleからdemoを実行すると, 100Hz更新のヌルヌルとしたダンスを披露します.  
