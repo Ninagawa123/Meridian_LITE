@@ -117,7 +117,7 @@
 
 // EEPROMの設定
 #define EEPROM_SIZE    540 // 使用するEEPROMのサイズ(バイト)
-#define EEPROM_SET     0   // 起動時にEEPROMにconfig.hの内容をセット(mrd_set_eeprom)
+#define EEPROM_SET     1   // 起動時にEEPROMにconfig.hの内容をセット(mrd_set_eeprom)
 #define EEPROM_PROTECT 0   // EEPROMの書き込み保護(0:保護しない, 1:書き込み禁止)
 #define EEPROM_LOAD    1   // 起動時にEEPROMの内容を諸設定にロードする
 #define EEPROM_DUMP    1   // 起動時のEEPROM内容のダンプ表示
@@ -388,8 +388,6 @@ float IDR_TRIM[IXR_MAX] = {
 #define MCMD_EEPROM_PCTOBOARD_DATA0 10300  // EEPROM用の[0][*]をPCからボードにMeridimで送信する
 #define MCMD_EEPROM_PCTOBOARD_DATA1 10301  // EEPROM用の[1][*]をPCからボードにMeridimで送信する
 #define MCMD_EEPROM_PCTOBOARD_DATA2 10302  // EEPROM用の[2][*]をPCからボードにMeridimで送信する
-#define MCMD_REQUEST_TRIM_POSITION  20001  // 通信相手にトリムポジション（位置ゼロ）の送信を要求する
-#define MCMD_REQUEST_HOME_POSITION  20002  // 通信相手にホームポジションの送信を要求する
 
 #define MCMD_NAK 32766 // コマンド実行の失敗を応答
 #define MCMD_ACK 32767 // コマンド実行の成功を応答

@@ -252,6 +252,10 @@ void loop() {
     // @[2-4a] エラービット14番(ESP32のPCからのUDP受信エラー検出)をサゲる
     mrd_clear_bit16(s_udp_meridim.usval[MRD_ERR], ERRBIT_14_PC_ESP);
 
+    if (s_udp_meridim.sval[0] == MCMD_EEPROM_SAVE_TRIM) {
+      Serial.println(r_udp_meridim.sval[0]);
+    }
+
   } else // チェックサムがNGならバッファから転記せず前回のデータを使用する
   {
 
