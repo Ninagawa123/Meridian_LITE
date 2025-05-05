@@ -175,7 +175,7 @@ Meridian consoleを起動し, ESP32DevKitCの電源が入っていると自動�
 - [回路図を公開](docs/Meridian_Board_LITE_schema.pdf)しており, 自作することが可能です.  
 - 完成品ボードの頒布もあります. [https://1985b.booth.pm/](https://1985b.booth.pm/)  
     
-## Boaard と ESP32DevKitCのドッキング  
+## Board と ESP32DevKitCのドッキング  
 
 <img width="400" alt="GettingStarted_Download" src="./docs/images/GettingStarted_13.png">
 
