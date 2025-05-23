@@ -65,9 +65,9 @@
 //
 // [00]      マスターコマンド デフォルトは90 で配列数も同時に示す
 // [01]      シーケンス番号
-// [02]-[04] IMU/AHRS:acc＿x,acc＿y,acc＿z    加速度x,y,z
-// [05]-[07] IMU/AHRS:gyro＿x,gyro＿y,gyro＿z ジャイロx,y,z
-// [08]-[10] IMU/AHRS:mag＿x,mag＿y,mag＿z    磁気コンパスx,y,z
+// [02]-[04] IMU/AHRS:acc_x,acc_y,acc_z    加速度x,y,z
+// [05]-[07] IMU/AHRS:gyro_x,gyro_y,gyro_z ジャイロx,y,z
+// [08]-[10] IMU/AHRS:mag_x,mag_y,mag_z    磁気コンパスx,y,z
 // [11]      IMU/AHRS:temp                   温度
 // [12]-[14] IMU/AHRS:DMP ROLL,PITCH,YAW     DMP推定値 ロール,ピッチ,ヨー
 // [15]      ボタンデータ1
@@ -320,7 +320,7 @@ int IXR_CW[IXR_MAX] = {
 };
 
 // L系統のトリム値(degree)
-float IDL_TRIM[IXL_MAX] = {
+float IXL_TRIM[IXL_MAX] = {
     0.0,     // [00]頭ヨー
     -20.42,  // [01]左肩ピッチ
     -103.55, // [02]左肩ロール
@@ -339,7 +339,7 @@ float IDL_TRIM[IXL_MAX] = {
 };
 
 // R系統のトリム値(degree)
-float IDR_TRIM[IXR_MAX] = {
+float IXR_TRIM[IXR_MAX] = {
     -4.28,  // [00]腰ヨー
     0.68,   // [01]右肩ピッチ
     -89.41, // [02]右肩ロール

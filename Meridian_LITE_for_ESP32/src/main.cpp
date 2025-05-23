@@ -84,12 +84,14 @@ void setup() {
   for (int i = 0; i <= sv.num_max; i++) {                // configで設定した値を反映させる
     sv.ixl_mount[i] = IXL_MT[i];
     sv.ixr_mount[i] = IXR_MT[i];
+    sv.ixl_type[i] = IXL_MT[i];
+    sv.ixr_type[i] = IXR_MT[i];
     sv.ixl_id[i] = IXL_ID[i];
     sv.ixr_id[i] = IXR_ID[i];
     sv.ixl_cw[i] = IXL_CW[i];
     sv.ixr_cw[i] = IXR_CW[i];
-    sv.ixl_trim[i] = IDL_TRIM[i];
-    sv.ixr_trim[i] = IDR_TRIM[i];
+    sv.ixl_trim[i] = IXL_TRIM[i];
+    sv.ixr_trim[i] = IXR_TRIM[i];
   };
 
   // サーボUARTの通信速度の表示
@@ -355,8 +357,8 @@ void loop() {
   mrd.monitor_check_flow("[8]", monitor.flow); // デバグ用フロー表示
 
   // @[8-1] サーボ受信値の処理
-  if (!MODE_ESP32_STANDALONE) {                                                       // サーボ処理を行うかどうか
-    mrd_servos_drive_lite(s_udp_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, sv); // サーボ動作を実行する
+  if (!MODE_ESP32_STANDALONE) {                                                      // サーボ処理を行うかどうか
+    mrd_servo_drive_lite(s_udp_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, sv); // サーボ動作を実行する
   } else {
     // ボード単体動作モードの場合はサーボ処理をせずL0番サーボ値として+-30度のサインカーブ値を返す
     sv.ixl_tgt[0] = sin(tmr.count_loop * M_PI / 180.0) * 30;
@@ -400,10 +402,9 @@ void loop() {
   s_udp_meridim.usval[1] = mrdsq.s_increment;
 
   // @[12-2] エラーが出たサーボのインデックス番号を格納
-  s_udp_meridim.ubval[MRD_ERR_l] = mrd_servos_make_errcode_lite(sv);
+  s_udp_meridim.ubval[MRD_ERR_l] = mrd_servo_make_errcode_lite(sv);
 
   // @[12-3] チェックサムを計算して格納
-  // s_udp_meridim.sval[MRD_CKSM] = mrd.cksm_val(s_udp_meridim.sval, MRDM_LEN);
   mrd_meriput90_cksm(s_udp_meridim);
 
   //------------------------------------------------------------------------------------

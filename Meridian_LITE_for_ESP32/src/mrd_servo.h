@@ -70,7 +70,7 @@ bool mrd_servo_begin(UartLine a_line, int a_servo_type) {
 /// @param a_R_type R系統のサーボタイプ.
 /// @param a_sv サーボパラメータの構造体.
 /// @return サーボの駆動が成功した場合はtrueを, 失敗した場合はfalseを返す.
-bool mrd_servos_drive_lite(Meridim90Union &a_meridim, int a_L_type, int a_R_type, ServoParam &a_sv) {
+bool mrd_servo_drive_lite(Meridim90Union &a_meridim, int a_L_type, int a_R_type, ServoParam &a_sv) {
   if (a_L_type == 43 && a_R_type == 43) // ICSサーボがL系R系に設定されていた場合はLR均等送信を実行
   {
     mrd_sv_drive_ics_double(a_meridim, a_sv);
@@ -100,7 +100,7 @@ bool mrd_servo_all_off(Meridim90Union &a_meridim) {
 /// @param a_sv サーボパラメータの構造体.
 /// @return uint8_tで番号を返す.
 ///         100-149(L系統 0-49),200-249(R系統 0-49)
-uint8_t mrd_servos_make_errcode_lite(ServoParam a_sv) {
+uint8_t mrd_servo_make_errcode_lite(ServoParam a_sv) {
   uint8_t servo_ix_tmp = 0;
   for (int i = 0; i < 15; i++) {
     if (a_sv.ixl_stat[i]) {
