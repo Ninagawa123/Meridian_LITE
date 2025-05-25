@@ -24,7 +24,7 @@
 //   GND         -  ICS変換基板 GND
 //
 //   19          -  SPI_MISO
-//   21          -  SPI_MOSI
+//   23          -  SPI_MOSI
 //   18          -  SPI_CSK
 //   15          -  SPI_CS SD
 
