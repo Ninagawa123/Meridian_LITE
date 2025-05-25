@@ -26,7 +26,29 @@
 //   19          -  SPI_MISO
 //   23          -  SPI_MOSI
 //   18          -  SPI_CSK
-//   15          -  SPI_CS SD
+//   15          -  SPI_CS SD(起動時LOW必須, 外部PU厳禁)
+//   05          -  SPI_CS BOARD PIN(Etherなど)
+//
+//   00          -  NG/起動時HIGH必須
+//   01          -  NG(USBシリアルTX0)
+//   02          -  NG/起動時HIGH必須
+//   03          -  NG(USBシリアルRX0)
+//   06          -  NG(FLASH SCK)
+//   07          -  NG(FLASH D0)
+//   08          -  NG(FLASH D1)
+//   09          -  NG(FLASH HD)
+//   10          -  NG(FLASH WP)
+//   11          -  NG(FLASH CS)
+//   12          -  NG(起動時LOW必須/電圧設定1.8Vor3.3V)
+//   13          -  OK/LED?
+//   14          -  OK/(SPI HS CLK)
+//   25          -  OK/BOARD PIN(Input/Output)/DAC出力0-3.3V
+//   26          -  OK/BOARD PIN(Input/Output)/DAC出力0-3.3V
+//   34          -  OK/BOARD PIN, アナログ入力のみ（PD/PD/出力不可）
+//   35          -  OK/BOARD PIN, アナログ入力のみ（PD/PD/出力不可）
+//   39          -  OK/アナログ入力のみ（PD/PD/出力不可）
+//   36          -  OK/アナログ入力のみ（PD/PD/出力不可）
+
 
 //==================================================================================================
 //  サーボIDとロボット部位、軸との対応表 (KHR-3HVの例)
