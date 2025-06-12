@@ -53,27 +53,27 @@
 //  サーボIDとロボット部位、軸との対応表 (KHR-3HVの例)
 //==================================================================================================
 //
-// ID    Parts/Axis ＜ICS_Left_Upper SIO1,SIO2＞
+// ID    Parts/Axis <ICS_Left_Upper SIO1,SIO2>
 // [L00] 頭/ヨー
 // [L01] 左肩/ピッチ
 // [L02] 左肩/ロール
 // [L03] 左肘/ヨー
 // [L04] 左肘/ピッチ
 // [L05] -
-// ID    Parts/Axis ＜ICS_Left_Lower SIO3,SIO4＞
+// ID    Parts/Axis <ICS_Left_Lower SIO3,SIO4>
 // [L06] 左股/ロール
 // [L07] 左股/ピッチ
 // [L08] 左膝/ピッチ
 // [L09] 左足首/ピッチ
 // [L10] 左足首/ロール
-// ID    Parts/Axis  ＜ICS_Right_Upper SIO5,SIO6＞
+// ID    Parts/Axis  <ICS_Right_Upper SIO5,SIO6>
 // [R00] 腰/ヨー
 // [R01] 右肩/ピッチ
 // [R02] 右肩/ロール
 // [R03] 右肘/ヨー
 // [R04] 右肘/ピッチ
 // [R05] -
-// ID    Parts/Axis  ＜ICS_Right_Lower SIO7,SIO8＞
+// ID    Parts/Axis  <ICS_Right_Lower SIO7,SIO8>
 // [R06] 右股/ロール
 // [R07] 右股/ピッチ
 // [R08] 右膝/ピッチ
@@ -86,9 +86,9 @@
 //
 // [00]      マスターコマンド デフォルトは90 で配列数も同時に示す
 // [01]      シーケンス番号
-// [02]-[04] IMU/AHRS:acc＿x,acc＿y,acc＿z    加速度x,y,z
-// [05]-[07] IMU/AHRS:gyro＿x,gyro＿y,gyro＿z ジャイロx,y,z
-// [08]-[10] IMU/AHRS:mag＿x,mag＿y,mag＿z    磁気コンパスx,y,z
+// [02]-[04] IMU/AHRS:acc_x,acc_y,acc_z      加速度x,y,z
+// [05]-[07] IMU/AHRS:gyro_x,gyro_y,gyro_z   ジャイロx,y,z
+// [08]-[10] IMU/AHRS:mag_x,mag_y,mag_z      磁気コンパスx,y,z
 // [11]      IMU/AHRS:temp                   温度
 // [12]-[14] IMU/AHRS:DMP ROLL,PITCH,YAW     DMP推定値 ロール,ピッチ,ヨー
 // [15]      ボタンデータ1
@@ -128,7 +128,7 @@
 #define MOUNT_PAD     PC          // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
 
 // 動作モード
-#define MODE_ESP32_STANDALONE 0 // ESP32をボードに挿さず動作確認(0:NO, 1:YES)
+#define MODE_ESP32_STANDALONE 1 // ESP32をボードに挿さず動作確認(0:NO, 1:YES)
 #define MODE_UDP_RECEIVE      1 // PCからのデータ受信(0:OFF, 1:ON, 通常は1)
 #define MODE_UDP_SEND         1 // PCへのデータ送信(0:OFF, 1:ON, 通常は1)
 
@@ -136,12 +136,15 @@
 #define MODE_FIXED_IP 0 // IPアドレスを固定するか(0:NO, 1:YES)
 #define UDP_TIMEOUT   4 // UDPの待受タイムアウト(単位ms,推奨値0)
 
+// 有線LANの設定(固定IPは別途keys.hで指定)
+#define MODE_ETHER 0 // wifiか優先LANか(0:wifi, 1:有線LAN, 通常は0)
+
 // EEPROMの設定
 #define EEPROM_SIZE    540 // 使用するEEPROMのサイズ(バイト)
-#define EEPROM_SET     1   // 起動時にEEPROMにconfig.hの内容をセット(mrd_set_eeprom)
+#define EEPROM_SET     0   // 起動時にEEPROMにconfig.hの内容をセット(mrd_set_eeprom)
 #define EEPROM_PROTECT 0   // EEPROMの書き込み保護(0:保護しない, 1:書き込み禁止)
 #define EEPROM_LOAD    1   // 起動時にEEPROMの内容を諸設定にロードする
-#define EEPROM_DUMP    1   // 起動時のEEPROM内容のダンプ表示
+#define EEPROM_DUMP    0   // 起動時のEEPROMデータのダンプ表示
 #define EEPROM_STYLE   Dec // 起動時のEEPROM内容のダンプ表示の書式(Bin,Hex,Dec)
 
 // 動作チェックモード
@@ -178,13 +181,15 @@
 #define PAD_GENERALIZE   1     // ジョイパッドの入力値をPS系に一般化する
 
 // ピンアサイン
-#define PIN_ERR_LED       25 // LED用 処理が時間内に収まっていない場合に点灯
-#define PIN_EN_L          33 // サーボL系統のENピン
-#define PIN_EN_R          4  // サーボR系統のENピン
-#define PIN_CHIPSELECT_SD 15 // SDカード用のCSピン
-#define PIN_I2C0_SDA      22 // I2CのSDAピン
-#define PIN_I2C0_SCL      21 // I2CのSCLピン
-#define PIN_LED_BT        26 // Bluetooth接続確認用ピン(点滅はペアリング,点灯でリンク確立)
+#define PIN_ERR_LED        25 // LED用 処理が時間内に収まっていない場合に点灯
+#define PIN_EN_L           33 // サーボL系統のENピン
+#define PIN_EN_R           4  // サーボR系統のENピン
+#define PIN_CHIPSELECT_SD  15 // SDカード用のCSピン
+#define PIN_CHIPSELECT_LAN 5  // 有線LAN用のCSピン
+#define PIN_RESET_LAN      14 // W5500リセットピン(※ボード裏から半田付けにてフリーピンに配線)
+#define PIN_I2C0_SDA       22 // I2CのSDAピン
+#define PIN_I2C0_SCL       21 // I2CのSCLピン
+#define PIN_LED_BT         26 // Bluetooth接続確認用ピン(点滅はペアリング,点灯でリンク確立)
 
 //-------------------------------------------------------------------------
 // サーボ設定
@@ -341,7 +346,7 @@ int IXR_CW[IXR_MAX] = {
 };
 
 // L系統のトリム値(degree)
-float IDL_TRIM[IXL_MAX] = {
+float IXL_TRIM[IXL_MAX] = {
     0.0,     // [00]頭ヨー
     -20.42,  // [01]左肩ピッチ
     -103.55, // [02]左肩ロール
@@ -360,7 +365,7 @@ float IDL_TRIM[IXL_MAX] = {
 };
 
 // R系統のトリム値(degree)
-float IDR_TRIM[IXR_MAX] = {
+float IXR_TRIM[IXR_MAX] = {
     -4.28,  // [00]腰ヨー
     0.68,   // [01]右肩ピッチ
     -89.41, // [02]右肩ロール
