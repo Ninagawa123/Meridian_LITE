@@ -1,7 +1,7 @@
 #ifndef __MERIDIAN_LITE_MAIN__
 #define __MERIDIAN_LITE_MAIN__
 
-#define VERSION "Meridian_LITE_v1.1.1_2025_05.24" // バージョン表示
+#define VERSION "Meridian_LITE_v1.1.1_2025_06.08" // バージョン表示
 
 /// @file    Meridian_LITE_for_ESP32/src/main.cpp
 /// @brief   Meridian is a system that smartly realizes the digital twin of a robot.
@@ -23,6 +23,7 @@
 #include "mrd_command.h"
 #include "mrd_disp.h"
 #include "mrd_eeprom.h"
+#include "mrd_ether.h"
 #include "mrd_move.h"
 #include "mrd_sd.h"
 #include "mrd_servo.h"
@@ -44,6 +45,9 @@ portMUX_TYPE timer_mux = portMUX_INITIALIZER_UNLOCKED; // ハードウェアタ�
 unsigned long count_frame = 0;                         // フレーム処理の完了時にカウントアップ
 volatile unsigned long count_timer = 0;                // フレーム用タイマーのカウントアップ
 
+// Ethernet送信先IP（事前パース）
+IPAddress ether_send_ip(0, 0, 0, 0); // Ethernet送信先IP（初期化）
+
 /// @brief count_timerを保護しつつ1ずつインクリメント
 void IRAM_ATTR frame_timer() {
   portENTER_CRITICAL_ISR(&timer_mux);
@@ -63,8 +67,7 @@ void setup() {
 
   // シリアルモニターの設定
   Serial.begin(SERIAL_PC_BPS);
-  // シリアルモニターの確立待ち
-  unsigned long start_time = millis();
+  unsigned long start_time = millis();                             // シリアルモニターの確立待ち
   while (!Serial && (millis() - start_time < SERIAL_PC_TIMEOUT)) { // タイムアウトもチェック
     delay(1);
   }
@@ -153,10 +156,70 @@ void setup() {
   }
 
   // WiFiの初期化と開始
-  mrd_disp.esp_wifi(WIFI_AP_SSID);
-  if (mrd_wifi_init(udp, WIFI_AP_SSID, WIFI_AP_PASS, Serial)) {
-    // wifiIPの表示
-    mrd_disp.esp_ip(MODE_FIXED_IP, WIFI_SEND_IP, FIXED_IP_ADDR);
+  if (!MODE_ETHER) { // MODE_ETHER = 0 ならWiFiの初期化
+    mrd_disp.esp_wifi(WIFI_AP_SSID);
+    if (MODE_FIXED_IP) { // 固定IPならばwifi.configを設定する
+      IPAddress fixed_ip = mrd_parse_ip_address(FIXED_IP_ADDR, Serial);
+      IPAddress fixed_gw = mrd_parse_ip_address(FIXED_IP_GATEWAY, Serial);
+      IPAddress fixed_sb = mrd_parse_ip_address(FIXED_IP_SUBNET, Serial);
+      WiFi.config(fixed_ip, fixed_gw, fixed_sb);
+      Serial.println("FIXEDIP****");
+    }
+    if (mrd_wifi_init(udp, WIFI_AP_SSID, WIFI_AP_PASS, Serial)) {
+      mrd_disp.esp_ip(MODE_FIXED_IP, WIFI_SEND_IP, FIXED_IP_ADDR); // wifiIPの表示
+    }
+
+  } else { // MODE_ETHER = 1 ならEthernet初期化
+
+    // Macアドレスのパース
+    // byte mac_et[] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x00}; // W5500のMACアドレス
+
+    byte ether_mac[6];
+    if (parseMacAddress(ETHER_MAC, ether_mac)) {
+      Serial.println("MAC address parsed successfully:");
+      Serial.print("byte ether_mac[] = {");
+      for (int i = 0; i < 6; i++) {
+        Serial.print("0x");
+        if (ether_mac[i] < 0x10)
+          Serial.print("0");
+        Serial.print(ether_mac[i], HEX);
+        if (i < 5)
+          Serial.print(", ");
+      }
+      Serial.println("};");
+
+      // 個別の値も表示
+      Serial.println("\nIndividual bytes:");
+      for (int i = 0; i < 6; i++) {
+        Serial.print("ether_mac[");
+        Serial.print(i);
+        Serial.print("] = 0x");
+        if (ether_mac[i] < 0x10)
+          Serial.print("0");
+        Serial.println(ether_mac[i], HEX);
+      }
+
+      if (mrd_ether_init(udp_et, PIN_CHIPSELECT_LAN, ether_mac, Serial)) {
+        Serial.println("Ethernet initialization completed successfully.");
+
+        // Ethernet送信先IPの事前パース
+        ether_send_ip = mrd_parse_ip_address(ETHER_GATEWAY, Serial);
+
+        if (ether_send_ip == IPAddress(0, 0, 0, 0)) {
+          // エラー状態でシステム停止（LEDで視覚的に通知）
+          mrd_error_stop(PIN_ERR_LED, "ERROR: Ethernet initialization failed. Fix WIFI_SEND_IP and restart", Serial);
+        } else {
+          Serial.print("Ethernet send IP configured: ");
+          Serial.println(ether_send_ip);
+        }
+      } else {
+        mrd_error_stop(PIN_ERR_LED, "ERROR: Ethernet initialization failed. Check Ethernet hardware/config.", Serial);
+      }
+    } else {
+      Serial.print("ERROR: Failed to parse MAC address ");
+      Serial.println(ETHER_MAC);
+      mrd_error_stop(PIN_ERR_LED, "Check '#define ETHER_MAC' in 'keys.h'", Serial);
+    }
   }
 
   // コントロールパッドの種類を表示
@@ -206,7 +269,12 @@ void loop() {
   if (flg.udp_send_mode) // UDPの送信実施フラグの確認(モード確認)
   {
     flg.udp_busy = true; // UDP使用中フラグをアゲる
-    mrd_wifi_udp_send(s_udp_meridim.bval, MRDM_BYTE, udp);
+    if (!MODE_ETHER) {   // 0ならwifi通信
+      mrd_wifi_udp_send(s_udp_meridim.bval, MRDM_BYTE, udp);
+    } else { // 1なら有線LAN通信
+      // 事前にパース済みのIPアドレスを使用
+      mrd_ether_udp_send(s_udp_meridim.bval, MRDM_BYTE, udp_et, ether_send_ip, UDP_SEND_PORT);
+    }
     flg.udp_busy = false; // UDP使用中フラグをサゲる
     flg.udp_rcvd = false; // UDP受信完了フラグをサゲる
   }
@@ -224,11 +292,17 @@ void loop() {
     flg.udp_rcvd = false; // UDP受信完了フラグをサゲる
     while (!flg.udp_rcvd) {
       // UDP受信処理
-      if (mrd_wifi_udp_receive(r_udp_meridim.bval, MRDM_BYTE, udp)) // 受信確認
-      {
-        flg.udp_rcvd = true; // UDP受信完了フラグをアゲる
+      if (!MODE_ETHER) {                                              // 0ならwifi通信
+        if (mrd_wifi_udp_receive(r_udp_meridim.bval, MRDM_BYTE, udp)) // 受信確認
+        {
+          flg.udp_rcvd = true; // UDP受信完了フラグをアゲる
+        }
+      } else {                                                            // 1なら有線LAN通信
+        if (mrd_ether_udp_receive(r_udp_meridim.bval, MRDM_BYTE, udp_et)) // 受信確認
+        {
+          flg.udp_rcvd = true; // UDP受信完了フラグをアゲる
+        }
       }
-
       // タイムアウト抜け処理
       unsigned long current_tmp = millis();
       if (current_tmp - start_tmp >= UDP_TIMEOUT) {
