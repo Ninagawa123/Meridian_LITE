@@ -123,7 +123,7 @@
 #define MRD_SERVO_SLOTS 15  // Meridim配列の1系統あたりの最大接続サーボ数(デフォルトは15)
 
 // 各種ハードウェアのマウント有無
-#define MOUNT_SD      1           // SDカードリーダーの有無s(0:なし, 1:あり)
+#define MOUNT_SD      0           // SDカードリーダーの有無s(0:なし, 1:あり)
 #define MOUNT_IMUAHRS BNO055_AHRS // IMU/AHRSの搭載 NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS
 #define MOUNT_PAD     PC          // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
 
@@ -137,7 +137,7 @@
 #define UDP_TIMEOUT   4 // UDPの待受タイムアウト(単位ms,推奨値0)
 
 // 有線LANの設定(固定IPは別途keys.hで指定)
-#define MODE_ETHER 0 // wifiか優先LANか(0:wifi, 1:有線LAN, 通常は0)
+#define MODE_ETHER 0 // wifiか有線LANか(0:wifi, 1:有線LAN, 通常は0)
 
 // EEPROMの設定
 #define EEPROM_SIZE    540 // 使用するEEPROMのサイズ(バイト)
