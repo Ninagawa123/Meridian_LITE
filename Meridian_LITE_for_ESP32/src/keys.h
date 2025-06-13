@@ -20,7 +20,6 @@
 #define ETHER_GATEWAY  "192.168.xx.xx"  // 有線LAN使用時のPCのIPアドレス
 #define ETHER_SUBNET   "255.255.255.0"  // 有線LAN使用時のサブネットマスク
 #define ETHER_DNS      "8.8.8.8"        // 有線LAN使用時のDNSアドレス
-
-#define ETHER_MAC "xx:xx:xx:xx:xx:xx" // W5500等に固有のMACアドレスを転記
+#define ETHER_MAC "xx:xx:xx:xx:xx:xx"   // 有線LAN使用時のW5500等に固有のMACアドレスを転記
 
 #endif // __MERIDIAN_KEYS_H__
