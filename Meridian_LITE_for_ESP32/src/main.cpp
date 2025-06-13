@@ -1,7 +1,7 @@
 #ifndef __MERIDIAN_LITE_MAIN__
 #define __MERIDIAN_LITE_MAIN__
 
-#define VERSION "Meridian_LITE_v1.1.1_2025_06.08" // バージョン表示
+#define VERSION "Meridian_LITE_v1.1.1_2025_06.12" // バージョン表示
 
 /// @file    Meridian_LITE_for_ESP32/src/main.cpp
 /// @brief   Meridian is a system that smartly realizes the digital twin of a robot.
@@ -158,21 +158,22 @@ void setup() {
   // WiFiの初期化と開始
   if (!MODE_ETHER) { // MODE_ETHER = 0 ならWiFiの初期化
     mrd_disp.esp_wifi(WIFI_AP_SSID);
-    if (MODE_FIXED_IP) { // 固定IPならばwifi.configを設定する
+    if (MODE_FIXED_IP) { // 固定IPを使用する場合はwifi.configの設定を使用する
       IPAddress fixed_ip = mrd_parse_ip_address(FIXED_IP_ADDR, Serial);
       IPAddress fixed_gw = mrd_parse_ip_address(FIXED_IP_GATEWAY, Serial);
       IPAddress fixed_sb = mrd_parse_ip_address(FIXED_IP_SUBNET, Serial);
-      WiFi.config(fixed_ip, fixed_gw, fixed_sb);
-      Serial.println("FIXEDIP****");
+      if (mrd_validate_network_config(fixed_ip, fixed_gw, fixed_sb, Serial)) { // IPチェック
+        WiFi.config(fixed_ip, fixed_gw, fixed_sb);                             // 固定IPを設定
+        Serial.println("FIXEDIP****");
+      } else { // IPのパースが失敗なら停止
+        mrd_error_stop(PIN_ERR_LED, "Please Check '#define FIXED_IP_ADDR, FIXED_IP_GATEWAY, FIXED_IP_SUBNET' in 'keys.h'", Serial);
+      }
     }
-    if (mrd_wifi_init(udp, WIFI_AP_SSID, WIFI_AP_PASS, Serial)) {
+    if (mrd_wifi_init(udp, WIFI_AP_SSID, WIFI_AP_PASS, Serial)) {  // wifiの初期化
       mrd_disp.esp_ip(MODE_FIXED_IP, WIFI_SEND_IP, FIXED_IP_ADDR); // wifiIPの表示
     }
 
   } else { // MODE_ETHER = 1 ならEthernet初期化
-
-    // Macアドレスのパース
-    // byte mac_et[] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x00}; // W5500のMACアドレス
 
     byte ether_mac[6];
     if (parseMacAddress(ETHER_MAC, ether_mac)) {
@@ -218,7 +219,7 @@ void setup() {
     } else {
       Serial.print("ERROR: Failed to parse MAC address ");
       Serial.println(ETHER_MAC);
-      mrd_error_stop(PIN_ERR_LED, "Check '#define ETHER_MAC' in 'keys.h'", Serial);
+      mrd_error_stop(PIN_ERR_LED, "Please check '#define ETHER_MAC' in 'keys.h'", Serial);
     }
   }
 
