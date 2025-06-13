@@ -10,9 +10,9 @@
 
 // Wifi用のESP32固定IPアドレスの設定
 // ※config.hの MODE_FIXED_IP を1に設定することで有効
-#define FIXED_IP_ADDR    "192.168.xxx.xxx" // ESP32のIPアドレスを固定時のESPのIPアドレス
-#define FIXED_IP_GATEWAY "192.168.xxx.xxx" // ESP32のIPアドレスを固定時のルーターのゲートウェイ
-#define FIXED_IP_SUBNET  "255.255.255. 0"  // ESP32のIPアドレスを固定時のサブネットマスク
+#define FIXED_IP_ADDR    "192.168.xxx.xxx" // ESP32のIPアドレス固定時のESPのIPアドレス
+#define FIXED_IP_GATEWAY "192.168.xxx.xxx" // ESP32のIPアドレス固定時のルーターのゲートウェイ
+#define FIXED_IP_SUBNET  "255.255.255. 0"  // ESP32のIPアドレス固定時のサブネットマスク
 
 // Ethernet用のESP32固定IPアドレスの設定
 // ※config.hの MODE_ETHER を1に設定に設定することで有効
