@@ -230,7 +230,7 @@ bool mrd_ether_init(EthernetUDP &a_udp, int a_cs_pin, byte *mac_address, Hardwar
       a_serial.print(":");
   }
   a_serial.println();
-  a_serial.println("Initializing Ethernet... ");
+  a_serial.print("Initializing Ethernet... ");
 
   // IPアドレス文字列をパース
   IPAddress local_ip = mrd_parse_ip_address(ETHER_LOCAL_IP, a_serial);
@@ -244,7 +244,6 @@ bool mrd_ether_init(EthernetUDP &a_udp, int a_cs_pin, byte *mac_address, Hardwar
       subnet == IPAddress(0, 0, 0, 0) ||
       dns == IPAddress(0, 0, 0, 0)) {
     a_serial.println("ERROR: Please check your IP address format in keys.h");
-    a_serial.println("Expected format: \"192.168.1.1\" (numbers 0-255, separated by dots)");
     return false;
   }
 
@@ -258,9 +257,11 @@ bool mrd_ether_init(EthernetUDP &a_udp, int a_cs_pin, byte *mac_address, Hardwar
   Ethernet.init(a_cs_pin);
 
   // 設定を適用（引数で受け取ったMACアドレスを使用）
-  Ethernet.begin(mac_address, local_ip, gateway, subnet);
+  // Ethernet.begin(mac_address, local_ip, dns, gateway, subnet);
+
+  Ethernet.begin(mac_address, local_ip, dns, gateway, subnet);
   if (Ethernet.localIP() == local_ip) {
-    a_serial.println("SUCCESS");
+    a_serial.println("OK");
   } else {
     a_serial.println("FAILED: IP address mismatch");
     a_serial.println("Check hardware connections and network settings");

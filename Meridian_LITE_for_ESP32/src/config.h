@@ -132,12 +132,10 @@
 #define MODE_UDP_RECEIVE      1 // PCからのデータ受信(0:OFF, 1:ON, 通常は1)
 #define MODE_UDP_SEND         1 // PCへのデータ送信(0:OFF, 1:ON, 通常は1)
 
-// Wifiの設定(SSID,パスワード等は別途keys.hで指定)
-#define MODE_FIXED_IP 0 // IPアドレスを固定するか(0:NO, 1:YES)
+// Wifi/有線LANの設定(SSID, パスワード, 固定IP, MACアドレス等は別途keys.hで指定)
+#define MODE_ETHER    0 // WiFiか有線LANか(0:wifi, 1:有線LAN, 通常は0)
+#define MODE_FIXED_IP 0 // WiFi用IPアドレスを固定するか(0:NO, 1:YES)
 #define UDP_TIMEOUT   4 // UDPの待受タイムアウト(単位ms,推奨値0)
-
-// 有線LANの設定(固定IPは別途keys.hで指定)
-#define MODE_ETHER 0 // wifiか有線LANか(0:wifi, 1:有線LAN, 通常は0)
 
 // EEPROMの設定
 #define EEPROM_SIZE    540 // 使用するEEPROMのサイズ(バイト)

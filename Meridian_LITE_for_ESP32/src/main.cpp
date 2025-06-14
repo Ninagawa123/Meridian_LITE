@@ -1,7 +1,7 @@
 #ifndef __MERIDIAN_LITE_MAIN__
 #define __MERIDIAN_LITE_MAIN__
 
-#define VERSION "Meridian_LITE_v1.1.1_2025_06.12" // バージョン表示
+#define VERSION "Meridian_LITE_v1.1.1_2025_06.13" // バージョン表示
 
 /// @file    Meridian_LITE_for_ESP32/src/main.cpp
 /// @brief   Meridian is a system that smartly realizes the digital twin of a robot.
@@ -177,41 +177,14 @@ void setup() {
 
     byte ether_mac[6];
     if (parseMacAddress(ETHER_MAC, ether_mac)) {
-      Serial.println("MAC address parsed successfully:");
-      Serial.print("byte ether_mac[] = {");
-      for (int i = 0; i < 6; i++) {
-        Serial.print("0x");
-        if (ether_mac[i] < 0x10)
-          Serial.print("0");
-        Serial.print(ether_mac[i], HEX);
-        if (i < 5)
-          Serial.print(", ");
-      }
-      Serial.println("};");
-
-      // 個別の値も表示
-      Serial.println("\nIndividual bytes:");
-      for (int i = 0; i < 6; i++) {
-        Serial.print("ether_mac[");
-        Serial.print(i);
-        Serial.print("] = 0x");
-        if (ether_mac[i] < 0x10)
-          Serial.print("0");
-        Serial.println(ether_mac[i], HEX);
-      }
 
       if (mrd_ether_init(udp_et, PIN_CHIPSELECT_LAN, ether_mac, Serial)) {
-        Serial.println("Ethernet initialization completed successfully.");
-
         // Ethernet送信先IPの事前パース
         ether_send_ip = mrd_parse_ip_address(ETHER_GATEWAY, Serial);
 
         if (ether_send_ip == IPAddress(0, 0, 0, 0)) {
           // エラー状態でシステム停止（LEDで視覚的に通知）
           mrd_error_stop(PIN_ERR_LED, "ERROR: Ethernet initialization failed. Fix WIFI_SEND_IP and restart", Serial);
-        } else {
-          Serial.print("Ethernet send IP configured: ");
-          Serial.println(ether_send_ip);
         }
       } else {
         mrd_error_stop(PIN_ERR_LED, "ERROR: Ethernet initialization failed. Check Ethernet hardware/config.", Serial);
@@ -414,6 +387,26 @@ void loop() {
     sv.ixr_tgt_past[i] = sv.ixr_tgt[i];                    // 前回のdegreeをキープ
     sv.ixl_tgt[i] = s_udp_meridim.sval[i * 2 + 21] * 0.01; // 受信したdegreeを格納
     sv.ixr_tgt[i] = s_udp_meridim.sval[i * 2 + 51] * 0.01; // 受信したdegreeを格納
+  }
+
+  // 移動差が大きい時に和らげる補正フィルタ
+  float tgt_gap_max = 3.0; // ギャップの最大値
+
+  for (int i = 0; i <= sv.num_max; i++) {
+    if (abs(sv.ixl_tgt[i] - sv.ixl_tgt_past[i]) > tgt_gap_max) {
+      if (sv.ixl_tgt[i] > sv.ixl_tgt_past[i]) {
+        sv.ixl_tgt[i] = sv.ixl_tgt[i] - tgt_gap_max;
+      } else {
+        sv.ixl_tgt[i] = sv.ixl_tgt[i] + tgt_gap_max;
+      }
+    }
+    if (abs(sv.ixr_tgt[i] - sv.ixr_tgt_past[i]) > tgt_gap_max) {
+      if (sv.ixr_tgt[i] > sv.ixr_tgt_past[i]) {
+        sv.ixr_tgt[i] = sv.ixr_tgt[i] - tgt_gap_max;
+      } else {
+        sv.ixr_tgt[i] = sv.ixr_tgt[i] + tgt_gap_max;
+      }
+    }
   }
 
   // @[7-2] ESP32による次回動作の計算

@@ -16,10 +16,10 @@
 
 // Ethernet用のESP32固定IPアドレスの設定
 // ※config.hの MODE_ETHER を1に設定に設定することで有効
-#define ETHER_LOCAL_IP "192.168.xx.xx"  // 有線LAN使用時のESP32のIPアドレス
-#define ETHER_GATEWAY  "192.168.xx.xx"  // 有線LAN使用時のPCのIPアドレス
-#define ETHER_SUBNET   "255.255.255.0"  // 有線LAN使用時のサブネットマスク
-#define ETHER_DNS      "8.8.8.8"        // 有線LAN使用時のDNSアドレス
-#define ETHER_MAC "xx:xx:xx:xx:xx:xx"   // 有線LAN使用時の固有MACアドレスを転記（W5500ボード等のMACアドレス）
+#define ETHER_LOCAL_IP "192.168.xxx.xxx"   // 有線LAN使用時のESP32のIPアドレス
+#define ETHER_GATEWAY  "192.168.xxx.xxx"   // 有線LAN使用時のPCのIPアドレス
+#define ETHER_SUBNET   "255.255.255.0"     // 有線LAN使用時のサブネットマスク
+#define ETHER_DNS      "8.8.8.8"           // 有線LAN使用時のDNSアドレス
+#define ETHER_MAC      "xx:xx:xx:xx:xx:xx" // 有線LAN使用時の固有MACアドレスを転記（W5500ボード等のMACアドレス）
 
 #endif // __MERIDIAN_KEYS_H__
