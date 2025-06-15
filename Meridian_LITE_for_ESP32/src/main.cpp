@@ -98,7 +98,7 @@ void setup() {
   // サーボ用UART設定
   mrd_servo_begin(L, MOUNT_SERVO_TYPE_L);         // サーボモータの通信初期設定. Serial2
   mrd_servo_begin(R, MOUNT_SERVO_TYPE_R);         // サーボモータの通信初期設定. Serial3
-  mrd_disp.servo_protocol(L, MOUNT_SERVO_TYPE_R); // サーボプロトコルの表示
+  mrd_disp.servo_protocol(L, MOUNT_SERVO_TYPE_L); // サーボプロトコルの表示
   mrd_disp.servo_protocol(R, MOUNT_SERVO_TYPE_R);
 
   // マウントされたサーボIDの表示
