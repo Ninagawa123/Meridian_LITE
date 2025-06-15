@@ -221,6 +221,9 @@ void setup() {
 
   // 開始メッセージ
   mrd_disp.flow_start_lite_esp();
+  if (MODE_ESP32_STANDALONE) {
+    Serial.println("CAUTION: This is ESP32 Standalone Mode. Servo communication will be ignored.");
+  }
 
   // タイマーの初期化
   count_frame = 0;
