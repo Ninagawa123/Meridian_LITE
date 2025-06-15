@@ -38,7 +38,7 @@ bool mrd_wifi_init(WiFiUDP &a_udp, const char *a_ssid, const char *a_pass,
       return false;
     }
   }
-  a_udp.begin(UDP_RESV_PORT);
+  a_udp.begin(UDP_RECV_PORT);
   return true;
 }
 
