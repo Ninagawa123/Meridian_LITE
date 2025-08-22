@@ -37,7 +37,7 @@ Meridian_LITEの動作確認にあたり,
 - [PlatformIO](https://platformio.org/) 開発およびボード書き込み用のアプリケーション  
 - python環境  
 
-<img width=500% alt="lite_pinassign" src="./docs/images/GettingStarted_15.png">  
+<img width=500 alt="lite_pinassign" src="./docs/images/GettingStarted_15.png">  
 
   
 ## PlatformIOのインストール  
