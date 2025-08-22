@@ -30,7 +30,7 @@ Meridian_LITEの動作確認にあたり,
 それ以外の部分はなるべく全て解説するようにします.  
     
 ## 動作テスト用の準備物
-- [ESP32-DevKitC](https://www.espressif.com/en/products/devkits/esp32-devkitc/overview) (マイコンボード, ([Espressifの正規品](https://www.espressif.com/en/products/devkits/esp32-devkitc/overview)を使用してください)  
+- [ESP32-DevKitC](https://www.espressif.com/en/products/devkits/esp32-devkitc/overview) (マイコンボード, ([Espressifの正規品](https://www.espressif.com/en/products/devkits/esp32-devkitc/overview)を使用してください.　マイコンがESP32-WROOM-32のものは動作しますが, ESP32-WROVER-Eでは正常に動作しません.)  
 - WiFi付きPC (Windows, Mac, Ubuntu のいずれか)  
 - WiFiアクセスポイント (2.4Ghz通信対応)  
 - USBケーブル (ESP32devkitCとPCを接続するためのもの)
@@ -359,6 +359,10 @@ config.hにて「#define MOUNT_PAD WIIMOTE」と設定してボードにアッ�
 BNO_055とのI2C通信がうまくいかない場合は, 写真のように10kΩ程度の抵抗でプルアップすることでI2Cの通信品質が改善する場合があります.  
 <img width="400" alt="pullup" src="./docs/images/pullup.jpg">  
   
+## L系統のサーボが全部反応しない！（ESP32-WROVER-E）
+ESP32DevKitCでも, マイコンがESP32-WROVER-Eの場合, PINの16,17が内部使用となっておりユーザーが利用できません.  
+ESP32DevKitCおよびボードの改造, コードの修正で対応できる可能性が高いですが, 方法は現在検討中です.(2025.08.22)  
+
 ## その他の情報    
 コードの命名規則はLLVM準拠とし, 内容を "Meridian_LITE_for_ESP32/.clang-format" ファイルにコメントしています.    
 フローチャートもDocsにて公開していますので改造の際にご利用ください.      
