@@ -373,13 +373,13 @@ ESP32DevKitCでも, マイコンがESP32-WROVER-Eの場合, PINの16,17が内部
 硬くて厚い板状のもののカド等に該当のピンの足を乗せ, はんだごてを当てたままボードをグッと押し下げると, ピンをボード上面から抜くことができると思います.  
 十分に気をつけて作業してください.    
 
-<img width=400% alt="lite_pinassign" src="./docs/images/GettingStarted_16.png">  
+<img width=400 alt="lite_pinassign" src="./docs/images/GettingStarted_16.png">  
 
 ##### WROVER修正 STEP 2  
 ボードのPIN16, PIN17に該当する箇所に, PIN13,PIN14をそれぞれ接続します.
 図を参考に, ボード背面で配線を行ってください.  
 
-<img width=400% alt="lite_pinassign" src="./docs/images/GettingStarted_17.png">  
+<img width=400 alt="lite_pinassign" src="./docs/images/GettingStarted_17.png">  
 
 
 ##### WROVER修正 STEP 3  
