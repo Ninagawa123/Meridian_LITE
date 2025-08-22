@@ -1,7 +1,7 @@
 #ifndef __MERIDIAN_LITE_MAIN__
 #define __MERIDIAN_LITE_MAIN__
 
-#define VERSION "Meridian_LITE_v1.1.1_2025_04.29" // バージョン表示
+#define VERSION "Meridian_LITE_v1.1.1_2025_08.22" // バージョン表示
 
 /// @file    Meridian_LITE_for_ESP32/src/main.cpp
 /// @brief   Meridian is a system that smartly realizes the digital twin of a robot.
@@ -96,8 +96,10 @@ void setup() {
   mrd_disp.servo_bps_2lines(SERVO_BAUDRATE_L, SERVO_BAUDRATE_R);
 
   // サーボ用UART設定
-  mrd_servo_begin(L, MOUNT_SERVO_TYPE_L);         // サーボモータの通信初期設定. Serial2
-  mrd_servo_begin(R, MOUNT_SERVO_TYPE_R);         // サーボモータの通信初期設定. Serial3
+  Serial1.begin(SERVO_BAUDRATE_L, SERIAL_8N1, RX1, TX1);
+  Serial2.begin(SERVO_BAUDRATE_R, SERIAL_8N1, RX2, TX2);
+  mrd_servo_begin(L, MOUNT_SERVO_TYPE_L);         // サーボモータの通信初期設定. Serial1
+  mrd_servo_begin(R, MOUNT_SERVO_TYPE_R);         // サーボモータの通信初期設定. Serial2
   mrd_disp.servo_protocol(L, MOUNT_SERVO_TYPE_L); // サーボプロトコルの表示
   mrd_disp.servo_protocol(R, MOUNT_SERVO_TYPE_R);
 
