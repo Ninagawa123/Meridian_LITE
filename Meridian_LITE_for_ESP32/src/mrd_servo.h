@@ -38,9 +38,9 @@ bool mrd_servo_begin(UartLine a_line, int a_servo_type) {
     return false;
   case 43:
     if (a_line == L)
-      ics_L.begin(); // サーボモータの通信初期設定. Serial2
+      ics_L.begin(); // サーボモータの通信初期設定. Serial1
     else if (a_line == R)
-      ics_R.begin(); // サーボモータの通信初期設定. Serial3
+      ics_R.begin(); // サーボモータの通信初期設定. Serial2
     return true;
   case 44:
     // PMX(KONDO) [WIP]
