@@ -148,6 +148,24 @@ const char *mrd_get_line_name(UartLine a_line) {
 //  meriput / meridimへのデータ書き込み
 //------------------------------------------------------------------------------------
 
+/// @brief エラーメッセージ＆LED点滅と共にシステム停止.
+/// @param a_led ERROR通知用のLEDのピン番号.
+/// @param a_msg エラーメッセージ.
+/// @param a_serial 出力先シリアルの指定.
+void mrd_error_stop(int a_led, String a_msg, HardwareSerial &a_serial) {
+  Serial.println(a_msg);
+  while (1) {
+    digitalWrite(a_led, HIGH);
+    delay(250);
+    digitalWrite(a_led, LOW);
+    delay(250);
+  }
+}
+
+//------------------------------------------------------------------------------------
+//  meriput / meridimへのデータ書き込み
+//------------------------------------------------------------------------------------
+
 /// @brief meridim配列のチェックサムを算出して[len-1]に書き込む.
 /// @param a_meridim Meridim配列の共用体. 参照渡し.
 /// @return 常にtrueを返す.

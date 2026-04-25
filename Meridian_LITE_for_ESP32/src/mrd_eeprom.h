@@ -159,6 +159,18 @@ bool mrd_eeprom_dump_to_serial(UnionEEPROM a_data, int a_bhd, HardwareSerial &a_
   return true;
 }
 
+// /// @brief EEPROM格納用の配列データをシリアルにダンプ出力する.(起動時用)
+// /// @param a_do_dump 実施するか否か.
+// /// @param a_bhd ダンプリストの表示形式.(0:Bin, 1:Hex, 2:Dec)
+// /// @return 終了時にtrueを返す.
+// bool mrd_eeprom_show_at_boot(bool a_do_dump, int a_bhd, HardwareSerial &a_serial) {
+//   if (a_do_dump) {
+//     mrd_eeprom_dump_to_serial(mrd_eeprom_read(), a_bhd, a_serial);
+//     return true;
+//   }
+//   return false;
+// }
+
 /// @brief EEPROM格納用の配列データをシリアルにダンプ出力する.(起動時用)
 /// @param a_do_dump 実施するか否か.
 /// @param a_bhd ダンプリストの表示形式.(0:Bin, 1:Hex, 2:Dec)
@@ -234,7 +246,7 @@ bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect, HardwareSeri
     Serial.println("Value updated.");
     return true;
   } else {
-    Serial.println("Same value.");
+    Serial.println("Value not changed.(same value)");
   }
   return false;
 }

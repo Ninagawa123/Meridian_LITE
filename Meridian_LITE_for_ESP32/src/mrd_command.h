@@ -33,8 +33,8 @@ bool execute_master_command_1(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
     for (int i = 0; i < IXR_MAX; i++) {
       a_sv.ixr_err[i] = 0;
     }
-    String tmp_msg = "cmd: reset servo error id.[" + String(MCMD_ERR_CLEAR_SERVO_ID) + "]";
-    Serial.println(tmp_msg);
+    String msg_tmp = "cmd: reset servo error id.[" + String(MCMD_ERR_CLEAR_SERVO_ID) + "]";
+    Serial.println(msg_tmp);
     return true;
   }
 
@@ -54,8 +54,8 @@ bool execute_master_command_1(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
 
   // コマンド:MCMD_EEPROM_SAVE_TRIM (10101) EEPROMに現在のサーボ値をTRIM値として書き込む
   if (a_meridim.sval[MRD_MASTER] == MCMD_EEPROM_SAVE_TRIM) {
-    String tmp_msg = "cmd: set EEPROM data from current trim.[" + String(MCMD_EEPROM_SAVE_TRIM) + "]";
-    Serial.println(tmp_msg);
+    String msg_tmp = "cmd: set EEPROM data from current trim.[" + String(MCMD_EEPROM_SAVE_TRIM) + "]";
+    Serial.println(msg_tmp);
 
     // 空のUnionEEPROM構造体を作成し初期化
     UnionEEPROM array_tmp = {0};
@@ -107,7 +107,7 @@ bool execute_master_command_1(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
 
     // サーボ動作を実行する
     if (!MODE_ESP32_STANDALONE) {
-      mrd_servos_drive_lite(a_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, a_sv);
+      mrd_servo_drive_lite(a_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, a_sv);
     }
 
     flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをセット
@@ -139,8 +139,8 @@ bool execute_master_command_2(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
   // コマンド:MCMD_SENSOR_YAW_CALIB(10002) IMU/AHRSのヨー軸リセット
   if (a_meridim.sval[MRD_MASTER] == MCMD_SENSOR_YAW_CALIB) {
     ahrs.yaw_origin = ahrs.yaw_source;
-    String tmp_msg = "cmd: caliblate sensor's yaw.[" + String(MCMD_SENSOR_YAW_CALIB) + "]";
-    Serial.println(tmp_msg);
+    String msg_tmp = "cmd: caliblate sensor's yaw.[" + String(MCMD_SENSOR_YAW_CALIB) + "]";
+    Serial.println(msg_tmp);
     return true;
   }
 
@@ -148,8 +148,8 @@ bool execute_master_command_2(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
   if (a_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_PASSIVE) {
     flg.udp_board_passive = true; // UDP送信をパッシブモードに
     flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをセット
-    String tmp_msg = "cmd: enter passive mode.[" + String(MCMD_BOARD_TRANSMIT_PASSIVE) + "]";
-    Serial.println(tmp_msg);
+    String msg_tmp = "cmd: enter passive mode.[" + String(MCMD_BOARD_TRANSMIT_PASSIVE) + "]";
+    Serial.println(msg_tmp);
     return true;
   }
 
@@ -164,8 +164,8 @@ bool execute_master_command_2(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
     flg.stop_board_during = true; // ボードの処理停止フラグをセット
     // ボードの末端処理をmeridim[2]ミリ秒だけ止める.
 
-    String tmp_msg = "cmd: stop ESP32's processing during " + String(int(a_meridim.sval[MRD_STOP_FRAMES])) + " ms.[" + String(MCMD_BOARD_TRANSMIT_PASSIVE) + "]";
-    Serial.println(tmp_msg);
+    String msg_tmp = "cmd: stop ESP32's processing during " + String(int(a_meridim.sval[MRD_STOP_FRAMES])) + " ms.[" + String(MCMD_BOARD_TRANSMIT_PASSIVE) + "]";
+    Serial.println(msg_tmp);
 
     for (int i = 0; i < int(a_meridim.sval[MRD_STOP_FRAMES]); i++) {
       delay(1);
@@ -196,7 +196,7 @@ bool execute_master_command_3(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
 
   // コマンド:[1] サーボオン 通常動作
 
-  // コマンド:MCMD_START_TRIM_SETTIN (10003) TRIM設定のスタート(Meridian_console連携)
+  // コマンド:MCMD_START_TRIM_SETTIN (10100) TRIM設定のスタート(Meridian_console連携)
   if (a_meridim.sval[MRD_MASTER] == MCMD_START_TRIM_SETTING) {
 
     // EEPROMのデータを展開する
@@ -214,7 +214,7 @@ bool execute_master_command_3(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
 
     // サーボ動作を実行する
     if (!MODE_ESP32_STANDALONE) {
-      mrd_servos_drive_lite(a_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, a_sv);
+      mrd_servo_drive_lite(a_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, a_sv);
     }
 
     // サーボの目標値として現在のTRIM値をセットする
@@ -231,10 +231,10 @@ bool execute_master_command_3(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
 
     // サーボ動作を実行する. サーボはTRIM値を0としつつ, tgtとしてこれまでのTRIM値の角度をキープする
     if (!MODE_ESP32_STANDALONE) {
-      mrd_servos_drive_lite(a_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, a_sv); // サーボ動作を実行する
+      mrd_servo_drive_lite(a_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, a_sv); // サーボ動作を実行する
     }
 
-    // サーボ設定を格納する
+    // サーボ設定を格納する ####(おかしそう)
     for (int i = 0; i < MRD_SERVO_SLOTS; i++) {
       a_meridim.sval[MRD_L_ORIGIDX + i * 2] = a_sv.ixl_trim[i];
       a_meridim.sval[MRD_R_ORIGIDX + i * 2] = a_sv.ixr_trim[i];
@@ -254,8 +254,8 @@ bool execute_master_command_3(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
     }
     a_serial.println();
 
-    String tmp_msg = "cmd: enter trim setting mode and send EEPROM[1][*] to PC.[" + String(MCMD_START_TRIM_SETTING) + "]";
-    Serial.println(tmp_msg);
+    String msg_tmp = "cmd: enter trim setting mode and send EEPROM[1][*] to PC.[" + String(MCMD_START_TRIM_SETTING) + "]";
+    Serial.println(msg_tmp);
     return true;
   }
 
@@ -268,8 +268,8 @@ bool execute_master_command_3(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
     }
     a_meridim.sval[MRD_MASTER] = MCMD_EEPROM_BOARDTOPC_DATA0;
 
-    String tmp_msg = "cmd: enter trim setting mode and send EEPROM[0][*] to PC.[" + String(MCMD_EEPROM_BOARDTOPC_DATA0) + "]";
-    Serial.println(tmp_msg);
+    String msg_tmp = "cmd: enter trim setting mode and send EEPROM[0][*] to PC.[" + String(MCMD_EEPROM_BOARDTOPC_DATA0) + "]";
+    Serial.println(msg_tmp);
     return true;
   }
 
@@ -282,8 +282,8 @@ bool execute_master_command_3(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
     }
     a_meridim.sval[MRD_MASTER] = MCMD_EEPROM_BOARDTOPC_DATA1;
 
-    String tmp_msg = "cmd: enter trim setting mode and send EEPROM[1][*] to PC.[" + String(MCMD_EEPROM_BOARDTOPC_DATA1) + "]";
-    Serial.println(tmp_msg);
+    String msg_tmp = "cmd: enter trim setting mode and send EEPROM[1][*] to PC.[" + String(MCMD_EEPROM_BOARDTOPC_DATA1) + "]";
+    Serial.println(msg_tmp);
     return true;
   }
 
@@ -296,8 +296,8 @@ bool execute_master_command_3(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
     }
     a_meridim.sval[MRD_MASTER] = MCMD_EEPROM_BOARDTOPC_DATA2;
 
-    String tmp_msg = "cmd: enter trim setting mode and send EEPROM[2][*] to PC.[" + String(MCMD_EEPROM_BOARDTOPC_DATA2) + "]";
-    Serial.println(tmp_msg);
+    String msg_tmp = "cmd: enter trim setting mode and send EEPROM[2][*] to PC.[" + String(MCMD_EEPROM_BOARDTOPC_DATA2) + "]";
+    Serial.println(msg_tmp);
     return true;
   }
 
