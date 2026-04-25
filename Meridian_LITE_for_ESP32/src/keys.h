@@ -2,11 +2,11 @@
 #define __MERIDIAN_KEYS_H__
 
 // Wifiアクセスポイントの設定
-#define WIFI_AP_SSID  "xxxxxxxx"    　　 // アクセスポイントのWIFI_AP_SSID
-#define WIFI_AP_PASS  "xxxxxxxx"    　　 // アクセスポイントのパスワード
+#define WIFI_AP_SSID  "xxxxxxxx"        // アクセスポイントのWIFI_AP_SSID
+#define WIFI_AP_PASS  "xxxxxxxx"        // アクセスポイントのパスワード
 #define WIFI_SEND_IP  "192.168.xxx.xxx" // 送り先のPCのIPアドレス（PCのIPアドレスを調べておく）
-#define UDP_SEND_PORT 22222         　　 // 送り先のポート番号
-#define UDP_RECV_PORT 22224         　　 // このESP32のポート番号
+#define UDP_SEND_PORT 22222             // 送り先のポート番号
+#define UDP_RECV_PORT 22224             // このESP32のポート番号
 
 // Wifi用のESP32固定IPアドレスの設定
 // ※config.hの MODE_FIXED_IP を1に設定することで有効
