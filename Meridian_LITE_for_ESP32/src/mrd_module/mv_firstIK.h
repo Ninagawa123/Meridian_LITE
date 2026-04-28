@@ -1,8 +1,7 @@
 #ifndef __MERIDIAN_MOVEMENT_FIRST_IK_H__
 #define __MERIDIAN_MOVEMENT_FIRST_IK_H__
 
-#include "config.h"
-#include "main.h"
+#include "mrd_common.h"
 
 //==================================================================================================
 //  逆運動学関連の処理  -----------------------------------------------------------------------------
@@ -10,7 +9,7 @@
 
 /// @brief スタブ関数.
 /// @return 常にfalseを返す.
-bool mrd_ik_x() {
+inline bool mrd_ik_x() {
   return false;
 }
 

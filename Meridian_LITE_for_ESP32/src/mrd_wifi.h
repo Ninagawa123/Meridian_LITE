@@ -2,71 +2,40 @@
 #define __MERIDIAN_WIFI_H__
 
 // ヘッダファイルの読み込み
-#include "config.h"
+#include "mrd_common.h"
 #include "keys.h"
-#include "main.h"
 
 // ライブラリ導入
 #include <WiFi.h>
 #include <WiFiUdp.h>
-WiFiUDP udp; // wifi設定
+extern WiFiUDP udp; // WiFi設定
 
 //==================================================================================================
-//  Wifi 関連の処理
+//  WiFi関数宣言
 //==================================================================================================
 
-/// @brief wifiを初期化する.
-/// @param a_ssid WifiアクセスポイントのSSID.
-/// @param a_pass Wifiアクセスポイントのパスワード.
-/// @param a_serial 出力先シリアルの指定.
-/// @return 初期化に成功した場合はtrueを, 失敗した場合はfalseを返す.
+/// @brief WiFiを初期化する
+/// @param a_udp WiFiUDPインスタンス
+/// @param a_ssid WiFiアクセスポイントのSSID
+/// @param a_pass WiFiアクセスポイントのパスワード
+/// @param a_serial 出力シリアル
+/// @return 成功時はtrue, 失敗時はfalse
 bool mrd_wifi_init(WiFiUDP &a_udp, const char *a_ssid, const char *a_pass,
-                   HardwareSerial &a_serial) {
-  WiFi.disconnect(true, true); // 新しい接続のためにWiFi接続をリセット
-  delay(100);
-  WiFi.begin(a_ssid, a_pass); // Wifiに接続
-  int i = 0;
-  while (WiFi.status() !=
-         WL_CONNECTED) { // https://www.arduino.cc/en/Reference/WiFiStatus 戻り値一覧
-    i++;
-    if (i % 10 == 0) { // 0.5秒ごとに接続状況を出力
-      a_serial.print(".");
-    }
-    delay(50);     // 接続が完了するまでループで待つ
-    if (i > 200) { // 10秒でタイムアウト
-      a_serial.println("Wifi init TIMEOUT.");
-      return false;
-    }
-  }
-  a_udp.begin(UDP_RECV_PORT);
-  return true;
-}
+                   HardwareSerial &a_serial);
 
-/// @brief 第一引数のMeridim配列にUDP経由でデータを受信, 格納する.
+/// @brief UDP経由でデータを受信しMeridim配列に格納する
 /// @param a_meridim_bval バイト型のMeridim配列
-/// @param a_len バイト型のMeridim配列の長さ
-/// @param a_udp 使用するWiFiUDPのインスタンス
-/// @return 受信した場合はtrueを, 受信しなかった場合はfalseを返す.
-bool mrd_wifi_udp_receive(byte *a_meridim_bval, int a_len, WiFiUDP &a_udp) {
-  if (a_udp.parsePacket() >= a_len) // データの受信バッファ確認
-  {
-    a_udp.read(a_meridim_bval, a_len); // データの受信
-    return true;
-  }
-  return false; // バッファにデータがない
-}
+/// @param a_len バイト型Meridim配列の長さ
+/// @param a_udp 使用するWiFiUDPインスタンス
+/// @return 受信した場合はtrue, 受信しなかった場合はfalse
+bool mrd_wifi_udp_receive(byte *a_meridim_bval, int a_len, WiFiUDP &a_udp);
 
-/// @brief 第一引数のMeridim配列のデータをUDP経由でWIFI_SEND_IP, UDP_SEND_PORTに送信する.
+/// @brief Meridim配列データをUDP経由でWIFI_SEND_IP, UDP_SEND_PORTへ送信する
 /// @param a_meridim_bval バイト型のMeridim配列
-/// @param a_len バイト型のMeridim配列の長さ
-/// @param a_udp 使用するWiFiUDPのインスタンス
-/// @return 送信完了時にtrueを返す.
-/// ※WIFI_SEND_IP, UDP_SEND_PORTを関数内で使用.
-bool mrd_wifi_udp_send(byte *a_meridim_bval, int a_len, WiFiUDP &a_udp) {
-  a_udp.beginPacket(WIFI_SEND_IP, UDP_SEND_PORT); // UDPパケットの開始
-  a_udp.write(a_meridim_bval, a_len);             // データの書き込み
-  a_udp.endPacket();                              // UDPパケットの終了
-  return true;
-}
+/// @param a_len バイト型Meridim配列の長さ
+/// @param a_udp 使用するWiFiUDPインスタンス
+/// @return 成功時はtrue, 失敗時はfalse
+/// 内部でWIFI_SEND_IP, UDP_SEND_PORTを使用
+bool mrd_wifi_udp_send(byte *a_meridim_bval, int a_len, WiFiUDP &a_udp);
 
 #endif // __MERIDIAN_WIFI_H__

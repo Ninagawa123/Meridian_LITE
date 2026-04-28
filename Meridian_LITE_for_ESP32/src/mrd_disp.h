@@ -2,13 +2,14 @@
 #define __MERIDIAN_MESSAGE_H__
 
 // ヘッダファイルの読み込み
-#include "config.h"
-#include "keys.h"
-#include "main.h"
+#include "config.h"     // MODE_ETHER定義用
+#include "mrd_common.h"
 #include "mrd_util.h"
 
-// ライブラリ導入
+// ライブラリ導入 (WiFiモード時のみ)
+#if !MODE_ETHER
 #include <WiFi.h>
+#endif
 
 //==================================================================================================
 //  シリアルモニタ表示用の関数
@@ -76,9 +77,9 @@ public:
   /// @param a_max サーボの最大数.
   /// @param a_mount サーボのマウント状態を示す配列.
   /// @param a_id サーボIDの配列.
-  void print_servo_ids(const char *a_label, int a_max, int *a_mount, const int *a_id) {
+  void print_servo_ids(const char *a_label, int a_max, const int *a_mount, const int *a_id) {
     m_serial.print(a_label);
-    for (int i = 0; i <= a_max; i++) {
+    for (int i = 0; i < a_max; i++) {
       if (a_mount[i] != 0) {
         if (a_id[i] < 10) {
           m_serial.print(" ");
@@ -93,8 +94,8 @@ public:
   }
 
   /// @brief マウントされているサーボのIDを表示する.
-  /// @param a_sv サーボパラメータの構造体.
-  void servo_mounts_2lines(ServoParam a_sv) {
+  /// @param a_sv サーボパラメータの構造体 (参照渡し).
+  void servo_mounts_2lines(const ServoParam &a_sv) {
     print_servo_ids("UART_L Servos mounted: ", a_sv.num_max, a_sv.ixl_mount, a_sv.ixl_id);
     print_servo_ids("UART_R Servos mounted: ", a_sv.num_max, a_sv.ixr_mount, a_sv.ixr_id);
   }
@@ -164,23 +165,25 @@ public:
     return false;
   }
 
-  /// @brief wifiの接続完了メッセージと各IPアドレスを出力する.
+  /// @brief wifiの接続完了メッセージと各IPアドレスを出力する (WiFiモード専用).
   /// @param a_flg_fixed_ip 固定IPかどうか. true:固定IP, false:動的IP.
-  /// @param a_ssid 接続先のSSID.
-  /// @param a_fixedip 固定IPの場合の値.
-  void esp_ip(bool a_flg_fixed_ip, const char *a_ssid, const char *a_fixedip) {
+  /// @param a_send_ip 送信先PCのIPアドレス.
+  /// @param a_fixedip ESP32の固定IPアドレス (固定IP時のみ使用).
+#if !MODE_ETHER
+  void esp_ip(bool a_flg_fixed_ip, const char *a_send_ip, const char *a_fixedip) {
     m_serial.println("WiFi successfully connected."); // WiFi接続完了通知
     m_serial.println("PC's IP address target => " +
-                     String(WIFI_SEND_IP)); // 送信先PCのIPアドレスの表示
+                     String(a_send_ip)); // 送信先PCのIPアドレスの表示
 
     if (a_flg_fixed_ip) {
-      m_serial.println("ESP32's IP address => " + String(FIXED_IP_ADDR) +
+      m_serial.println("ESP32's IP address => " + String(a_fixedip) +
                        " (*Fixed)"); // ESP32自身のIPアドレスの表示
     } else {
       m_serial.print("ESP32's IP address => "); // ESP32自身のIPアドレスの表示
       m_serial.println(WiFi.localIP().toString());
     }
   }
+#endif
 
   /// @brief マウント設定したジョイパッドのタイプをシリアルモニタに出力する.
   /// @param a_mount_pad パッドの定義(PC,MERIMOTE,BLUERETRO,SBDBT,KRR5FH,WIIMOTE)
@@ -220,9 +223,9 @@ public:
 
   /// @brief システム内の様々な通信エラーとスキップ数をモニタリングし, シリアルポートに出力する.
   /// @param mrd_disp_all_err モニタリング表示のオンオフ.
-  /// @param a_err エラーデータの入った構造体.
+  /// @param a_err エラーデータの入った構造体 (参照渡し).
   /// @return エラーメッセージを表示した場合はtrueを, 表示しなかった場合はfalseを返す.
-  bool all_err(bool mrd_disp_all_err, MrdErr a_err) {
+  bool all_err(bool mrd_disp_all_err, const MrdErr &a_err) {
     if (mrd_disp_all_err) {
       m_serial.print("[ERR] es>pc:");
       m_serial.print(a_err.esp_pc);
@@ -231,7 +234,7 @@ public:
       m_serial.print(" es>ts:");
       m_serial.print(a_err.esp_tsy);
       m_serial.print(" ts>es:");
-      m_serial.print(a_err.esp_tsy);
+      m_serial.print(a_err.tsy_esp);
       m_serial.print(" tsSkp:");
       m_serial.print(a_err.tsy_skip);
       m_serial.print(" esSkp:");
