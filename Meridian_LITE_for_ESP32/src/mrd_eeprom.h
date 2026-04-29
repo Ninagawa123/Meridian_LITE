@@ -2,19 +2,10 @@
 #define __MERIDIAN_EEPROM_H__
 
 // ヘッダファイルの読み込み
-#include "config.h"
 #include "mrd_common.h"
-#include "mrd_util.h"
 
 // ライブラリ導入
-#include <EEPROM.h>
-#include <Meridian.h>
-
-// グローバル変数のextern宣言 (実体はmain.cppで定義)
-extern MERIDIANFLOW::Meridian mrd;
-extern MrdFlags flg;
-
-// UnionEEPROM は mrd_common.h で定義
+#include <Meridian.h> // Meridianのライブラリ導入
 
 //==================================================================================================
 //  EEPROM関数宣言
@@ -27,8 +18,9 @@ bool mrd_eeprom_init(int a_eeprom_size);
 
 /// @brief サーボ設定構造体からEEPROM格納用の配列データを作成する
 /// @param a_sv サーボ設定を保持する構造体
+/// @param a_mrd Meridianクラスのインスタンス
 /// @return EEPROM格納用の配列データ (UnionEEPROM型)
-UnionEEPROM mrd_eeprom_make_data_from_config(const ServoParam &a_sv);
+UnionEEPROM mrd_eeprom_make_data_from_config(const ServoParam &a_sv, MERIDIANFLOW::Meridian &a_mrd);
 
 /// @brief EEPROMの内容を読み取って返す
 /// @return UnionEEPROM形式の配列
@@ -59,16 +51,18 @@ bool mrd_eeprom_dump_at_boot(bool a_do_dump, int a_bhd, HardwareSerial &a_serial
 /// @param a_write_data EEPROM書き込み用の配列データ
 /// @param a_flg_protect EEPROM書き込み保護フラグ (trueで書き込み禁止)
 /// @param a_serial 出力シリアル
+/// @param a_flg フラグの構造体 (参照渡し)
 /// @return 書き込みが成功した場合はtrue, 書き込まなかった場合はfalse
-bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect, HardwareSerial &a_serial);
+bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect, HardwareSerial &a_serial, MrdFlags &a_flg);
 
 /// @brief EEPROMに設定を書き込み, 読み取って内容を検証し, シリアルポートに出力する
 /// @param a_write_data EEPROM書き込み用の配列データ
 /// @param a_do EEPROM読み書きチェックのブール値
 /// @param a_protect EEPROM書き込み保護フラグ (trueで書き込み禁止)
 /// @param a_bhd ダンプリストの表示形式 (0:Bin, 1:Hex, 2:Dec)
+/// @param a_flg フラグの構造体 (参照渡し)
 /// @return 書き込みと読み込みが成功した場合はtrue, それ以外はfalse
-bool mrd_eeprom_write_read_check(UnionEEPROM a_write_data, bool a_do, bool a_protect, int a_bhd);
+bool mrd_eeprom_write_read_check(UnionEEPROM a_write_data, bool a_do, bool a_protect, int a_bhd, MrdFlags &a_flg);
 
 //------------------------------------------------------------------------------------
 //  各種オペレーション
