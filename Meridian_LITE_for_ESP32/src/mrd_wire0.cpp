@@ -37,6 +37,7 @@ bool mrd_wire0_init_i2c(int a_i2c0_speed, int a_pinSDA, int a_pinSCL) {
 /// @param a_ahrs AHRS値を保持する構造体
 /// @return DMP初期化が成功した場合はtrue, 失敗した場合はfalse
 bool mrd_wire0_init_mpu6050_dmp(AhrsValue &a_ahrs) {
+#if MOUNT_IMUAHRS == 1 // MPU6050_6Axis_MotionApps20
   a_ahrs.mpu6050.initialize();
   a_ahrs.devStatus = a_ahrs.mpu6050.dmpInitialize();
 
@@ -57,6 +58,7 @@ bool mrd_wire0_init_mpu6050_dmp(AhrsValue &a_ahrs) {
     Serial.println("MPU6050 OK.");
     return true;
   }
+#endif
   Serial.println("IMU/AHRS DMP Initialization FAILED!");
   return false;
 }
@@ -65,6 +67,7 @@ bool mrd_wire0_init_mpu6050_dmp(AhrsValue &a_ahrs) {
 /// @param a_ahrs AHRS値を保持する構造体
 /// @return BNO055初期化が成功した場合はtrue, 検出できなかった場合はfalse
 bool mrd_wire0_init_bno055(AhrsValue &a_ahrs) {
+#if MOUNT_IMUAHRS == 3 // Adafruit_BNO055
   if (!a_ahrs.bno.begin()) {
     Serial.println("No BNO055 detected ... Check your wiring or I2C ADDR!");
     return false;
@@ -75,6 +78,9 @@ bool mrd_wire0_init_bno055(AhrsValue &a_ahrs) {
     delay(10);
     return true;
   }
+#else
+  return false;
+#endif
   // データ取得はセンサスレッドで実行される
 }
 
@@ -120,7 +126,7 @@ bool mrd_wire0_setup(ImuAhrsType a_imuahrs_type, int a_i2c0_speed, AhrsValue &a_
 /// @param args 未使用の引数
 void mrd_wire0_Core0_bno055_r(void *args) {
   float local_read[16]; // ローカルバッファ
-
+#if MOUNT_IMUAHRS == 3  // Adafruit_BNO055
   while (1) {
     // mutex保護下でセンサ読み取りと共有バッファへの書き込みを実行
     if (xSemaphoreTake(ahrs_mutex, pdMS_TO_TICKS(20)) == pdTRUE) {
@@ -144,9 +150,9 @@ void mrd_wire0_Core0_bno055_r(void *args) {
 
       // センサフュージョンによる推定姿勢を取得 - VECTOR_EULER - degrees
       imu::Vector<3> euler = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-      local_read[12] = euler.y();                        // DMP_ROLL 推定値
-      local_read[13] = euler.z();                        // DMP_PITCH 推定値
-      float yaw_tmp = euler.x() - ahrs.yaw_origin;       // DMP_YAW 推定値
+      local_read[12] = euler.y();                  // DMP_ROLL 推定値
+      local_read[13] = euler.z();                  // DMP_PITCH 推定値
+      float yaw_tmp = euler.x() - ahrs.yaw_origin; // DMP_YAW 推定値
       if (yaw_tmp >= 180) {
         yaw_tmp = yaw_tmp - 360;
       } else if (yaw_tmp < -180) {
@@ -166,6 +172,7 @@ void mrd_wire0_Core0_bno055_r(void *args) {
 
     delay(IMUAHRS_INTERVAL);
   }
+#endif
 }
 
 /// @brief I2C経由でAHRSセンサからデータを読み取る.
@@ -173,8 +180,8 @@ void mrd_wire0_Core0_bno055_r(void *args) {
 ///        各データはahrs.read配列に格納され, 利用可能な場合ahrs.resultにコピーされる.
 /// @param a_ahrs AHRS値を保持する構造体
 /// @return 成功時はtrue, 失敗時はfalse
-bool mrd_wire0_read_ahrs_i2c(AhrsValue &a_ahrs) { // wireTimer0.begin引数にvoidが必要
-
+bool mrd_wire0_read_ahrs_i2c(AhrsValue &a_ahrs) {                    // wireTimer0.begin引数にvoidが必要
+#if MOUNT_IMUAHRS == 1                                               // MPU6050_6Axis_MotionApps20
   if (MOUNT_IMUAHRS == MPU6050_IMU) {                                // MPU6050
     if (a_ahrs.mpu6050.dmpGetCurrentFIFOPacket(a_ahrs.fifoBuffer)) { // 新しいデータを取得
       a_ahrs.mpu6050.dmpGetQuaternion(&a_ahrs.q, a_ahrs.fifoBuffer);
@@ -223,6 +230,9 @@ bool mrd_wire0_read_ahrs_i2c(AhrsValue &a_ahrs) { // wireTimer0.begin引数にvo
   } else {
     return false;
   }
+#else
+  return false;
+#endif
 }
 
 //------------------------------------------------------------------------------------

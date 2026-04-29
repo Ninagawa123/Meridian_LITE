@@ -2,8 +2,8 @@
 #define __MERIDIAN_WIFI_H__
 
 // ヘッダファイルの読み込み
-#include "mrd_common.h"
 #include "keys.h"
+#include "mrd_common.h"
 
 // ライブラリ導入
 #include <WiFi.h>

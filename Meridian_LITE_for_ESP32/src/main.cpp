@@ -12,19 +12,19 @@
 //==================================================================================================
 
 // ヘッダファイルの読み込み
-#define CONFIG_DEFINE_ARRAYS  // サーボ設定配列の実体をここで定義
-#include "config.h"
+#define CONFIG_DEFINE_ARRAYS // サーボ設定配列の実体をここで定義
 #include "main.h"
+#include "config.h"
 #include "keys.h"
 
 // 常時必要なモジュール
 #include "mrd_command.h"
 #include "mrd_disp.h"
 #include "mrd_eeprom.h"
+#include "mrd_move.h"
 #include "mrd_servo.h"
 #include "mrd_util.h"
-#include "mrd_move.h"
-#include "mrd_wire0.h"  // AhrsValue定義のため常時必要
+#include "mrd_wire0.h" // AhrsValue定義のため常時必要
 
 // 通信モジュール（排他選択）
 #if MODE_ETHER
@@ -56,8 +56,8 @@ IcsHardSerialClass ics_R(&Serial2, PIN_EN_R, SERVO_BAUDRATE_R, SERVO_TIMEOUT_R);
 
 // main.hで宣言された変数
 TaskHandle_t thp[4] = {NULL};
-Meridim90Union s_udp_meridim = {0};  // ゼロ初期化
-Meridim90Union r_udp_meridim = {0};  // ゼロ初期化
+Meridim90Union s_udp_meridim = {0}; // ゼロ初期化
+Meridim90Union r_udp_meridim = {0}; // ゼロ初期化
 MrdFlags flg;
 MrdSq mrdsq;
 MrdTimer tmr;
@@ -68,11 +68,13 @@ AhrsValue ahrs;
 ServoParam sv;
 MrdMonitor monitor;
 MrdMsgHandler mrd_disp(Serial);
-SemaphoreHandle_t ahrs_mutex;  // AHRSデータアクセス用mutex
-SemaphoreHandle_t pad_mutex;   // PADデータアクセス用mutex
+SemaphoreHandle_t ahrs_mutex; // AHRSデータアクセス用mutex
+SemaphoreHandle_t pad_mutex;  // PADデータアクセス用mutex
 
 // mrd_wifi.hで宣言された変数
+#if !MODE_ETHER
 WiFiUDP udp;
+#endif
 
 // mrd_bt_pad.hで宣言された変数
 ESP32Wiimote wiimote;
@@ -127,7 +129,7 @@ void setup() {
   // サーボ値の初期設定
   sv.num_max = max(mrd_max_used_index(IXL_MT, IXL_MAX),
                    mrd_max_used_index(IXR_MT, IXR_MAX)); // サーボ処理回数
-  for (int i = 0; i < sv.num_max; i++) { // configで設定した値を反映
+  for (int i = 0; i < sv.num_max; i++) {                 // configで設定した値を反映
     sv.ixl_mount[i] = IXL_MT[i];
     sv.ixr_mount[i] = IXR_MT[i];
     sv.ixl_type[i] = IXL_MT[i];
@@ -242,13 +244,13 @@ void setup() {
     IPAddress fixed_gw = mrd_parse_ip_address(FIXED_IP_GATEWAY, Serial);
     IPAddress fixed_sb = mrd_parse_ip_address(FIXED_IP_SUBNET, Serial);
     if (mrd_validate_network_config(fixed_ip, fixed_gw, fixed_sb, Serial)) { // IP検証
-      WiFi.config(fixed_ip, fixed_gw, fixed_sb); // 固定IPを設定
+      WiFi.config(fixed_ip, fixed_gw, fixed_sb);                             // 固定IPを設定
       Serial.println("FIXEDIP****");
     } else { // IPパース失敗時は停止
       mrd_error_stop(PIN_ERR_LED, "Please Check '#define FIXED_IP_ADDR, FIXED_IP_GATEWAY, FIXED_IP_SUBNET' in 'keys.h'", Serial);
     }
   }
-  if (mrd_wifi_init(udp, WIFI_AP_SSID, WIFI_AP_PASS, Serial)) { // WiFi初期化
+  if (mrd_wifi_init(udp, WIFI_AP_SSID, WIFI_AP_PASS, Serial)) {  // WiFi初期化
     mrd_disp.esp_ip(MODE_FIXED_IP, WIFI_SEND_IP, FIXED_IP_ADDR); // WiFi IPの表示
   } else {
     mrd_error_stop(PIN_ERR_LED, "ERROR: WiFi initialization failed. Check SSID/password in 'keys.h'", Serial);
@@ -281,7 +283,7 @@ void setup() {
   if (timer_semaphore == NULL) {
     mrd_error_stop(PIN_ERR_LED, "ERROR: Failed to create timer semaphore", Serial);
   }
-  timer = timerBegin(0, 80, true);            // タイマー設定(1つ目のタイマー, 分周比80)
+  timer = timerBegin(0, 80, true); // タイマー設定(1つ目のタイマー, 分周比80)
 
   timerAttachInterrupt(timer, &frame_timer, true);     // frame_timer関数を割込みに登録
   timerAlarmWrite(timer, FRAME_DURATION * 1000, true); // タイマーを10ms毎にトリガー
@@ -363,7 +365,7 @@ void loop() {
 
   // @[2-2] チェックサム確認
   if (mrd.cksm_rslt(r_udp_meridim.sval, MRDM_LEN)) { // チェックサムOK
-    mrd.monitor_check_flow("CsOK", monitor.flow); // デバグ用フロー表示
+    mrd.monitor_check_flow("CsOK", monitor.flow);    // デバグ用フロー表示
 
     // @[2-3] UDP受信配列から UDP送信配列にデータを転写
     memcpy(s_udp_meridim.bval, r_udp_meridim.bval, MRDM_LEN * 2);
@@ -391,7 +393,7 @@ void loop() {
     mrd_clear_bit16(s_udp_meridim.usval[MRD_ERR], ERRBIT_10_UDP_ESP_SKIP);
     flg.meridim_rcvd = true; // Meridim受信成功フラグをセット
 
-  } else { // 受信シーケンス番号が予想と異なる場合
+  } else {                                              // 受信シーケンス番号が予想と異なる場合
     mrdsq.r_expect = int(s_udp_meridim.usval[MRD_SEQ]); // 現在の受信値を予想値として保持
 
     // エラービット10番(ESP受信スキップ検出)をセット
@@ -429,7 +431,7 @@ void loop() {
     if (MOUNT_PAD == WIIMOTE) {
       // WIIMOTE: Copy pad data under mutex protection
       if (xSemaphoreTake(pad_mutex, pdMS_TO_TICKS(5)) == pdTRUE) {
-        PadUnion pad_local = pad_array;  // Copy under mutex
+        PadUnion pad_local = pad_array; // Copy under mutex
         xSemaphoreGive(pad_mutex);
         // リモコン値をMeridimに格納
         meriput90_pad(s_udp_meridim, pad_local, PAD_BUTTON_MARGE);
@@ -460,10 +462,10 @@ void loop() {
   for (int i = 0; i < sv.num_max; i++) {
     int idx_l = i * 2 + 21; // インデックス計算を一度だけ実行
     int idx_r = i * 2 + 51;
-    sv.ixl_tgt_past[i] = sv.ixl_tgt[i];                        // 前回のdegreeを保持
-    sv.ixr_tgt_past[i] = sv.ixr_tgt[i];                        // 前回のdegreeを保持
-    sv.ixl_tgt[i] = s_udp_meridim.sval[idx_l] * DEGREE_SCALE;  // 受信degreeを格納
-    sv.ixr_tgt[i] = s_udp_meridim.sval[idx_r] * DEGREE_SCALE;  // 受信degreeを格納
+    sv.ixl_tgt_past[i] = sv.ixl_tgt[i];                       // 前回のdegreeを保持
+    sv.ixr_tgt_past[i] = sv.ixr_tgt[i];                       // 前回のdegreeを保持
+    sv.ixl_tgt[i] = s_udp_meridim.sval[idx_l] * DEGREE_SCALE; // 受信degreeを格納
+    sv.ixr_tgt[i] = s_udp_meridim.sval[idx_r] * DEGREE_SCALE; // 受信degreeを格納
   }
 
   // 移動差が大きい時に緩和する補正フィルタ (clamp処理で分岐を削減)

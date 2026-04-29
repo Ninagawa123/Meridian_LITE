@@ -1,9 +1,8 @@
-#ifndef __MERIDIAN_MESSAGE_H__
-#define __MERIDIAN_MESSAGE_H__
+#ifndef __MERIDIAN_DISP_H__
+#define __MERIDIAN_DISP_H__
 
 // ヘッダファイルの読み込み
-#include "config.h"     // MODE_ETHER定義用
-#include "mrd_common.h"
+#include "config.h" // MODE_ETHER定義用
 #include "mrd_util.h"
 
 // ライブラリ導入 (WiFiモード時のみ)
@@ -289,4 +288,4 @@ public:
   }
 };
 
-#endif // __MERIDIAN_MESSAGE_H__
+#endif // __MERIDIAN_DISP_H__

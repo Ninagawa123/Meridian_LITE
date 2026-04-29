@@ -41,7 +41,7 @@ bool mrd_wifi_init(WiFiUDP &a_udp, const char *a_ssid, const char *a_pass,
 /// @param a_udp 使用するWiFiUDPインスタンス
 /// @return 受信した場合はtrue, 受信しなかった場合はfalse
 bool mrd_wifi_udp_receive(byte *a_meridim_bval, int a_len, WiFiUDP &a_udp) {
-  if (a_udp.parsePacket() >= a_len) { // 受信バッファにデータがあるか確認
+  if (a_udp.parsePacket() >= a_len) {  // 受信バッファにデータがあるか確認
     a_udp.read(a_meridim_bval, a_len); // データを受信
     return true;
   }

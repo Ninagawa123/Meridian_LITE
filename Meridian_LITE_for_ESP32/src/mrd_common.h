@@ -17,7 +17,7 @@
 #define MRDM_LEN 90 // Meridim配列の長さ (デフォルト90)
 #endif
 #define MRDM_BYTE (MRDM_LEN * 2)
-#define MRD_CKSM (MRDM_LEN - 1)
+#define MRD_CKSM  (MRDM_LEN - 1)
 
 // サーボシステムの上限
 #ifndef IXL_MAX

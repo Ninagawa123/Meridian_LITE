@@ -2,9 +2,8 @@
 #define __MERIDIAN_BT_PAD_H__
 
 // ヘッダファイルの読み込み
-#include <Arduino.h>
 #include "config.h"
-#include "mrd_common.h"
+#include <Arduino.h>
 
 // ライブラリ導入
 #include <ESP32Wiimote.h> // Wiiコントローラー
@@ -12,7 +11,7 @@ extern ESP32Wiimote wiimote;
 
 #include <IcsHardSerialClass.h>
 extern PadUnion pad_array;
-extern SemaphoreHandle_t pad_mutex;  // pad_arrayアクセス用Mutex
+extern SemaphoreHandle_t pad_mutex; // pad_arrayアクセス用Mutex
 
 // リモコンボタンデータ変換テーブル
 constexpr unsigned short PAD_TABLE_WIIMOTE_SOLO[16] = {
@@ -25,12 +24,12 @@ constexpr unsigned short PAD_TABLE_KRC5FH_TO_COMMON[16] = { //
     0, 64, 32, 128, 1, 4, 2, 8, 1024, 4096, 512, 2048, 16, 64, 32, 256};
 
 // KRC-5FH 十字キーコンボ検出用ボタンマスク
-constexpr uint16_t KRC_DPAD_LEFT_MASK = 0x000F;        // bit 0-3: 左十字キー (UP,DOWN,LEFT,RIGHT)
-constexpr uint16_t KRC_DPAD_RIGHT_MASK = 0x0170;       // bit 4,5,6,8: 右十字キーボタン (368)
-constexpr uint16_t KRC_CLEAR_DPAD_LEFT = 0xFFF0;       // bit 0-3 をクリア
-constexpr uint16_t KRC_CLEAR_DPAD_RIGHT = 0xFE8F;      // bit 4,5,6,8 をクリア
+constexpr uint16_t KRC_DPAD_LEFT_MASK = 0x000F;   // bit 0-3: 左十字キー (UP,DOWN,LEFT,RIGHT)
+constexpr uint16_t KRC_DPAD_RIGHT_MASK = 0x0170;  // bit 4,5,6,8: 右十字キーボタン (368)
+constexpr uint16_t KRC_CLEAR_DPAD_LEFT = 0xFFF0;  // bit 0-3 をクリア
+constexpr uint16_t KRC_CLEAR_DPAD_RIGHT = 0xFE8F; // bit 4,5,6,8 をクリア
 // ボタンテーブル変換から残った可能性のあるbit 1,2 をクリア
-constexpr uint16_t KRC_CLEAR_RESIDUAL_BITS = 0xFFF9;   // 0b1111111111111001
+constexpr uint16_t KRC_CLEAR_RESIDUAL_BITS = 0xFFF9; // 0b1111111111111001
 
 //==================================================================================================
 //  JOYPAD 関数宣言
