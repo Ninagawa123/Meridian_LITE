@@ -288,4 +288,4 @@ public:
   }
 };
 
-#endif // __MERIDIAN_MESSAGE_H__
+#endif // __MERIDIAN_DISP_H__
