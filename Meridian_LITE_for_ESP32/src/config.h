@@ -1,6 +1,14 @@
 #ifndef __MERIDIAN_CONFIG__
 #define __MERIDIAN_CONFIG__
 
+// ヘッダファイルの読み込み
+#include "mrd_common.h"
+
+// ライブラリ導入
+
+//==================================================================================================
+//  各種定数定義
+//==================================================================================================
 // IMU/AHRSセンサ選択用のプリプロセッサ定数 (enumより先に定義が必要)
 // これらの値はプリプロセッサの#if条件で使用される
 #define IMUAHRS_NONE    0
@@ -21,8 +29,6 @@
 #define SERVO_TYPE_JRXBUS  51
 #define SERVO_TYPE_FTCSTS  61
 #define SERVO_TYPE_FTCSCS  62
-
-#include "mrd_common.h"
 
 //==================================================================================================
 //  MERIDIAN - LITE - ESP32の配線
@@ -176,7 +182,7 @@
 #define MONITOR_FRAME_DELAY       1    // シリアルモニタでフレーム遅延時間を表示(0:OFF, 1:ON)
 #define MONITOR_FLOW              0    // シリアルモニタでフローを表示(0:OFF, 1:ON)
 #define MONITOR_ERR_SERVO         0    // シリアルモニタでサーボエラーを表示(0:OFF, 1:ON)
-#define MONITOR_ERR_ALL           0    // 全経路の受信エラー率を表示
+#define MONITOR_ERR_ALL           0    // 全経路の受信エラー率を表示(0:OFF, 1:ON)
 #define MONITOR_SEQ               0    // シリアルモニタでシーケンス番号チェックを表示(0:OFF, 1:ON)
 #define MONITOR_PAD               0    // シリアルモニタでリモコンのデータを表示(0:OFF, 1:ON)
 #define MONITOR_SUPPRESS_DURATION 8000 // 起動直後のタイムアウトメッセージ抑制時間(単位ms)
@@ -236,23 +242,6 @@
 // 各サーボ系統の最大サーボマウント数
 #define IXL_MAX 15 // L系統の最大サーボ数. 標準は15.
 #define IXR_MAX 15 // R系統の最大サーボ数. 標準は15.
-
-// サーボのマウント/種類 (0:NOSERVO, 43:KONDO ICS, 等)
-// インデックス 0-10: アクティブサーボ, 11-14: 予約
-extern int IXL_MT[IXL_MAX];
-extern int IXR_MT[IXR_MAX];
-
-// サーボのハードウェアID
-extern int IXL_ID[IXL_MAX];
-extern int IXR_ID[IXR_MAX];
-
-// サーボの回転方向 (1:正転, -1:逆転)
-extern int IXL_CW[IXL_MAX];
-extern int IXR_CW[IXR_MAX];
-
-// 直立姿勢用サーボトリム値 (度)
-extern float IXL_TRIM[IXL_MAX];
-extern float IXR_TRIM[IXR_MAX];
 
 //-------------------------------------------------------------------------
 //  固定値, マスターコマンド定義
@@ -397,9 +386,8 @@ extern float IXR_TRIM[IXR_MAX];
 #define ERRBIT_8_PC_SKIP       8  // Teensy → ESP32 → PC のフレームスキップエラー(末端で捕捉)
 
 //-------------------------------------------------------------------------
-//  サーボ設定配列の実体定義 (main.cppでのみ有効化)
+//  サーボ設定配列の実体定義
 //-------------------------------------------------------------------------
-#ifdef CONFIG_DEFINE_ARRAYS
 
 // L系統のサーボのマウントの設定
 // 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
@@ -408,22 +396,22 @@ extern float IXR_TRIM[IXR_MAX];
 // 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
 // 51: JRXBUS (JRPROPO_XBUS)[WIP]
 // 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
-int IXL_MT[IXL_MAX] = {
-    43, // [00]頭ヨー
-    0,  // [01]左肩ピッチ
-    0,  // [02]左肩ロール
-    0,  // [03]左肘ヨー
-    0,  // [04]左肘ピッチ
-    0,  // [05]左股ヨー
-    0,  // [06]左股ロール
-    0,  // [07]左股ピッチ
-    0,  // [08]左膝ピッチ
-    0,  // [09]左足首ピッチ
-    0,  // [10]左足首ロール
-    0,  // [11]追加サーボ用
-    0,  // [12]追加サーボ用
-    0,  // [13]追加サーボ用
-    0   // [14]追加サーボ用
+static int IXL_MT[IXL_MAX] = {
+    SERVO_TYPE_KOICS3, // [00]頭ヨー
+    SERVO_TYPE_NONE,   // [01]左肩ピッチ
+    SERVO_TYPE_NONE,   // [02]左肩ロール
+    SERVO_TYPE_NONE,   // [03]左肘ヨー
+    SERVO_TYPE_NONE,   // [04]左肘ピッチ
+    SERVO_TYPE_NONE,   // [05]左股ヨー
+    SERVO_TYPE_NONE,   // [06]左股ロール
+    SERVO_TYPE_NONE,   // [07]左股ピッチ
+    SERVO_TYPE_NONE,   // [08]左膝ピッチ
+    SERVO_TYPE_NONE,   // [09]左足首ピッチ
+    SERVO_TYPE_NONE,   // [10]左足首ロール
+    SERVO_TYPE_NONE,   // [11]追加サーボ用
+    SERVO_TYPE_NONE,   // [12]追加サーボ用
+    SERVO_TYPE_NONE,   // [13]追加サーボ用
+    SERVO_TYPE_NONE    // [14]追加サーボ用
 };
 
 // R系統のサーボのマウントの設定
@@ -433,26 +421,26 @@ int IXL_MT[IXL_MAX] = {
 // 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
 // 51: JRXBUS (JRPROPO_XBUS)[WIP]
 // 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
-int IXR_MT[IXR_MAX] = {
-    0, // [00]腰ヨー
-    0, // [01]右肩ピッチ
-    0, // [02]右肩ロール
-    0, // [03]右肘ヨー
-    0, // [04]右肘ピッチ
-    0, // [05]右股ヨー
-    0, // [06]右股ロール
-    0, // [07]右股ピッチ
-    0, // [08]右膝ピッチ
-    0, // [09]右足首ピッチ
-    0, // [10]右足首ロール
-    0, // [11]追加サーボ用
-    0, // [12]追加サーボ用
-    0, // [13]追加サーボ用
-    0  // [14]追加サーボ用
+static int IXR_MT[IXR_MAX] = {
+    SERVO_TYPE_NONE, // [00]腰ヨー
+    SERVO_TYPE_NONE, // [01]右肩ピッチ
+    SERVO_TYPE_NONE, // [02]右肩ロール
+    SERVO_TYPE_NONE, // [03]右肘ヨー
+    SERVO_TYPE_NONE, // [04]右肘ピッチ
+    SERVO_TYPE_NONE, // [05]右股ヨー
+    SERVO_TYPE_NONE, // [06]右股ロール
+    SERVO_TYPE_NONE, // [07]右股ピッチ
+    SERVO_TYPE_NONE, // [08]右膝ピッチ
+    SERVO_TYPE_NONE, // [09]右足首ピッチ
+    SERVO_TYPE_NONE, // [10]右足首ロール
+    SERVO_TYPE_NONE, // [11]追加サーボ用
+    SERVO_TYPE_NONE, // [12]追加サーボ用
+    SERVO_TYPE_NONE, // [13]追加サーボ用
+    SERVO_TYPE_NONE  // [14]追加サーボ用
 };
 
 // L系統のコード上のサーボIndexに対し, 実際に呼び出すハードウェアのID番号
-int IXL_ID[IXL_MAX] = {
+static int IXL_ID[IXL_MAX] = {
     0,  // [00]頭ヨー
     1,  // [01]左肩ピッチ
     2,  // [02]左肩ロール
@@ -471,7 +459,7 @@ int IXL_ID[IXL_MAX] = {
 };
 
 // R系統のコード上のサーボIndexに対し, 実際に呼び出すハードウェアのID番号
-int IXR_ID[IXR_MAX] = {
+static int IXR_ID[IXR_MAX] = {
     0,  // [00]腰ヨー
     1,  // [01]右肩ピッチ
     2,  // [02]右肩ロール
@@ -490,7 +478,7 @@ int IXR_ID[IXR_MAX] = {
 };
 
 // L系統のサーボ回転方向補正(1:変更なし, -1:逆転)
-int IXL_CW[IXL_MAX] = {
+static int IXL_CW[IXL_MAX] = {
     1, // [00]頭ヨー
     1, // [01]左肩ピッチ
     1, // [02]左肩ロール
@@ -509,7 +497,7 @@ int IXL_CW[IXL_MAX] = {
 };
 
 // R系統のサーボ回転方向補正(1:変更なし, -1:逆転)
-int IXR_CW[IXR_MAX] = {
+static int IXR_CW[IXR_MAX] = {
     1, // [00]腰ヨー
     1, // [01]右肩ピッチ
     1, // [02]右肩ロール
@@ -528,7 +516,7 @@ int IXR_CW[IXR_MAX] = {
 };
 
 // L系統のトリム値(degree)
-float IXL_TRIM[IXL_MAX] = {
+static float IXL_TRIM[IXL_MAX] = {
     0.0,     // [00]頭ヨー
     -20.42,  // [01]左肩ピッチ
     -103.55, // [02]左肩ロール
@@ -547,7 +535,7 @@ float IXL_TRIM[IXL_MAX] = {
 };
 
 // R系統のトリム値(degree)
-float IXR_TRIM[IXR_MAX] = {
+static float IXR_TRIM[IXR_MAX] = {
     -4.28,  // [00]腰ヨー
     0.68,   // [01]右肩ピッチ
     -89.41, // [02]右肩ロール
@@ -565,6 +553,14 @@ float IXR_TRIM[IXR_MAX] = {
     0.0     // [14]追加サーボ用
 };
 
-#endif // CONFIG_DEFINE_ARRAYS
+//------------------------------------------------------------------------------------
+// システム用
+//------------------------------------------------------------------------------------
+const int MRDM_BYTE = MRDM_LEN * 2;    // Meridim配列のバイト型の長さ
+const int MRD_ERR = MRDM_LEN - 2;      // エラーフラグの格納場所(配列の末尾から2つめ)
+const int MRD_ERR_u = MRD_ERR * 2 + 1; // エラーフラグの格納場所(上位8ビット)
+const int MRD_ERR_l = MRD_ERR * 2;     // エラーフラグの格納場所(下位8ビット)
+const int MRD_CKSM = MRDM_LEN - 1;     // チェックサムの格納場所(配列の末尾)
+const int PAD_LEN = 5;                 // リモコン用配列の長さ
 
 #endif // __MERIDIAN_CONFIG__

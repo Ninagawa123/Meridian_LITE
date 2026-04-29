@@ -8,10 +8,10 @@
 #include <Wire.h> // I2C通信のためのWireライブラリ導入
 
 // センサーライブラリの条件付きインクルード
-#if MOUNT_IMUAHRS == 3
+#if MOUNT_IMUAHRS == IMUAHRS_BNO055
 #include <Adafruit_BNO055.h>
 #endif
-#if MOUNT_IMUAHRS == 1
+#if MOUNT_IMUAHRS == IMUAHRS_MPU6050
 #include <MPU6050_6Axis_MotionApps20.h>
 #endif
 
@@ -22,10 +22,10 @@ extern SemaphoreHandle_t ahrs_mutex; // AHRSデータアクセス用mutex
 //==================================================================================================
 // 6軸or9軸センサーの値
 struct AhrsValue {
-#if MOUNT_IMUAHRS == 3
+#if MOUNT_IMUAHRS == IMUAHRS_BNO055
   Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28, &Wire); // BNO055のインスタンス
 #endif
-#if MOUNT_IMUAHRS == 1
+#if MOUNT_IMUAHRS == IMUAHRS_MPU6050
   MPU6050 mpu6050;     // MPU6050のインスタンス
   Quaternion q;        // [w, x, y, z]         quaternion container
   VectorFloat gravity; // [x, y, z]            gravity vector
@@ -79,7 +79,7 @@ bool mrd_wire0_init_i2c(int a_i2c0_speed, int a_pinSDA, int a_pinSCL) {
 ///        ジャイロスコープと加速度センサのオフセットを設定する
 /// @return DMP初期化が成功した場合はtrue, 失敗した場合はfalse
 bool mrd_wire0_init_mpu6050_dmp() {
-#if MOUNT_IMUAHRS == 1 // MPU6050_6Axis_MotionApps20
+#if MOUNT_IMUAHRS == IMUAHRS_MPU6050 // MPU6050_6Axis_MotionApps20
   m_ahrs.mpu6050.initialize();
   m_ahrs.devStatus = m_ahrs.mpu6050.dmpInitialize();
 
@@ -108,7 +108,7 @@ bool mrd_wire0_init_mpu6050_dmp() {
 /// @brief BNO055センサの初期化を試みる
 /// @return BNO055初期化が成功した場合はtrue, 検出できなかった場合はfalse
 bool mrd_wire0_init_bno055() {
-#if MOUNT_IMUAHRS == 3 // Adafruit_BNO055
+#if MOUNT_IMUAHRS == IMUAHRS_BNO055 // Adafruit_BNO055
   if (!m_ahrs.bno.begin()) {
     Serial.println("No BNO055 detected ... Check your wiring or I2C ADDR!");
     return false;
@@ -160,8 +160,8 @@ bool mrd_wire0_setup(ImuAhrsType a_imuahrs_type, int a_i2c0_speed, int a_pinSDA,
 /// @brief I2C経由でBNO055からデータを読み取るスレッド関数. IMUAHRS_INTERVAL間隔で実行.
 /// @param args 未使用の引数
 void mrd_wire0_Core0_bno055_r(void *args) {
-  float local_read[16]; // ローカルバッファ
-#if MOUNT_IMUAHRS == 3  // Adafruit_BNO055
+  float local_read[16];             // ローカルバッファ
+#if MOUNT_IMUAHRS == IMUAHRS_BNO055 // Adafruit_BNO055
   while (1) {
     // mutex保護下でセンサ読み取りと共有バッファへの書き込みを実行
     if (xSemaphoreTake(ahrs_mutex, pdMS_TO_TICKS(20)) == pdTRUE) {
@@ -215,7 +215,7 @@ void mrd_wire0_Core0_bno055_r(void *args) {
 /// @param a_ahrs AHRS値を保持する構造体
 /// @return 成功時はtrue, 失敗時はfalse
 bool mrd_wire0_read_ahrs_i2c(MrdFlags &a_flg) { // wireTimer0.begin引数にvoidが必要
-#if MOUNT_IMUAHRS == 1                          // MPU6050_6Axis_MotionApps20
+#if MOUNT_IMUAHRS == IMUAHRS_MPU6050            // MPU6050_6Axis_MotionApps20
 
   if (MOUNT_IMUAHRS == MPU6050_IMU) {                                // MPU6050
     if (m_ahrs.mpu6050.dmpGetCurrentFIFOPacket(m_ahrs.fifoBuffer)) { // Get new data

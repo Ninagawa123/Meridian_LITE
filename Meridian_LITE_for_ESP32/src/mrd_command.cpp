@@ -107,7 +107,8 @@ bool execute_master_command_1(Meridim90Union &a_meridim, bool a_flg_exe,
 
     // サーボ移動を実行
     if (!MODE_ESP32_STANDALONE) {
-      mrd_servo_drive_lite(a_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, a_sv, a_ics_L, a_ics_R, a_mrd);
+      mrd_servo_drive_lite(a_meridim, (ServoType)MOUNT_SERVO_TYPE_L, (ServoType)MOUNT_SERVO_TYPE_R,
+                           a_sv, a_ics_L, a_ics_R, a_mrd);
     }
 
     a_flg.count_frame_reset = true; // フレーム管理タイマーリセットフラグをセット
@@ -231,7 +232,8 @@ bool execute_master_command_3(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
 
     // サーボ移動を実行
     if (!MODE_ESP32_STANDALONE) {
-      mrd_servo_drive_lite(a_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, a_sv, a_ics_L, a_ics_R, a_mrd);
+      mrd_servo_drive_lite(a_meridim, (ServoType)MOUNT_SERVO_TYPE_L, (ServoType)MOUNT_SERVO_TYPE_R,
+                           a_sv, a_ics_L, a_ics_R, a_mrd);
     }
 
     // 現在のTRIM値をサーボターゲット値として設定
@@ -248,7 +250,8 @@ bool execute_master_command_3(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
 
     // サーボ移動を実行. TRIM値が0の状態で, 前回TRIM値の角度をtgtとしてサーボは保持
     if (!MODE_ESP32_STANDALONE) {
-      mrd_servo_drive_lite(a_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, a_sv, a_ics_L, a_ics_R, a_mrd); // サーボ動作を実行する
+      mrd_servo_drive_lite(a_meridim, (ServoType)MOUNT_SERVO_TYPE_L, (ServoType)MOUNT_SERVO_TYPE_R,
+                           a_sv, a_ics_L, a_ics_R, a_mrd); // サーボ動作を実行する
     }
 
     // サーボ設定を格納 ####(誤りの可能性あり)

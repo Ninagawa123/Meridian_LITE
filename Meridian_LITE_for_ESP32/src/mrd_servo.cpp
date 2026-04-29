@@ -6,20 +6,20 @@
 
 // サーボドライバーの条件付きインクルード
 // 使用するドライバーのみコンパイルに含める
-#if MOUNT_SERVO_TYPE_L == KOICS3 || MOUNT_SERVO_TYPE_R == KOICS3
+#if MOUNT_SERVO_TYPE_L == SERVO_TYPE_KOICS3 || MOUNT_SERVO_TYPE_R == SERVO_TYPE_KOICS3
 #include "mrd_module/sv_ics.h"
 #endif
 
-#if MOUNT_SERVO_TYPE_L == FTBRSX || MOUNT_SERVO_TYPE_R == FTBRSX
+#if MOUNT_SERVO_TYPE_L == SERVO_TYPE_FTBRSX || MOUNT_SERVO_TYPE_R == SERVO_TYPE_FTBRSX
 #include "mrd_module/sv_ftbrx.h"
 #endif
 
-#if MOUNT_SERVO_TYPE_L == DXL2 || MOUNT_SERVO_TYPE_R == DXL2
+#if MOUNT_SERVO_TYPE_L == SERVO_TYPE_DXL2 || MOUNT_SERVO_TYPE_R == SERVO_TYPE_DXL2
 #include "mrd_module/sv_dxl2.h"
 #endif
 
-#if MOUNT_SERVO_TYPE_L == FTCSTS || MOUNT_SERVO_TYPE_R == FTCSTS || \
-    MOUNT_SERVO_TYPE_L == FTCSCS || MOUNT_SERVO_TYPE_R == FTCSCS
+#if MOUNT_SERVO_TYPE_L == SERVO_TYPE_FTCSTS || MOUNT_SERVO_TYPE_R == SERVO_TYPE_FTCSTS || \
+    MOUNT_SERVO_TYPE_L == SERVO_TYPE_FTCSCS || MOUNT_SERVO_TYPE_R == SERVO_TYPE_FTCSCS
 #include "mrd_module/sv_ftc.h"
 #endif
 
@@ -92,9 +92,9 @@ bool mrd_servo_drive_lite(Meridim90Union &a_meridim, ServoType a_L_type, ServoTy
                           ServoParam &a_sv,
                           IcsHardSerialClass &a_ics_L, IcsHardSerialClass &a_ics_R,
                           MERIDIANFLOW::Meridian &a_mrd) {
-#if MOUNT_SERVO_TYPE_L == KOICS3 && MOUNT_SERVO_TYPE_R == KOICS3
+#if MOUNT_SERVO_TYPE_L == SERVO_TYPE_KOICS3 && MOUNT_SERVO_TYPE_R == SERVO_TYPE_KOICS3
   // LR両系統がICSサーボの場合, LRバランス送信を実行
-  if (a_L_type == KOICS3 && a_R_type == KOICS3) {
+  if (a_L_type == SERVO_TYPE_KOICS3 && a_R_type == SERVO_TYPE_KOICS3) {
     mrd_sv_drive_ics_double(a_meridim, a_sv, a_ics_L, a_ics_R, a_mrd);
     return true;
   }

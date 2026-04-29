@@ -2,11 +2,12 @@
 #define __MERIDIAN_SERVO_KONDO_ICS_H__
 
 // ヘッダファイルの読み込み
+// #include "gs2d_krs.h"
 #include "mrd_common.h"
-#include "gs2d_krs.h"
 
 // ライブラリ導入
 #include <IcsHardSerialClass.h>
+#include <Meridian.h> // Meridianのライブラリ導入
 
 //==================================================================================================
 //  KONDO ICSサーボ関連の処理

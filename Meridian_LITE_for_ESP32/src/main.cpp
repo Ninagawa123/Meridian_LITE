@@ -147,10 +147,10 @@ void setup() {
   mrd_disp.servo_bps_2lines(SERVO_BAUDRATE_L, SERVO_BAUDRATE_R);
 
   // サーボ用UART設定
-  mrd_servo_begin(L, MOUNT_SERVO_TYPE_L, ics_L);  // サーボモータの通信初期設定(Serial1)
-  mrd_servo_begin(R, MOUNT_SERVO_TYPE_R, ics_R);  // サーボモータの通信初期設定(Serial2)
-  mrd_disp.servo_protocol(L, MOUNT_SERVO_TYPE_L); // L系統プロトコルの表示
-  mrd_disp.servo_protocol(R, MOUNT_SERVO_TYPE_R); // R系統プロトコルの表示
+  mrd_servo_begin(L, (ServoType)MOUNT_SERVO_TYPE_L, ics_L);  // サーボモータの通信初期設定(Serial1)
+  mrd_servo_begin(R, (ServoType)MOUNT_SERVO_TYPE_R, ics_R);  // サーボモータの通信初期設定(Serial2)
+  mrd_disp.servo_protocol(L, (ServoType)MOUNT_SERVO_TYPE_L); // L系統プロトコルの表示
+  mrd_disp.servo_protocol(R, (ServoType)MOUNT_SERVO_TYPE_R); // R系統プロトコルの表示
 
   // マウントされたサーボIDの表示
   mrd_disp.servo_mounts_2lines(sv);
@@ -194,7 +194,7 @@ void setup() {
 #endif
 
   // I2Cの初期化と開始
-  mrd_wire0_setup(MOUNT_IMUAHRS, I2C0_SPEED, PIN_I2C0_SDA, PIN_I2C0_SCL);
+  mrd_wire0_setup((ImuAhrsType)MOUNT_IMUAHRS, I2C0_SPEED, PIN_I2C0_SDA, PIN_I2C0_SCL);
 
   // AHRSデータ用mutexの作成
   ahrs_mutex = xSemaphoreCreateMutex();
@@ -514,7 +514,8 @@ void loop() {
 
   // @[8-1] サーボ受信値の処理
   if (!MODE_ESP32_STANDALONE) { // サーボ処理を実行
-    mrd_servo_drive_lite(s_udp_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, sv, ics_L, ics_R, mrd);
+    mrd_servo_drive_lite(s_udp_meridim, (ServoType)MOUNT_SERVO_TYPE_L, (ServoType)MOUNT_SERVO_TYPE_R,
+                         sv, ics_L, ics_R, mrd);
   } else {
     // ボード単体動作モードではサーボ処理をせずL0番サーボ値として+-30度のサイン波を返す
     sv.ixl_tgt[0] = sinf(tmr.count_loop * (float)M_PI / 180.0f) * 30.0f;
