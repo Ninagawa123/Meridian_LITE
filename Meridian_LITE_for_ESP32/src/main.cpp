@@ -72,9 +72,9 @@ SemaphoreHandle_t ahrs_mutex; // AHRSデータアクセス用mutex
 SemaphoreHandle_t pad_mutex;  // PADデータアクセス用mutex
 
 // mrd_wifi.hで宣言された変数
-#if MODE_ETHER
-#else
+#if !MODE_ETHER
 WiFiUDP udp;
+#endif
 
 // mrd_bt_pad.hで宣言された変数
 ESP32Wiimote wiimote;
