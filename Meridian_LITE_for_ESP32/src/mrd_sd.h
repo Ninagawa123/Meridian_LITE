@@ -2,10 +2,9 @@
 #define __MERIDIAN_SD_H__
 
 // ヘッダファイルの読み込み
-#include "mrd_common.h"
 
 // ライブラリ導入
-#include <SD.h> // SDカード用
+#include <Arduino.h>
 
 //==================================================================================================
 //  SDメモリ関数宣言
@@ -36,9 +35,5 @@ bool mrd_sd_init(bool a_sd_mount, int a_sd_chipselect_pin, HardwareSerial &a_ser
 /// @param a_serial 出力シリアル
 /// @return SDカードの読み書きが成功した場合はtrue, 失敗した場合はfalse
 bool mrd_sd_check(bool a_sd_mount, int a_sd_chipselect_pin, bool a_sd_check_rw, HardwareSerial &a_serial);
-
-//------------------------------------------------------------------------------------
-//  各種オペレーション
-//------------------------------------------------------------------------------------
 
 #endif // __MERIDIAN_SD_H__
