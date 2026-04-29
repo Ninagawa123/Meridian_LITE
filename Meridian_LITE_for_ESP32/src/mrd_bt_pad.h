@@ -3,7 +3,6 @@
 
 // ヘッダファイルの読み込み
 #include "config.h"
-#include "mrd_common.h"
 #include <Arduino.h>
 
 // ライブラリ導入

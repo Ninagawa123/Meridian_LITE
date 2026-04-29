@@ -9,10 +9,10 @@
 #include <Wire.h>
 
 // センサーライブラリの条件付きインクルード
-#if MOUNT_IMUAHRS == BNO055_AHRS
+#if MOUNT_IMUAHRS == 3
 #include <Adafruit_BNO055.h>
 #endif
-#if MOUNT_IMUAHRS == MPU6050_IMU
+#if MOUNT_IMUAHRS == 1
 #include <MPU6050_6Axis_MotionApps20.h>
 #endif
 
@@ -22,11 +22,11 @@
 
 // 6軸or9軸センサーの値
 struct AhrsValue {
-#if MOUNT_IMUAHRS == BNO055_AHRS
+#if MOUNT_IMUAHRS == 3
   Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28, &Wire); // BNO055のインスタンス
 #endif
 
-#if MOUNT_IMUAHRS == MPU6050_IMU
+#if MOUNT_IMUAHRS == 1
   MPU6050 mpu6050;        // MPU6050のインスタンス
   uint8_t mpuIntStatus;   // MPUからの割込みステータスバイト
   uint8_t devStatus;      // デバイス操作後の戻り値 (0:成功, 0以外:エラー)
