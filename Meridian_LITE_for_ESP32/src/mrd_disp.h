@@ -2,7 +2,6 @@
 #define __MERIDIAN_DISP_H__
 
 // ヘッダファイルの読み込み
-#include "config.h" // MODE_ETHER定義用
 #include "mrd_util.h"
 
 // ライブラリ導入 (WiFiモード時のみ)
