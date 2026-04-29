@@ -85,13 +85,13 @@ bool mrd_wire0_init_bno055(AhrsValue &a_ahrs) {
 }
 
 /// @brief 指定されたIMU/AHRSタイプに基づいて適切なセンサを初期化する
-/// @param a_imuahrs_type センサタイプのenum (MPU6050, MPU9250, BNO055)
+/// @param a_imuahrs_type センサタイプ (0:なし, 1:MPU6050, 2:MPU9250, 3:BNO055)
 /// @param a_i2c0_speed I2C通信クロック速度
 /// @param a_ahrs AHRS値を保持する構造体
 /// @param a_pinSDA SDAピン番号. a_pinSCLと共に省略可能.
 /// @param a_pinSCL SCLピン番号. a_pinSDAと共に省略可能.
 /// @return センサが正しく初期化された場合はtrue, それ以外はfalse
-bool mrd_wire0_setup(ImuAhrsType a_imuahrs_type, int a_i2c0_speed, AhrsValue &a_ahrs,
+bool mrd_wire0_setup(int a_imuahrs_type, int a_i2c0_speed, AhrsValue &a_ahrs,
                      int a_pinSDA, int a_pinSCL) {
   if (a_imuahrs_type > 0) // 何らかのセンサが搭載されている
   {

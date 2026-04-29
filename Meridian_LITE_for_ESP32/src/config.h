@@ -3,10 +3,24 @@
 
 // IMU/AHRSセンサ選択用のプリプロセッサ定数 (enumより先に定義が必要)
 // これらの値はプリプロセッサの#if条件で使用される
-#define IMUAHRS_NONE   0
+#define IMUAHRS_NONE    0
 #define IMUAHRS_MPU6050 1
 #define IMUAHRS_MPU9250 2
 #define IMUAHRS_BNO055  3
+
+// サーボタイプ選択用のプリプロセッサ定数 (enumより先に定義が必要)
+// これらの値はプリプロセッサの#if条件で使用される
+#define SERVO_TYPE_NONE    0
+#define SERVO_TYPE_PWM_S   1
+#define SERVO_TYPE_PCA9685 11
+#define SERVO_TYPE_FTBRSX  21
+#define SERVO_TYPE_DXL1    31
+#define SERVO_TYPE_DXL2    32
+#define SERVO_TYPE_KOICS3  43
+#define SERVO_TYPE_KOPMX   44
+#define SERVO_TYPE_JRXBUS  51
+#define SERVO_TYPE_FTCSTS  61
+#define SERVO_TYPE_FTCSCS  62
 
 #include "mrd_common.h"
 
@@ -132,9 +146,9 @@
 #define MRD_SERVO_SLOTS 15  // Meridim配列の1系統あたりの最大接続サーボ数(デフォルトは15)
 
 // 各種ハードウェアのマウント有無
-#define MOUNT_SD      1           // SDカードリーダーの有無(0:なし, 1:あり)
+#define MOUNT_SD      1              // SDカードリーダーの有無(0:なし, 1:あり)
 #define MOUNT_IMUAHRS IMUAHRS_BNO055 // IMU/AHRSの搭載 (0:なし, 1:MPU6050, 2:MPU9250, 3:BNO055)
-#define MOUNT_PAD     PC          // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
+#define MOUNT_PAD     PC             // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
 
 // 動作モード
 #define MODE_ESP32_STANDALONE 0 // ESP32をボードに挿さず動作確認(0:NO, 1:YES)
@@ -209,8 +223,8 @@
 // 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
 // 51: JRXBUS (JRPROPO_XBUS)[WIP]
 // 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
-#define MOUNT_SERVO_TYPE_L 43 // L系統のコマンドサーボの種類
-#define MOUNT_SERVO_TYPE_R 43 // R系統のコマンドサーボの種類
+#define MOUNT_SERVO_TYPE_L SERVO_TYPE_KOICS3 // L系統のコマンドサーボの種類 (43)
+#define MOUNT_SERVO_TYPE_R SERVO_TYPE_KOICS3 // R系統のコマンドサーボの種類 (43)
 
 // サーボ関連設定
 #define SERVO_BAUDRATE_L    1250000 // L系統のICSサーボの通信速度bps
@@ -396,16 +410,16 @@ extern float IXR_TRIM[IXR_MAX];
 // 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
 int IXL_MT[IXL_MAX] = {
     43, // [00]頭ヨー
-    43, // [01]左肩ピッチ
-    43, // [02]左肩ロール
-    43, // [03]左肘ヨー
-    43, // [04]左肘ピッチ
-    43, // [05]左股ヨー
-    43, // [06]左股ロール
-    43, // [07]左股ピッチ
-    43, // [08]左膝ピッチ
-    43, // [09]左足首ピッチ
-    43, // [10]左足首ロール
+    0,  // [01]左肩ピッチ
+    0,  // [02]左肩ロール
+    0,  // [03]左肘ヨー
+    0,  // [04]左肘ピッチ
+    0,  // [05]左股ヨー
+    0,  // [06]左股ロール
+    0,  // [07]左股ピッチ
+    0,  // [08]左膝ピッチ
+    0,  // [09]左足首ピッチ
+    0,  // [10]左足首ロール
     0,  // [11]追加サーボ用
     0,  // [12]追加サーボ用
     0,  // [13]追加サーボ用
@@ -420,21 +434,21 @@ int IXL_MT[IXL_MAX] = {
 // 51: JRXBUS (JRPROPO_XBUS)[WIP]
 // 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
 int IXR_MT[IXR_MAX] = {
-    43, // [00]腰ヨー
-    43, // [01]右肩ピッチ
-    43, // [02]右肩ロール
-    43, // [03]右肘ヨー
-    43, // [04]右肘ピッチ
-    43, // [05]右股ヨー
-    43, // [06]右股ロール
-    43, // [07]右股ピッチ
-    43, // [08]右膝ピッチ
-    43, // [09]右足首ピッチ
-    43, // [10]右足首ロール
-    0,  // [11]追加サーボ用
-    0,  // [12]追加サーボ用
-    0,  // [13]追加サーボ用
-    0   // [14]追加サーボ用
+    0, // [00]腰ヨー
+    0, // [01]右肩ピッチ
+    0, // [02]右肩ロール
+    0, // [03]右肘ヨー
+    0, // [04]右肘ピッチ
+    0, // [05]右股ヨー
+    0, // [06]右股ロール
+    0, // [07]右股ピッチ
+    0, // [08]右膝ピッチ
+    0, // [09]右足首ピッチ
+    0, // [10]右足首ロール
+    0, // [11]追加サーボ用
+    0, // [12]追加サーボ用
+    0, // [13]追加サーボ用
+    0  // [14]追加サーボ用
 };
 
 // L系統のコード上のサーボIndexに対し, 実際に呼び出すハードウェアのID番号

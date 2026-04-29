@@ -67,9 +67,9 @@ bool mrd_servo_begin(UartLine a_line, int a_servo_type) {
 /// @param a_sv サーボパラメータ構造体 (参照渡し)
 /// @return サーボ駆動が成功した場合はtrue, 失敗した場合はfalse
 bool mrd_servo_drive_lite(Meridim90Union &a_meridim, int a_L_type, int a_R_type, ServoParam &a_sv) {
-#if MOUNT_SERVO_TYPE_L == KOICS3 && MOUNT_SERVO_TYPE_R == KOICS3
+#if MOUNT_SERVO_TYPE_L == SERVO_TYPE_KOICS3 && MOUNT_SERVO_TYPE_R == SERVO_TYPE_KOICS3
   // LR両系統がICSサーボの場合, LRバランス送信を実行
-  if (a_L_type == KOICS3 && a_R_type == KOICS3) {
+  if (a_L_type == SERVO_TYPE_KOICS3 && a_R_type == SERVO_TYPE_KOICS3) {
     mrd_sv_drive_ics_double(a_meridim, a_sv, ics_L, ics_R, mrd);
     return true;
   }

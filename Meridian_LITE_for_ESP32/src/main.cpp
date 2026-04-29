@@ -314,6 +314,10 @@ void loop() {
 
   // @[1-1] UDP送信の実行
   if (flg.udp_send_mode) { // UDP送信実施フラグの確認(モード確認)
+    // [DEBUG] UDP送信直前のsval[21]を表示
+    Serial.print("[DBG_TX] sval[21]=");
+    Serial.println(s_udp_meridim.sval[21]);
+
     flg.udp_busy = true;   // UDP使用中フラグをセット
 #if MODE_ETHER
     // 有線LAN通信: 事前パース済みのIPアドレスを使用
@@ -527,6 +531,13 @@ void loop() {
     // 最新のサーボ角度をdegree単位で格納
     s_udp_meridim.sval[idx_l] = mrd.float2HfShort(sv.ixl_tgt[i]);
     s_udp_meridim.sval[idx_r] = mrd.float2HfShort(sv.ixr_tgt[i]);
+    // [DEBUG] L0の書き戻し値を表示
+    if (i == 0) {
+      Serial.print("[DBG_WB] L0 tgt=");
+      Serial.print(sv.ixl_tgt[0]);
+      Serial.print(" sval[21]=");
+      Serial.println(s_udp_meridim.sval[21]);
+    }
   }
 
   //------------------------------------------------------------------------------------
