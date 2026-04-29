@@ -1,5 +1,5 @@
-#ifndef __MERIDIAN_MESSAGE_H__
-#define __MERIDIAN_MESSAGE_H__
+#ifndef __MERIDIAN_DISP_H__
+#define __MERIDIAN_DISP_H__
 
 // ヘッダファイルの読み込み
 #include "config.h" // MODE_ETHER定義用
