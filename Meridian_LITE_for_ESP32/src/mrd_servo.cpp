@@ -75,7 +75,10 @@ bool mrd_servo_drive_lite(Meridim90Union &a_meridim, int a_L_type, int a_R_type,
   }
 #endif
   // 他のサーボタイプの組み合わせは未実装
-  (void)a_meridim; (void)a_L_type; (void)a_R_type; (void)a_sv; // 未使用警告抑制
+  (void)a_meridim;
+  (void)a_L_type;
+  (void)a_R_type;
+  (void)a_sv; // 未使用警告抑制
   return false;
 }
 

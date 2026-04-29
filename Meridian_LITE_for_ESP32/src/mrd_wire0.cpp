@@ -144,9 +144,9 @@ void mrd_wire0_Core0_bno055_r(void *args) {
 
       // センサフュージョンによる推定姿勢を取得 - VECTOR_EULER - degrees
       imu::Vector<3> euler = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-      local_read[12] = euler.y();                        // DMP_ROLL 推定値
-      local_read[13] = euler.z();                        // DMP_PITCH 推定値
-      float yaw_tmp = euler.x() - ahrs.yaw_origin;       // DMP_YAW 推定値
+      local_read[12] = euler.y();                  // DMP_ROLL 推定値
+      local_read[13] = euler.z();                  // DMP_PITCH 推定値
+      float yaw_tmp = euler.x() - ahrs.yaw_origin; // DMP_YAW 推定値
       if (yaw_tmp >= 180) {
         yaw_tmp = yaw_tmp - 360;
       } else if (yaw_tmp < -180) {

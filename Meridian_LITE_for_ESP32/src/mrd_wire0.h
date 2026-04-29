@@ -41,9 +41,9 @@ struct AhrsValue {
 #endif
 
   // 共通メンバ
-  float ypr[3];           // [roll, pitch, yaw] ロール/ピッチ/ヨー格納用
-  float yaw_origin = 0;   // ヨー軸の補正センター値
-  float yaw_source = 0;   // ヨー軸のソースデータ保持用
+  float ypr[3];         // [roll, pitch, yaw] ロール/ピッチ/ヨー格納用
+  float yaw_origin = 0; // ヨー軸の補正センター値
+  float yaw_source = 0; // ヨー軸のソースデータ保持用
 
   float read[16]; // mpuからの読み込んだ一次データacc_x,y,z,gyro_x,y,z,mag_x,y,z,gr_x,y,z,rpy_r,p,y,temp
 
@@ -56,7 +56,7 @@ struct AhrsValue {
 
 // グローバル変数のextern宣言
 extern AhrsValue ahrs;
-extern SemaphoreHandle_t ahrs_mutex;  // AHRSデータアクセス用mutex (main.cppで定義)
+extern SemaphoreHandle_t ahrs_mutex; // AHRSデータアクセス用mutex (main.cppで定義)
 
 //==================================================================================================
 //  I2C wire0 関数宣言

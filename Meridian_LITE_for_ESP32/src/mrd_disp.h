@@ -2,7 +2,7 @@
 #define __MERIDIAN_MESSAGE_H__
 
 // ヘッダファイルの読み込み
-#include "config.h"     // MODE_ETHER定義用
+#include "config.h" // MODE_ETHER定義用
 #include "mrd_common.h"
 #include "mrd_util.h"
 

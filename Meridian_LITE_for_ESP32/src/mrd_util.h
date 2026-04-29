@@ -2,9 +2,9 @@
 #define __MERIDIAN_UTILITY_H__
 
 // ヘッダファイルの読み込み
+#include "mrd_common.h"
 #include <Arduino.h>
 #include <IPAddress.h>
-#include "mrd_common.h"
 
 //==================================================================================================
 // ユーティリティ関数宣言
