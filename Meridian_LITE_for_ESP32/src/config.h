@@ -1,6 +1,13 @@
 #ifndef __MERIDIAN_CONFIG__
 #define __MERIDIAN_CONFIG__
 
+// IMU/AHRSセンサ選択用のプリプロセッサ定数 (enumより先に定義が必要)
+// これらの値はプリプロセッサの#if条件で使用される
+#define IMUAHRS_NONE   0
+#define IMUAHRS_MPU6050 1
+#define IMUAHRS_MPU9250 2
+#define IMUAHRS_BNO055  3
+
 #include "mrd_common.h"
 
 //==================================================================================================
@@ -125,12 +132,12 @@
 #define MRD_SERVO_SLOTS 15  // Meridim配列の1系統あたりの最大接続サーボ数(デフォルトは15)
 
 // 各種ハードウェアのマウント有無
-#define MOUNT_SD      0           // SDカードリーダーの有無(0:なし, 1:あり)
-#define MOUNT_IMUAHRS NO_IMU      // IMU/AHRSの搭載 NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS
+#define MOUNT_SD      1           // SDカードリーダーの有無(0:なし, 1:あり)
+#define MOUNT_IMUAHRS IMUAHRS_BNO055 // IMU/AHRSの搭載 (0:なし, 1:MPU6050, 2:MPU9250, 3:BNO055)
 #define MOUNT_PAD     PC          // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
 
 // 動作モード
-#define MODE_ESP32_STANDALONE 1 // ESP32をボードに挿さず動作確認(0:NO, 1:YES)
+#define MODE_ESP32_STANDALONE 0 // ESP32をボードに挿さず動作確認(0:NO, 1:YES)
 #define MODE_UDP_RECEIVE      1 // PCからのデータ受信(0:OFF, 1:ON, 通常は1)
 #define MODE_UDP_SEND         1 // PCへのデータ送信(0:OFF, 1:ON, 通常は1)
 
