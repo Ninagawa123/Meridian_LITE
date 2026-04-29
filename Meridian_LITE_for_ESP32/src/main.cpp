@@ -72,6 +72,8 @@ SemaphoreHandle_t ahrs_mutex; // AHRSデータアクセス用mutex
 SemaphoreHandle_t pad_mutex;  // PADデータアクセス用mutex
 
 // mrd_wifi.hで宣言された変数
+#if MODE_ETHER
+#else
 WiFiUDP udp;
 
 // mrd_bt_pad.hで宣言された変数
