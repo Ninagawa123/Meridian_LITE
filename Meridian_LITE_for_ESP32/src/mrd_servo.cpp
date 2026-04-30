@@ -7,20 +7,20 @@
 // サーボドライバーの条件付きインクルード
 // 使用するドライバーのみコンパイルに含める
 #if MOUNT_SERVO_TYPE_L == SERVO_TYPE_KOICS3 || MOUNT_SERVO_TYPE_R == SERVO_TYPE_KOICS3
-#include "mrd_module/sv_ics.h"
+#include "sv_ics.h"
 #endif
 
 #if MOUNT_SERVO_TYPE_L == SERVO_TYPE_FTBRSX || MOUNT_SERVO_TYPE_R == SERVO_TYPE_FTBRSX
-#include "mrd_module/sv_ftbrx.h"
+#include "sv_ftbrx.h"
 #endif
 
 #if MOUNT_SERVO_TYPE_L == SERVO_TYPE_DXL2 || MOUNT_SERVO_TYPE_R == SERVO_TYPE_DXL2
-#include "mrd_module/sv_dxl2.h"
+#include "sv_dxl2.h"
 #endif
 
 #if MOUNT_SERVO_TYPE_L == SERVO_TYPE_FTCSTS || MOUNT_SERVO_TYPE_R == SERVO_TYPE_FTCSTS || \
     MOUNT_SERVO_TYPE_L == SERVO_TYPE_FTCSCS || MOUNT_SERVO_TYPE_R == SERVO_TYPE_FTCSCS
-#include "mrd_module/sv_ftc.h"
+#include "sv_ftc.h"
 #endif
 
 // ライブラリの読み込み
