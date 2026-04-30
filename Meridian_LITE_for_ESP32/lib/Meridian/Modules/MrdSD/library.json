@@ -1,0 +1,17 @@
+{
+    "name": "MrdSD",
+    "version": "1.0.0",
+    "description": "Meridian Module - SD",
+    "keywords": "Meridian, SD, Storage",
+    "author": "Meridian Team",
+    "license": "MIT License",
+    "dependencies": {},
+    "headers": "",
+    "examples": [],
+    "build": {
+        "flags": []
+    },
+    "export": {
+        "exclude": []
+    }
+}

@@ -2,7 +2,6 @@
 #define __MERIDIAN_CONFIG__
 
 // ヘッダファイルの読み込み
-#include "mrd_common.h"
 
 // ライブラリ導入
 

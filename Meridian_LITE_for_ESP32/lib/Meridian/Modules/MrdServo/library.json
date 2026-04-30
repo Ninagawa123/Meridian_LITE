@@ -1,0 +1,17 @@
+{
+    "name": "MrdServo",
+    "version": "1.0.0",
+    "description": "Meridian Module - Servo",
+    "keywords": "Meridian, Servo, Actuator",
+    "author": "Meridian Team",
+    "license": "MIT License",
+    "dependencies": {},
+    "headers": "",
+    "examples": [],
+    "build": {
+        "flags": []
+    },
+    "export": {
+        "exclude": []
+    }
+}

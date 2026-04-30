@@ -1,0 +1,17 @@
+{
+    "name": "MrdCommon",
+    "version": "1.0.0",
+    "description": "Meridian Module - Common",
+    "keywords": "Meridian, Common, Utilities",
+    "author": "Meridian Team",
+    "license": "MIT License",
+    "dependencies": {},
+    "headers": "",
+    "examples": [],
+    "build": {
+        "flags": []
+    },
+    "export": {
+        "exclude": []
+    }
+}
