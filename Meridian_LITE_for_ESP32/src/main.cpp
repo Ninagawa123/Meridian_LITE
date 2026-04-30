@@ -179,11 +179,11 @@ void setup() {
   }
 
   // EEPROMの内容ダンプ表示をする場合
-  mrd_eeprom_dump_at_boot(EEPROM_DUMP, EEPROM_STYLE, Serial);
+  mrd_eeprom_dump_at_boot(EEPROM_DUMP, (BinHexDec)EEPROM_STYLE, Serial);
 
   // EEPROMのリードライトテスト
   // mrd_eeprom_write_read_check(mrd_eeprom_make_data_from_config(sv,mrd),
-  //                             CHECK_EEPROM_RW, EEPROM_PROTECT, EEPROM_STYLE, flg);
+  //                             CHECK_EEPROM_RW, EEPROM_PROTECT, (BinHexDec)EEPROM_STYLE, flg);
 
   // SDカードの初期設定とチェック
 #if MOUNT_SD

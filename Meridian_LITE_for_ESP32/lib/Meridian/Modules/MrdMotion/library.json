@@ -5,7 +5,9 @@
     "keywords": "Meridian, Motion, Sensor",
     "author": "Meridian Team",
     "license": "MIT License",
-    "dependencies": {},
+    "dependencies": {
+        "MrdCommon": "*"
+    },
     "headers": "",
     "examples": [],
     "build": {

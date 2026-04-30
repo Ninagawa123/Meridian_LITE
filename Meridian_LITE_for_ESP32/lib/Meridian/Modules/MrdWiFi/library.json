@@ -5,7 +5,9 @@
     "keywords": "Meridian, WiFi, Networking",
     "author": "Meridian Team",
     "license": "MIT License",
-    "dependencies": {},
+    "dependencies": {
+        "MrdCommon": "*"
+    },
     "headers": "",
     "examples": [],
     "build": {
