@@ -5,6 +5,7 @@
 #include "mrd_wire0.h"
 
 // ライブラリ導入
+#include <SPI.h>
 #include <Wire.h> // I2C通信のためのWireライブラリ導入
 
 // センサーライブラリの条件付きインクルード

@@ -5,7 +5,11 @@
     "keywords": "Meridian, IMU, Sensor",
     "author": "Meridian Team",
     "license": "MIT License",
-    "dependencies": {},
+    "dependencies": {
+        "adafruit/Adafruit BNO055": "^1.5.3",
+        "electroniccats/MPU6050": "^0.5.0",
+        "adafruit/Adafruit BusIO": "*"
+    },
     "headers": "",
     "examples": [],
     "build": {
