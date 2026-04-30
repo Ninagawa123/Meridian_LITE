@@ -1,14 +1,11 @@
 {
-    "name": "MrdServo",
+    "name": "MrdMotion",
     "version": "1.0.0",
-    "description": "Meridian Module - Servo",
-    "keywords": "Meridian, Servo, Actuator",
+    "description": "Meridian Module - Motion",
+    "keywords": "Meridian, Motion, Sensor",
     "author": "Meridian Team",
     "license": "MIT License",
-    "dependencies": {
-        "IcsClass_V210": "*",
-        "gs2d": "*"
-    },
+    "dependencies": {},
     "headers": "",
     "examples": [],
     "build": {
