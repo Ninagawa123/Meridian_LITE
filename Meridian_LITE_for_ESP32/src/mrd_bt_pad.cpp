@@ -1,7 +1,35 @@
 // mrd_bt_pad.cpp
 // Bluetoothパッド関数の実装
 
+// ヘッダファイルの読み込み
 #include "mrd_bt_pad.h"
+
+// ライブラリ導入
+
+//==================================================================================================
+// 定数定義
+//==================================================================================================
+ESP32Wiimote m_wiimote;
+PadUnion pad_array = {0};           // pad値の格納用配列
+extern SemaphoreHandle_t pad_mutex; // PADデータアクセス用mutex
+
+// リモコンボタンデータ変換テーブル
+constexpr unsigned short PAD_TABLE_WIIMOTE_SOLO[16] = {
+    0x1000, 0x0080, 0x0000, 0x0010, 0x0200, 0x0400, 0x0100, 0x0800,
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0008, 0x0001, 0x0002, 0x0004};
+constexpr unsigned short PAD_TABLE_WIIMOTE_ORIG[16] = {
+    0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x0000, 0x0000, 0x0000,
+    0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0000, 0x0000, 0x0080};
+constexpr unsigned short PAD_TABLE_KRC5FH_TO_COMMON[16] = { //
+    0, 64, 32, 128, 1, 4, 2, 8, 1024, 4096, 512, 2048, 16, 64, 32, 256};
+
+// KRC-5FH 十字キーコンボ検出用ボタンマスク
+constexpr uint16_t KRC_DPAD_LEFT_MASK = 0x000F;   // bit 0-3: 左十字キー (UP,DOWN,LEFT,RIGHT)
+constexpr uint16_t KRC_DPAD_RIGHT_MASK = 0x0170;  // bit 4,5,6,8: 右十字キーボタン (368)
+constexpr uint16_t KRC_CLEAR_DPAD_LEFT = 0xFFF0;  // bit 0-3 をクリア
+constexpr uint16_t KRC_CLEAR_DPAD_RIGHT = 0xFE8F; // bit 4,5,6,8 をクリア
+// ボタンテーブル変換から残った可能性のあるbit 1,2 をクリア
+constexpr uint16_t KRC_CLEAR_RESIDUAL_BITS = 0xFFF9; // 0b1111111111111001
 
 //==================================================================================================
 //  タイプ別JOYPAD読み取り
@@ -31,9 +59,9 @@ uint64_t mrd_pad_read_krc(uint a_interval, IcsHardSerialClass &a_ics) {
     rcvd_tmp = a_ics.getKrrAllData(&krr_button_tmp, krr_analog_tmp);
     delayMicroseconds(2);
 
-    if (rcvd_tmp) // リモコンデータを受信した場合
-    {
-      // ボタンデータ処理
+    if (rcvd_tmp) { // リモコンデータが受信できていたら
+                    // ボタンデータ処理
+
       int button_tmp = krr_button_tmp; // 受信したボタンデータを読み取り
 
       if (PAD_GENERALIZE) { // ボタンデータ汎用化処理
@@ -105,16 +133,16 @@ uint64_t mrd_bt_read_wiimote() {
   static int calib_l1y = 0;
 
   // 受信データを問い合わせ
-  wiimote.task();
+  m_wiimote.task();
   ButtonState rcvd_button_tmp;
   NunchukState nunchuk_tmp;
   // AccelState accel_tmp;
 
-  if (wiimote.available() > 0) {
+  if (m_wiimote.available() > 0) {
 
     // リモコンデータを取得
-    rcvd_button_tmp = wiimote.getButtonState();
-    nunchuk_tmp = wiimote.getNunchukState();
+    rcvd_button_tmp = m_wiimote.getButtonState();
+    nunchuk_tmp = m_wiimote.getNunchukState();
 
     uint16_t new_pad_tmp[4] = {0}; // アナログ入力データ組み立て用
 
@@ -202,23 +230,19 @@ uint64_t mrd_pad_read(PadType a_pad_type, uint64_t a_pad_data, IcsHardSerialClas
 /// @param a_led LEDピン
 /// @param a_serial 出力シリアル
 /// @return 成功時はtrue, タイムアウト時はfalse
-bool mrd_bt_settings(int a_mount_pad,
-                     int a_timeout,
-                     ESP32Wiimote &a_wiimote,
-                     int a_led,
-                     HardwareSerial &a_serial) {
+bool mrd_bt_settings(PadType a_mount_pad, int a_timeout, int a_led, HardwareSerial &a_serial) {
   // Wiiコントローラー接続を開始
   if (a_mount_pad == WIIMOTE) {
     a_serial.println("Try to connect Wiimote...");
-    a_wiimote.init();
-    a_wiimote.addFilter(ACTION_IGNORE, FILTER_ACCEL);
+    m_wiimote.init();
+    m_wiimote.addFilter(ACTION_IGNORE, FILTER_ACCEL);
 
     uint16_t count_tmp = 0;
     unsigned long start_time = millis();
-    while (!a_wiimote.available()) {
+    while (!m_wiimote.available()) {
 
       // リモコンを問い合わせ
-      a_wiimote.task();
+      m_wiimote.task();
 
       // タイムアウトチェック
       if (millis() - start_time >= a_timeout) {

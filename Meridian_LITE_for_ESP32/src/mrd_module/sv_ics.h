@@ -1,7 +1,13 @@
 #ifndef __MERIDIAN_SERVO_KONDO_ICS_H__
 #define __MERIDIAN_SERVO_KONDO_ICS_H__
 
+// ヘッダファイルの読み込み
+// #include "gs2d_krs.h"
 #include "mrd_common.h"
+
+// ライブラリ導入
+#include <IcsHardSerialClass.h>
+#include <Meridian.h> // Meridianのライブラリ導入
 
 //==================================================================================================
 //  KONDO ICSサーボ関連の処理
@@ -18,9 +24,9 @@
 /// @param a_stat サーボのステータス
 /// @param a_ics サーボクラスのインスタンス
 /// @param a_mrd Meridianライブラリインスタンス
-inline float mrd_servo_process_ics(int a_servo_id, int a_cmd, float a_tgt, float a_tgt_past, float a_trim,
-                                   int a_cw, int &a_err_cnt, uint16_t &a_stat, IcsHardSerialClass &a_ics,
-                                   MERIDIANFLOW::Meridian &a_mrd) {
+float mrd_servo_process_ics(int a_servo_id, int a_cmd, float a_tgt, float a_tgt_past, float a_trim,
+                            int a_cw, int &a_err_cnt, uint16_t &a_stat, IcsHardSerialClass &a_ics,
+                            MERIDIANFLOW::Meridian &a_mrd) {
   int val_tmp = 0;
   if (a_cmd == 1) { // コマンドが1ならPos指定
     val_tmp = a_ics.setPos(a_servo_id, a_mrd.Deg2Krs(a_tgt, a_trim, a_cw));
@@ -65,9 +71,9 @@ inline float mrd_servo_process_ics(int a_servo_id, int a_cmd, float a_tgt, float
 /// @param a_ics_L L系統ICSサーボクラスインスタンス
 /// @param a_ics_R R系統ICSサーボクラスインスタンス
 /// @param a_mrd Meridianライブラリインスタンス
-inline void mrd_sv_drive_ics_double(Meridim90Union &a_meridim, ServoParam &a_sv,
-                                    IcsHardSerialClass &a_ics_L, IcsHardSerialClass &a_ics_R,
-                                    MERIDIANFLOW::Meridian &a_mrd) {
+void mrd_sv_drive_ics_double(Meridim90Union &a_meridim, ServoParam &a_sv,
+                             IcsHardSerialClass &a_ics_L, IcsHardSerialClass &a_ics_R,
+                             MERIDIANFLOW::Meridian &a_mrd) {
   for (int i = 0; i < a_sv.num_max; i++) {
     // L系統サーボの処理
     if (a_sv.ixl_mount[i]) { // サーボがマウントされている場合

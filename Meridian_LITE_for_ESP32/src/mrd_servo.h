@@ -2,34 +2,10 @@
 #define __MERIDIAN_SERVO_DISTRIBUTOR_H__
 
 // ヘッダファイルの読み込み
-#include "config.h"
 #include "mrd_common.h"
+
+// ライブラリの読み込み
 #include <IcsHardSerialClass.h>
-#include <Meridian.h>
-
-// サーボドライバーの条件付きインクルード
-// 使用するドライバーのみコンパイルに含める
-#if MOUNT_SERVO_TYPE_L == SERVO_TYPE_KOICS3 || MOUNT_SERVO_TYPE_R == SERVO_TYPE_KOICS3
-#include "mrd_module/sv_ics.h"
-#endif
-
-#if MOUNT_SERVO_TYPE_L == SERVO_TYPE_FTBRSX || MOUNT_SERVO_TYPE_R == SERVO_TYPE_FTBRSX
-#include "mrd_module/sv_ftbrx.h"
-#endif
-
-#if MOUNT_SERVO_TYPE_L == SERVO_TYPE_DXL2 || MOUNT_SERVO_TYPE_R == SERVO_TYPE_DXL2
-#include "mrd_module/sv_dxl2.h"
-#endif
-
-#if MOUNT_SERVO_TYPE_L == SERVO_TYPE_FTCSTS || MOUNT_SERVO_TYPE_R == SERVO_TYPE_FTCSTS || \
-    MOUNT_SERVO_TYPE_L == SERVO_TYPE_FTCSCS || MOUNT_SERVO_TYPE_R == SERVO_TYPE_FTCSCS
-#include "mrd_module/sv_ftc.h"
-#endif
-
-// グローバル変数のextern宣言 (実体はmain.cppで定義)
-extern MERIDIANFLOW::Meridian mrd;
-extern IcsHardSerialClass ics_L;
-extern IcsHardSerialClass ics_R;
 
 //==================================================================================================
 //  サーボ関数宣言
@@ -42,8 +18,9 @@ extern IcsHardSerialClass ics_R;
 /// @brief 指定されたUARTラインとサーボタイプに基づいてサーボ通信プロトコルを設定する
 /// @param a_line UART通信ライン (L, R, または C)
 /// @param a_servo_type サーボのタイプを示す整数値
+/// @param a_ics サーボクラスのインスタンス (KONDO ICSサーボ用)
 /// @return サーボがサポートされている場合はtrue, サポートされていない場合はfalse
-bool mrd_servo_begin(UartLine a_line, int a_servo_type);
+bool mrd_servo_begin(UartLine a_line, ServoType a_servo_type, IcsHardSerialClass &a_ics);
 
 //------------------------------------------------------------------------------------
 //  サーボ通信形成の分岐
@@ -54,8 +31,14 @@ bool mrd_servo_begin(UartLine a_line, int a_servo_type);
 /// @param a_L_type L系統のサーボタイプ
 /// @param a_R_type R系統のサーボタイプ
 /// @param a_sv サーボパラメータ構造体 (参照渡し)
+/// @param a_ics_L L系統のICSサーボ通信クラスのインスタンス
+/// @param a_ics_R R系統のICSサーボ通信クラスのインスタンス
+/// @param a_mrd Meridianクラスのインスタンス
 /// @return サーボ駆動が成功した場合はtrue, 失敗した場合はfalse
-bool mrd_servo_drive_lite(Meridim90Union &a_meridim, int a_L_type, int a_R_type, ServoParam &a_sv);
+bool mrd_servo_drive_lite(Meridim90Union &a_meridim, ServoType a_L_type, ServoType a_R_type,
+                          ServoParam &a_sv,
+                          IcsHardSerialClass &a_ics_L, IcsHardSerialClass &a_ics_R,
+                          MERIDIANFLOW::Meridian &a_mrd);
 
 //------------------------------------------------------------------------------------
 //  各種オペレーション

@@ -1,7 +1,16 @@
 // mrd_eeprom.cpp
 // EEPROM関連の関数実装
 
+// ヘッダファイルの読み込み
 #include "mrd_eeprom.h"
+#include "mrd_util.h"
+
+// ライブラリ導入
+#include <EEPROM.h>
+
+// EEPROM読み書き用共用体
+UnionEEPROM eeprom_write_data; // EEPROM書き込み用
+UnionEEPROM eeprom_read_data;  // EEPROM読み込み用
 
 //==================================================================================================
 //  EEPROM関数
@@ -20,8 +29,9 @@ bool mrd_eeprom_init(int a_eeprom_size) {
 
 /// @brief サーボ設定構造体からEEPROM格納用の配列データを作成する
 /// @param a_sv サーボ設定を保持する構造体
+/// @param a_mrd Meridianクラスのインスタンス
 /// @return EEPROM格納用の配列データ (UnionEEPROM型)
-UnionEEPROM mrd_eeprom_make_data_from_config(const ServoParam &a_sv) {
+UnionEEPROM mrd_eeprom_make_data_from_config(const ServoParam &a_sv, MERIDIANFLOW::Meridian &a_mrd) {
   UnionEEPROM array_tmp = {0};
 
   for (int i = 0; i < 15; i++) {
@@ -50,8 +60,8 @@ UnionEEPROM mrd_eeprom_make_data_from_config(const ServoParam &a_sv) {
     array_tmp.saval[1][50 + i * 2] = r_tmp;
 
     // 各サーボのデフォルト直立角度を格納 (degree -> float short*100)
-    array_tmp.saval[1][21 + i * 2] = mrd.float2HfShort(a_sv.ixl_trim[i]);
-    array_tmp.saval[1][51 + i * 2] = mrd.float2HfShort(a_sv.ixr_trim[i]);
+    array_tmp.saval[1][21 + i * 2] = a_mrd.float2HfShort(a_sv.ixl_trim[i]);
+    array_tmp.saval[1][51 + i * 2] = a_mrd.float2HfShort(a_sv.ixr_trim[i]);
   }
   return array_tmp;
 }
@@ -59,9 +69,8 @@ UnionEEPROM mrd_eeprom_make_data_from_config(const ServoParam &a_sv) {
 /// @brief EEPROMの内容を読み取って返す
 /// @return UnionEEPROM形式の配列
 UnionEEPROM mrd_eeprom_read() {
-  UnionEEPROM read_data_tmp = {0};      // 明示的にゼロ初期化
-  for (int i = 0; i < EEPROM_SIZE; i++) // byte型でデータを読み込み
-  {
+  UnionEEPROM read_data_tmp = {0};        // 明示的にゼロ初期化
+  for (int i = 0; i < EEPROM_SIZE; i++) { // byte型でデータを読み込み
     read_data_tmp.bval[i] = EEPROM.read(i);
   }
   return read_data_tmp;
@@ -124,8 +133,7 @@ bool mrd_eeprom_dump_to_serial(UnionEEPROM a_data, int a_bhd, HardwareSerial &a_
   a_serial.print("EEPROM Length ");
   a_serial.print(len_tmp); // EEPROMの長さを表示
   a_serial.println("byte, 16bit Dump;");
-  for (int i = 0; i < 270; i++) // 読み取るデータはshort型で作成
-  {
+  for (int i = 0; i < 270; i++) { // 読み取るデータはshort型で作成
     if (a_bhd == 0) {
       a_serial.print(a_data.sval[i], BIN);
     } else if (a_bhd == 1) {
@@ -157,24 +165,23 @@ bool mrd_eeprom_dump_at_boot(bool a_do_dump, int a_bhd, HardwareSerial &a_serial
 /// @brief EEPROM格納用配列データをEEPROMに書き込む
 /// @param a_write_data EEPROM書き込み用の配列データ
 /// @param a_flg_protect EEPROM書き込み保護フラグ (trueで書き込み禁止)
+/// @param a_serial 出力シリアル
+/// @param a_flg フラグの構造体 (参照渡し)
 /// @return 書き込みが成功した場合はtrue, 書き込まなかった場合はfalse
-bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect, HardwareSerial &a_serial) {
+bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect, HardwareSerial &a_serial, MrdFlags &a_flg) {
   if (a_flg_protect) { // EEPROM書き込みフラグを確認
     return false;
   }
-  if (flg.eeprom_protect) // config.hのEEPROM書き込み保護を確認
-  {
+  if (a_flg.eeprom_protect) { // config.hのEEPROM書き込み保護を確認
     Serial.println("EEPROM is protected. To unprotect, please set 'EEPROM_PROTECT' to false.");
     return false;
   }
 
   // EEPROM書き込み
-  byte old_value_tmp;                   // 既にEEPROMに書き込まれているデータ
-  bool flg_renew_tmp = false;           // 書き込みコミット用フラグ
-  for (int i = 0; i < EEPROM_SIZE; i++) // byte型でデータを書き込み
-  {
-    if (i >= EEPROM.length()) // EEPROMサイズを超えないか確認
-    {
+  byte old_value_tmp;                     // 既にEEPROMに書き込まれているデータ
+  bool flg_renew_tmp = false;             // 書き込みコミット用フラグ
+  for (int i = 0; i < EEPROM_SIZE; i++) { // byte型でデータを書き込み
+    if (i >= EEPROM.length()) {           // EEPROMサイズを超えないか確認
       Serial.println("Error: EEPROM address out of range.");
       return false;
     }
@@ -210,9 +217,8 @@ bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect, HardwareSeri
     a_serial.println(mrd_pddstr(float(a_write_data.saval[1][51 + i * 2] / 100), 7, 2, true));
   }
 
-  if (flg_renew_tmp) // 変更がある場合は書き込みを実行
-  {
-    EEPROM.commit(); // 書き込みを確定
+  if (flg_renew_tmp) { // 変更がある場合は書き込みを実行
+    EEPROM.commit();   // 書き込みを確定
     Serial.println("Value updated.");
     return true;
   } else {
@@ -226,10 +232,10 @@ bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect, HardwareSeri
 /// @param a_do EEPROM読み書きチェックのブール値
 /// @param a_protect EEPROM書き込み保護フラグ (trueで書き込み禁止)
 /// @param a_bhd ダンプリストの表示形式 (0:Bin, 1:Hex, 2:Dec)
+/// @param a_flg フラグの構造体 (参照渡し)
 /// @return 書き込みと読み込みが成功した場合はtrue, それ以外はfalse
-bool mrd_eeprom_write_read_check(UnionEEPROM a_write_data, bool a_do, bool a_protect, int a_bhd) {
-  if (!a_do) // EEPROM読み書きチェックを実行するかどうか
-  {
+bool mrd_eeprom_write_read_check(UnionEEPROM a_write_data, bool a_do, bool a_protect, int a_bhd, MrdFlags &a_flg) {
+  if (!a_do) { // EEPROM読み書きチェックを実行するかどうか
     return false;
   }
 
@@ -237,7 +243,7 @@ bool mrd_eeprom_write_read_check(UnionEEPROM a_write_data, bool a_do, bool a_pro
   Serial.println("Try to write EEPROM: ");
   mrd_eeprom_dump_to_serial(a_write_data, a_bhd, Serial); // 書き込み内容をダンプ
 
-  if (mrd_eeprom_write(a_write_data, a_protect, Serial)) {
+  if (mrd_eeprom_write(a_write_data, a_protect, Serial, a_flg)) {
     Serial.println("...Write OK.");
   } else {
     Serial.println("...Write failed.");

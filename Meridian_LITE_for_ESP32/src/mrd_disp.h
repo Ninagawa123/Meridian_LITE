@@ -2,7 +2,6 @@
 #define __MERIDIAN_DISP_H__
 
 // ヘッダファイルの読み込み
-#include "config.h" // MODE_ETHER定義用
 #include "mrd_util.h"
 
 // ライブラリ導入 (WiFiモード時のみ)
@@ -109,49 +108,49 @@ public:
   /// @param a_line UART通信ライン(L, R, またはC).
   /// @param a_servo_type サーボのタイプを示す整数値.
   /// @return サーボがサポートされている場合はtrueを, サポートされていない場合はfalseを返す.
-  bool servo_protocol(UartLine a_line, int a_servo_type) {
+  bool servo_protocol(UartLine a_line, ServoType a_servo_type) {
     if (a_servo_type > 0) {
       m_serial.print("Set UART_");
       m_serial.print(mrd_get_line_name(a_line));
       m_serial.print(" protocol : ");
 
       switch (a_servo_type) {
-      case 1:
+      case PWM_S:
         m_serial.print("single PWM");
         m_serial.println(" - Not supported yet.");
         break;
-      case 11:
+      case PCA9685:
         m_serial.print("I2C_PCA9685 to PWM");
         m_serial.println(" - Not supported yet.");
         break;
-      case 21:
+      case FTBRSX:
         m_serial.print("RSxTTL (FUTABA)");
         m_serial.println(" - Not supported yet.");
         break;
-      case 31:
+      case DXL1:
         m_serial.print("DYNAMIXEL Protocol 1.0");
         m_serial.println(" - Not supported yet.");
         break;
-      case 32:
+      case DXL2:
         m_serial.print("DYNAMIXEL Protocol 2.0");
         m_serial.println(" - Not supported yet.");
         break;
-      case 43:
+      case KOICS3:
         m_serial.println("ICS3.5/3.6(KONDO,KRS)");
         break;
-      case 44:
+      case KOPMX:
         m_serial.print("PMX(KONDO)");
         m_serial.println(" - Not supported yet.");
         break;
-      case 51:
+      case JRXBUS:
         m_serial.print("XBUS(JR PROPO)");
         m_serial.println(" - Not supported yet.");
         break;
-      case 61:
+      case FTCSTS:
         m_serial.print("STS(FEETECH)");
         m_serial.println(" - Not supported yet.");
         break;
-      case 62:
+      case FTCSCS:
         m_serial.print("SCS(FEETECH)");
         m_serial.println(" - Not supported yet.");
         break;
@@ -186,7 +185,7 @@ public:
 
   /// @brief マウント設定したジョイパッドのタイプをシリアルモニタに出力する.
   /// @param a_mount_pad パッドの定義(PC,MERIMOTE,BLUERETRO,SBDBT,KRR5FH,WIIMOTE)
-  void mounted_pad(int a_mount_pad) {
+  void mounted_pad(PadType a_mount_pad) {
     m_serial.print("Pad Receiver mounted : ");
     switch (a_mount_pad) {
     case WIIMOTE:

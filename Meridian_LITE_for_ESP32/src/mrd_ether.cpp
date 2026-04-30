@@ -1,11 +1,16 @@
 // mrd_ether.cpp
 // Ethernet関連の関数実装
 
+// ヘッダファイルの読み込み
 #include "mrd_ether.h"
+#include "keys.h"
 #include "mrd_util.h"
 
-// Ethernet UDPインスタンス
-EthernetUDP udp_et;
+// ライブラリ導入 (標準Ethernetライブラリ)
+#include <EthernetUdp.h>
+#include <SPI.h>
+
+EthernetUDP udp_et; // Ethernet設定
 
 //==================================================================================================
 // Ethernetヘルパー関数
@@ -82,12 +87,11 @@ bool parseMacAddress(const char *macStr, byte *macBytes) {
 }
 
 /// @brief Ethernetを初期化する (文字列IP設定版)
-/// @param a_udp 使用するEthernetUDPインスタンス
 /// @param a_cs_pin W5500のCSピン番号
 /// @param mac_address MACアドレスバイト配列
 /// @param a_serial 出力シリアル
 /// @return 成功時はtrue, 失敗時はfalse
-bool mrd_ether_init(EthernetUDP &a_udp, int a_cs_pin, byte *mac_address, HardwareSerial &a_serial) {
+bool mrd_ether_init(int a_cs_pin, byte *mac_address, HardwareSerial &a_serial) {
   // MACアドレスを表示
   a_serial.print("Wired LAN MAC Address: ");
   for (int i = 0; i < 6; i++) {
@@ -141,7 +145,7 @@ bool mrd_ether_init(EthernetUDP &a_udp, int a_cs_pin, byte *mac_address, Hardwar
   a_serial.println(Ethernet.gatewayIP());
 
   // UDPを開始
-  if (!a_udp.begin(UDP_RECV_PORT)) {
+  if (!udp_et.begin(UDP_RECV_PORT)) {
     a_serial.print("ERROR: Failed to start UDP on port ");
     a_serial.println(UDP_RECV_PORT);
     return false;
@@ -154,12 +158,11 @@ bool mrd_ether_init(EthernetUDP &a_udp, int a_cs_pin, byte *mac_address, Hardwar
 /// @brief UDP経由でデータを受信しMeridim配列に格納する
 /// @param a_meridim_bval バイト型のMeridim配列
 /// @param a_len バイト型Meridim配列の長さ
-/// @param a_udp 使用するEthernetUDPインスタンス
 /// @return 受信した場合はtrue, 受信しなかった場合はfalse
-bool mrd_ether_udp_receive(byte *a_meridim_bval, int a_len, EthernetUDP &a_udp) {
-  int packet_size = a_udp.parsePacket();
+bool mrd_ether_udp_receive(byte *a_meridim_bval, int a_len) {
+  int packet_size = udp_et.parsePacket();
   if (packet_size >= a_len) {
-    a_udp.read(a_meridim_bval, a_len);
+    udp_et.read(a_meridim_bval, a_len);
     return true;
   }
   return false; // バッファにデータなし
@@ -168,21 +171,19 @@ bool mrd_ether_udp_receive(byte *a_meridim_bval, int a_len, EthernetUDP &a_udp) 
 /// @brief Meridim配列データをUDP経由で指定IPとポートに送信する
 /// @param a_meridim_bval バイト型のMeridim配列
 /// @param a_len バイト型Meridim配列の長さ
-/// @param a_udp 使用するEthernetUDPインスタンス
 /// @param a_send_ip 送信先IPアドレス
-/// @param a_send_port 送信先ポート番号
 /// @return 完了時にtrueを返す
-bool mrd_ether_udp_send(byte *a_meridim_bval, int a_len, EthernetUDP &a_udp, IPAddress a_send_ip, int a_send_port) {
-  int result = a_udp.beginPacket(a_send_ip, a_send_port);
+bool mrd_ether_udp_send(byte *a_meridim_bval, int a_len, IPAddress a_send_ip) {
+  int result = udp_et.beginPacket(a_send_ip, UDP_SEND_PORT);
   if (result == 0) {
     return false; // パケット開始失敗
   }
 
-  size_t bytes_written = a_udp.write(a_meridim_bval, a_len);
+  size_t bytes_written = udp_et.write(a_meridim_bval, a_len);
   if (bytes_written != a_len) {
     return false; // 書き込みサイズ不一致
   }
 
-  result = a_udp.endPacket();
+  result = udp_et.endPacket();
   return (result == 1); // 成功時は1を返す
 }
