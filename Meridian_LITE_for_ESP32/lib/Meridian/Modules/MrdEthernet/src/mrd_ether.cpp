@@ -4,6 +4,7 @@
 // ヘッダファイルの読み込み
 #include "mrd_ether.h"
 #include "keys.h"
+#include "mrd_util.h"
 
 // ライブラリ導入 (標準Ethernetライブラリ)
 #include <EthernetUdp.h>
