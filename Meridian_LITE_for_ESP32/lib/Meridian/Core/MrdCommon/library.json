@@ -5,7 +5,9 @@
     "keywords": "Meridian, Common, Utilities",
     "author": "Meridian Team",
     "license": "MIT License",
-    "dependencies": {},
+    "dependencies": {
+        "ninagawa123/Meridian": "^0.1.0"
+    },
     "headers": "",
     "examples": [],
     "build": {
