@@ -230,10 +230,7 @@ uint64_t mrd_pad_read(PadType a_pad_type, uint64_t a_pad_data, IcsHardSerialClas
 /// @param a_led LEDピン
 /// @param a_serial 出力シリアル
 /// @return 成功時はtrue, タイムアウト時はfalse
-bool mrd_bt_settings(int a_mount_pad,
-                     int a_timeout,
-                     int a_led,
-                     HardwareSerial &a_serial) {
+bool mrd_bt_settings(PadType a_mount_pad, int a_timeout, int a_led, HardwareSerial &a_serial) {
   // Wiiコントローラー接続を開始
   if (a_mount_pad == WIIMOTE) {
     a_serial.println("Try to connect Wiimote...");

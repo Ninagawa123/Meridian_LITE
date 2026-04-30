@@ -12,29 +12,6 @@
 //  JOYPAD 関数宣言
 //==================================================================================================
 
-//----------------------------------------------------------------------
-// KRC-5FH 読み取り
-//----------------------------------------------------------------------
-
-/// @brief KRC-5FHジョイパッドからデータを読み取り, 指定間隔で更新する
-/// @param a_interval 読み取り間隔 (ミリ秒)
-/// @param a_ics ICSシリアルクラスインスタンス
-/// @return 更新されたジョイパッド状態を64ビット整数で返す
-uint64_t mrd_pad_read_krc(uint a_interval, IcsHardSerialClass &a_ics);
-
-//----------------------------------------------------------------------
-// WIIMOTE 読み取り
-//----------------------------------------------------------------------
-
-/// @brief Wiiリモコンからの入力データを受信・処理する
-/// @return 更新されたジョイパッド状態を64ビット整数で返す
-/// @note 内部でESP32Wiimoteインスタンスwiimoteと定数PAD_GENERALIZEを使用
-uint64_t mrd_bt_read_wiimote();
-
-//==================================================================================================
-//  各種パッドへの分岐
-//==================================================================================================
-
 /// @brief 指定されたジョイパッドタイプに基づいて最新データを読み取り, 64ビット整数で返す
 /// @param a_pad_type ジョイパッドタイプのenum (MERIMOTE, BLUERETRO, SBDBT, KRR5FH)
 /// @param a_pad_data 64ビットボタンデータ
@@ -57,10 +34,7 @@ uint64_t mrd_pad_read(PadType a_pad_type, uint64_t a_pad_data, IcsHardSerialClas
 /// @param a_led LEDピン
 /// @param a_serial 出力シリアル
 /// @return 成功時はtrue, タイムアウト時はfalse
-bool mrd_bt_settings(int a_mount_pad,
-                     int a_timeout,
-                     int a_led,
-                     HardwareSerial &a_serial);
+bool mrd_bt_settings(PadType a_mount_pad, int a_timeout, int a_led, HardwareSerial &a_serial);
 
 //----------------------------------------------------------------------
 // WIIMOTE スレッド

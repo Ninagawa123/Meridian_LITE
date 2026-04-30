@@ -185,7 +185,7 @@ public:
 
   /// @brief マウント設定したジョイパッドのタイプをシリアルモニタに出力する.
   /// @param a_mount_pad パッドの定義(PC,MERIMOTE,BLUERETRO,SBDBT,KRR5FH,WIIMOTE)
-  void mounted_pad(int a_mount_pad) {
+  void mounted_pad(PadType a_mount_pad) {
     m_serial.print("Pad Receiver mounted : ");
     switch (a_mount_pad) {
     case WIIMOTE:

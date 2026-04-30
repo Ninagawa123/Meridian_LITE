@@ -37,7 +37,7 @@
 /// @param a_line UART通信ライン (L, R, または C)
 /// @param a_servo_type サーボのタイプを示す整数値
 /// @return サーボがサポートされている場合はtrue, サポートされていない場合はfalse
-bool mrd_servo_begin(UartLine a_line, ServoType a_servo_type, IcsHardSerialClass a_ics) {
+bool mrd_servo_begin(UartLine a_line, ServoType a_servo_type, IcsHardSerialClass &a_ics) {
   switch (a_servo_type) {
   case PWM_S:
     // 単体PWM [WIP]

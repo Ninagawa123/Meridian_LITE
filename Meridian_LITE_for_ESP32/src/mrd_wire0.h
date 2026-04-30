@@ -45,7 +45,7 @@ void mrd_wire0_Core0_bno055_r(void *args);
 /// @brief I2C経由でAHRSセンサからデータを読み取る.
 ///        MPU6050, MPU9250用だが, MPU9250は未実装.
 ///        各データはahrs.read配列に格納され, 利用可能な場合ahrs.resultにコピーされる.
-/// @param a_ahrs AHRS値を保持する構造体
+/// @param a_flg AHRSデータの更新フラグを含む構造体. 参照渡し.
 /// @return 成功時はtrue, 失敗時はfalse
 bool mrd_wire0_read_ahrs_i2c(MrdFlags &a_flg);
 
@@ -57,8 +57,9 @@ bool mrd_wire0_read_ahrs_i2c(MrdFlags &a_flg);
 /// @param a_meridim Meridim配列共用体. 参照渡し.
 /// @param a_ahrs_result AHRSから読み取った結果を格納する配列
 /// @param a_type センサタイプのenum (MPU6050, MPU9250, BNO055)
+/// @param mrd Meridianクラスのインスタンス. 参照渡し.
 /// @return データ書き込みが成功した場合はtrue, それ以外はfalse
-bool meriput90_ahrs(Meridim90Union &a_meridim, int a_type, MERIDIANFLOW::Meridian &mrd, MrdFlags &a_flg);
+bool meriput90_ahrs(Meridim90Union &a_meridim, int a_type, MERIDIANFLOW::Meridian &mrd);
 
 /// @brief AHRSセンサーのyaw_originを現在のyaw_sourceにキャリブレートする関数.
 void mrd_wire0_calibrate_yaw_origin();

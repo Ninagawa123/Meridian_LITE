@@ -160,7 +160,7 @@ bool mrd_wire0_setup(ImuAhrsType a_imuahrs_type, int a_i2c0_speed, int a_pinSDA,
 /// @brief I2C経由でBNO055からデータを読み取るスレッド関数. IMUAHRS_INTERVAL間隔で実行.
 /// @param args 未使用の引数
 void mrd_wire0_Core0_bno055_r(void *args) {
-  float local_read[16];             // ローカルバッファ
+  float local_read[16] = {0};       // ローカルバッファ
 #if MOUNT_IMUAHRS == IMUAHRS_BNO055 // Adafruit_BNO055
   while (1) {
     // mutex保護下でセンサ読み取りと共有バッファへの書き込みを実行
@@ -212,7 +212,7 @@ void mrd_wire0_Core0_bno055_r(void *args) {
 /// @brief I2C経由でAHRSセンサからデータを読み取る.
 ///        MPU6050, MPU9250用だが, MPU9250は未実装.
 ///        各データはahrs.read配列に格納され, 利用可能な場合ahrs.resultにコピーされる.
-/// @param a_ahrs AHRS値を保持する構造体
+/// @param a_flg AHRSデータの更新フラグを含む構造体. 参照渡し.
 /// @return 成功時はtrue, 失敗時はfalse
 bool mrd_wire0_read_ahrs_i2c(MrdFlags &a_flg) { // wireTimer0.begin引数にvoidが必要
 #if MOUNT_IMUAHRS == IMUAHRS_MPU6050            // MPU6050_6Axis_MotionApps20
@@ -276,10 +276,10 @@ bool mrd_wire0_read_ahrs_i2c(MrdFlags &a_flg) { // wireTimer0.begin引数にvoid
 
 /// @brief 指定されたIMU/AHRSタイプに基づいて測定されたAHRSデータを読み取る
 /// @param a_meridim Meridim配列共用体. 参照渡し.
-/// @param a_ahrs_result AHRSから読み取った結果を格納する配列
 /// @param a_type センサタイプのenum (MPU6050, MPU9250, BNO055)
+/// @param mrd Meridianクラスのインスタンス. 参照渡し.
 /// @return データ書き込みが成功した場合はtrue, それ以外はfalse
-bool meriput90_ahrs(Meridim90Union &a_meridim, int a_type, MERIDIANFLOW::Meridian &mrd, MrdFlags &a_flg) {
+bool meriput90_ahrs(Meridim90Union &a_meridim, int a_type, MERIDIANFLOW::Meridian &mrd) {
   if (a_type == BNO055_AHRS) {
     float local_copy[16];
 

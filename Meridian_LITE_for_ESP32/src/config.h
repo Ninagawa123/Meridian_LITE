@@ -7,30 +7,6 @@
 // ライブラリ導入
 
 //==================================================================================================
-//  各種定数定義
-//==================================================================================================
-// IMU/AHRSセンサ選択用のプリプロセッサ定数 (enumより先に定義が必要)
-// これらの値はプリプロセッサの#if条件で使用される
-#define IMUAHRS_NONE    0
-#define IMUAHRS_MPU6050 1
-#define IMUAHRS_MPU9250 2
-#define IMUAHRS_BNO055  3
-
-// サーボタイプ選択用のプリプロセッサ定数 (enumより先に定義が必要)
-// これらの値はプリプロセッサの#if条件で使用される
-#define SERVO_TYPE_NONE    0
-#define SERVO_TYPE_PWM_S   1
-#define SERVO_TYPE_PCA9685 11
-#define SERVO_TYPE_FTBRSX  21
-#define SERVO_TYPE_DXL1    31
-#define SERVO_TYPE_DXL2    32
-#define SERVO_TYPE_KOICS3  43
-#define SERVO_TYPE_KOPMX   44
-#define SERVO_TYPE_JRXBUS  51
-#define SERVO_TYPE_FTCSTS  61
-#define SERVO_TYPE_FTCSCS  62
-
-//==================================================================================================
 //  MERIDIAN - LITE - ESP32の配線
 //==================================================================================================
 //
@@ -154,7 +130,6 @@
 // 各種ハードウェアのマウント有無
 #define MOUNT_SD      1              // SDカードリーダーの有無(0:なし, 1:あり)
 #define MOUNT_IMUAHRS IMUAHRS_BNO055 // IMU/AHRSの搭載 (0:なし, 1:MPU6050, 2:MPU9250, 3:BNO055)
-#define MOUNT_PAD     PC             // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
 
 // 動作モード
 #define MODE_ESP32_STANDALONE 0 // ESP32をボードに挿さず動作確認(0:NO, 1:YES)
@@ -200,12 +175,6 @@
 // PC接続関連設定
 #define SERIAL_PC_BPS     115200 // PCとのシリアル速度(モニタリング表示用)
 #define SERIAL_PC_TIMEOUT 2000   // PCとのシリアル接続確立タイムアウト(ms)
-
-// JOYPAD関連設定
-#define PAD_INIT_TIMEOUT 10000 // 起動時のJOYPADの接続確立のタイムアウト(ms)
-#define PAD_INTERVAL     10    // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
-#define PAD_BUTTON_MARGE 1     // 0:JOYPADのボタンデータをMeridim受信値に論理積, 1:Meridim受信値に論理和
-#define PAD_GENERALIZE   1     // ジョイパッドの入力値をPS系に一般化する
 
 // ピンアサイン
 #define PIN_ERR_LED        25 // LED用 処理が時間内に収まっていない場合に点灯
@@ -389,6 +358,45 @@
 //  サーボ設定配列の実体定義
 //-------------------------------------------------------------------------
 
+// サーボタイプ選択用のプリプロセッサ定数 (enumより先に定義が必要)
+// これらの値はプリプロセッサの#if条件で使用される
+#define SERVO_TYPE_NONE    0
+#define SERVO_TYPE_PWM_S   1
+#define SERVO_TYPE_PCA9685 11
+#define SERVO_TYPE_FTBRSX  21
+#define SERVO_TYPE_DXL1    31
+#define SERVO_TYPE_DXL2    32
+#define SERVO_TYPE_KOICS3  43
+#define SERVO_TYPE_KOPMX   44
+#define SERVO_TYPE_JRXBUS  51
+#define SERVO_TYPE_FTCSTS  61
+#define SERVO_TYPE_FTCSCS  62
+enum ServoType {                // サーボプロトコルのタイプ
+  NOSERVO = SERVO_TYPE_NONE,    // サーボなし
+  PWM_S = SERVO_TYPE_PWM_S,     // Single PWM (WIP)
+  PCA9685 = SERVO_TYPE_PCA9685, // I2C_PCA9685 to PWM (WIP)
+  FTBRSX = SERVO_TYPE_FTBRSX,   // FUTABA_RSxTTL (WIP)
+  DXL1 = SERVO_TYPE_DXL1,       // DYNAMIXEL 1.0 (WIP)
+  DXL2 = SERVO_TYPE_DXL2,       // DYNAMIXEL 2.0 (WIP)
+  KOICS3 = SERVO_TYPE_KOICS3,   // KONDO_ICS 3.5 / 3.6
+  KOPMX = SERVO_TYPE_KOPMX,     // KONDO_PMX (WIP)
+  JRXBUS = SERVO_TYPE_JRXBUS,   // JRPROPO_XBUS (WIP)
+  FTCSTS = SERVO_TYPE_FTCSTS,   // FEETECH_STS (WIP)
+  FTCSCS = SERVO_TYPE_FTCSCS    // FEETECH_SCS (WIP)
+};
+
+// IMU/AHRSセンサ選択用のプリプロセッサ定数 (enumより先に定義が必要)
+// これらの値はプリプロセッサの#if条件で使用される
+#define IMUAHRS_NONE    0
+#define IMUAHRS_MPU6050 1
+#define IMUAHRS_MPU9250 2
+#define IMUAHRS_BNO055  3
+enum ImuAhrsType {               // 6軸9軸センサ種の列挙型(NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS)
+  NO_IMU = IMUAHRS_NONE,         // IMU/AHRS なし.
+  MPU6050_IMU = IMUAHRS_MPU6050, // MPU6050
+  MPU9250_IMU = IMUAHRS_MPU9250, // MPU9250(未設定)
+  BNO055_AHRS = IMUAHRS_BNO055   // BNO055
+};
 // L系統のサーボのマウントの設定
 // 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
 // 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
@@ -552,6 +560,35 @@ static float IXR_TRIM[IXR_MAX] = {
     0.0,    // [13]追加サーボ用
     0.0     // [14]追加サーボ用
 };
+
+//------------------------------------------------------------------------------------
+// PADの種類定義
+//------------------------------------------------------------------------------------
+#define PAD_TYPE_NONE      0 // リモコンなし
+#define PAD_TYPE_PC        0 // PCからのPD入力情報を使用
+#define PAD_TYPE_MERIMOTE  1 // MERIMOTE(未導入)
+#define PAD_TYPE_BLUERETRO 2 // BLUERETRO(未導入)
+#define PAD_TYPE_SBDBT     3 // SBDBT(未導入)
+#define PAD_TYPE_KRR5FH    4 // KRR5FH
+#define PAD_TYPE_WIIMOTE   5 // WIIMOTE / WIIMOTE + Nunchuk
+#define PAD_TYPE_WIIMOTE_C 6 // WIIMOTE+Classic
+enum PadType {
+  // リモコン種の列挙型(NONE, PC, MERIMOTE, BLUERETRO, SBDBT, KRR5FH)
+  PAD_NONE = PAD_TYPE_NONE,       // リモコンなし
+  PC = PAD_TYPE_PC,               // PCからのPD入力情報を使用
+  MERIMOTE = PAD_TYPE_MERIMOTE,   // MERIMOTE(未導入)
+  BLUERETRO = PAD_TYPE_BLUERETRO, // BLUERETRO(未導入)
+  SBDBT = PAD_TYPE_SBDBT,         // SBDBT(未導入)
+  KRR5FH = PAD_TYPE_KRR5FH,       // KRR5FH
+  WIIMOTE = PAD_TYPE_WIIMOTE,     // WIIMOTE / WIIMOTE + Nunchuk
+  WIIMOTE_C = PAD_TYPE_WIIMOTE_C, // WIIMOTE+Classic
+};
+// JOYPAD関連設定
+#define PAD_INIT_TIMEOUT 10000         // 起動時のJOYPADの接続確立のタイムアウト(ms)
+#define PAD_INTERVAL     10            // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
+#define PAD_BUTTON_MARGE 1             // 0:JOYPADのボタンデータをMeridim受信値に論理積, 1:Meridim受信値に論理和
+#define PAD_GENERALIZE   1             // ジョイパッドの入力値をPS系に一般化する
+#define PAD_MOUNT        PAD_TYPE_NONE // // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
 
 //------------------------------------------------------------------------------------
 // システム用

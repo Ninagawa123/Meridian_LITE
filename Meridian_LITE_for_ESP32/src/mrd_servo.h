@@ -20,7 +20,7 @@
 /// @param a_servo_type サーボのタイプを示す整数値
 /// @param a_ics サーボクラスのインスタンス (KONDO ICSサーボ用)
 /// @return サーボがサポートされている場合はtrue, サポートされていない場合はfalse
-bool mrd_servo_begin(UartLine a_line, ServoType a_servo_type, IcsHardSerialClass a_ics);
+bool mrd_servo_begin(UartLine a_line, ServoType a_servo_type, IcsHardSerialClass &a_ics);
 
 //------------------------------------------------------------------------------------
 //  サーボ通信形成の分岐

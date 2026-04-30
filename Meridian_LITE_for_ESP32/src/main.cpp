@@ -33,9 +33,7 @@
 #endif
 
 // オプションモジュール: Bluetoothパッド
-#if MOUNT_PAD == WIIMOTE || MOUNT_PAD == WIIMOTE_C
 #include "mrd_bt_pad.h"
-#endif
 
 // ライブラリ導入
 
@@ -259,11 +257,11 @@ void setup() {
 #endif
 
   // コントロールパッドの種類を表示
-  mrd_disp.mounted_pad(MOUNT_PAD);
+  mrd_disp.mounted_pad(PAD_NONE);
 
   // Bluetoothの開始(WIIMOTE)
-#if MOUNT_PAD == WIIMOTE || MOUNT_PAD == WIIMOTE_C
-  if (mrd_bt_settings(MOUNT_PAD, PAD_INIT_TIMEOUT, PIN_LED_BT, Serial)) {
+#if PAD_MOUNT == PAD_TYPE_WIIMOTE || PAD_MOUNT == PAD_TYPE_WIIMOTE_C
+  if (mrd_bt_settings((PadType)PAD_MOUNT, PAD_INIT_TIMEOUT, PIN_LED_BT, Serial)) {
     BaseType_t result = xTaskCreatePinnedToCore(Core0_BT_r, "Core0_BT_r", 2048, NULL, 5, &thp[2], 0);
     if (result != pdPASS) {
       mrd_error_stop(PIN_ERR_LED, "ERROR: Failed to create Wiimote task", Serial);
@@ -379,9 +377,11 @@ void loop() {
     // @[2-4a] エラービット14番(PCからのUDP受信エラー検出)をクリア
     mrd_clear_bit16(s_udp_meridim.usval[MRD_ERR], ERRBIT_14_PC_ESP);
 
+#ifdef DEBUG
     if (s_udp_meridim.sval[0] == MCMD_EEPROM_SAVE_TRIM) {
       Serial.println(r_udp_meridim.sval[0]);
     }
+#endif
 
   } else { // チェックサムNGなら前回データを使用
 
@@ -427,7 +427,7 @@ void loop() {
   mrd.monitor_check_flow("[4]", monitor.flow); // デバグ用フロー表示
 
   // @[4-1] センサ値をMeridimに転記
-  meriput90_ahrs(s_udp_meridim, MOUNT_IMUAHRS, mrd, flg); // MOUNT_IMUAHRS
+  meriput90_ahrs(s_udp_meridim, MOUNT_IMUAHRS, mrd); // MOUNT_IMUAHRS
 
   //------------------------------------------------------------------------------------
   //  [ 5 ] リモコンの読み取り
@@ -435,10 +435,9 @@ void loop() {
   mrd.monitor_check_flow("[5]", monitor.flow); // デバグ用フロー表示
 
   // @[5-1] リモコンデータの書込み
-  if (MOUNT_PAD > 0) { // リモコンがマウントされている場合
-
+  if (PAD_MOUNT > PAD_TYPE_NONE) { // リモコンがマウントされている場合
     // リモコンデータを読込み
-    if (MOUNT_PAD == WIIMOTE) {
+    if (PAD_MOUNT == WIIMOTE) {
       // WIIMOTE: Copy pad data under mutex protection
       if (xSemaphoreTake(pad_mutex, pdMS_TO_TICKS(5)) == pdTRUE) {
         PadUnion pad_local = pad_array; // Copy under mutex
@@ -448,7 +447,7 @@ void loop() {
       }
     } else {
       // Other pads: No mutex needed
-      pad_array.ui64val = mrd_pad_read(MOUNT_PAD, pad_array.ui64val, ics_R);
+      pad_array.ui64val = mrd_pad_read((PadType)PAD_MOUNT, pad_array.ui64val, ics_R);
       // リモコン値をMeridimに格納
       meriput90_pad(s_udp_meridim, pad_array, PAD_BUTTON_MARGE);
     }
