@@ -1,0 +1,19 @@
+{
+    "name": "MrdEthernet",
+    "version": "1.0.0",
+    "description": "Meridian Module - Ethernet",
+    "keywords": "Meridian, Ethernet, Networking",
+    "author": "Meridian Team",
+    "license": "MIT License",
+    "dependencies": {
+        "arduino-libraries/Ethernet": "^2.0.2"
+    },
+    "headers": "",
+    "examples": [],
+    "build": {
+        "flags": []
+    },
+    "export": {
+        "exclude": []
+    }
+}

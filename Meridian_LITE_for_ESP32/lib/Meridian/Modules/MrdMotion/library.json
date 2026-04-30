@@ -1,0 +1,19 @@
+{
+    "name": "MrdMotion",
+    "version": "1.0.0",
+    "description": "Meridian Module - Motion",
+    "keywords": "Meridian, Motion, Sensor",
+    "author": "Meridian Team",
+    "license": "MIT License",
+    "dependencies": {
+        "MrdCommon": "*"
+    },
+    "headers": "",
+    "examples": [],
+    "build": {
+        "flags": []
+    },
+    "export": {
+        "exclude": []
+    }
+}

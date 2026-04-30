@@ -1,0 +1,21 @@
+{
+    "name": "MrdBtPAD",
+    "version": "1.0.0",
+    "description": "Meridian Module - Bluetooth PAD",
+    "keywords": "Meridian, Bluetooth, PAD",
+    "author": "Meridian Team",
+    "license": "MIT License",
+    "dependencies": {
+        "MrdCommon": "*",
+        "ESP32Wiimote": "*",
+        "IcsClass_V210": "*"
+    },
+    "headers": "",
+    "examples": [],
+    "build": {
+        "flags": []
+    },
+    "export": {
+        "exclude": []
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "name": "MrdEEPROM",
+    "version": "1.0.0",
+    "description": "Meridian Module - EEPROM",
+    "keywords": "Meridian, EEPROM, Storage",
+    "author": "Meridian Team",
+    "license": "MIT License",
+    "dependencies": {
+        "MrdCommon": "*"
+    },
+    "headers": "",
+    "examples": [],
+    "build": {
+        "flags": []
+    },
+    "export": {
+        "exclude": []
+    }
+}

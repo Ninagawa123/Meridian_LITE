@@ -37,11 +37,10 @@ enum PadButton {  // リモコンボタンの列挙型
   PAD_bD = 16384, // x 下
   PAD_bL = 32768  // ◻︎ 左
 };
-
-enum BinHexDec { // 数値表示タイプの列挙型(Bin, Hex, Dec)
-  Bin = 0,       // BIN
-  Hex = 1,       // HEX
-  Dec = 2,       // DEC
+enum BinHexDec {        // 数値表示タイプの列挙型(Bin, Hex, Dec)
+  Bin = VALUE_TYPE_BIN, // BIN
+  Hex = VALUE_TYPE_HEX, // HEX
+  Dec = VALUE_TYPE_DEC, // DEC
 };
 
 //------------------------------------------------------------------------------------
