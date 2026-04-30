@@ -5,7 +5,9 @@
     "keywords": "Meridian, Ethernet, Networking",
     "author": "Meridian Team",
     "license": "MIT License",
-    "dependencies": {},
+    "dependencies": {
+        "arduino-libraries/Ethernet": "^2.0.2"
+    },
     "headers": "",
     "examples": [],
     "build": {
