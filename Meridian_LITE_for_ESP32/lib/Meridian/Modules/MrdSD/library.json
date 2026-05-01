@@ -1,10 +1,20 @@
 {
     "name": "MrdSD",
     "version": "1.0.0",
-    "description": "Meridian Module - SD",
-    "keywords": "Meridian, SD, Storage",
-    "author": "Meridian Team",
-    "license": "MIT License",
+    "description": "Meridian Module - SD card storage for data logging, motion recording, and file-based storage",
+    "keywords": [
+        "meridian",
+        "sd-card",
+        "storage",
+        "logging",
+        "data-recording"
+    ],
+    "authors": {
+        "name": "Meridian Team"
+    },
+    "license": "MIT",
+    "frameworks": "arduino",
+    "platforms": "esp32",
     "dependencies": {
         "MrdCommon": "*"
     },

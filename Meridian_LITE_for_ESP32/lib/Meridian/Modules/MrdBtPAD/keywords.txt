@@ -1,0 +1,8 @@
+# Syntax Coloring Map For MrdBtPAD
+
+# Datatypes (KEYWORD1)
+BT_PAD	KEYWORD1
+
+# Methods and Functions (KEYWORD2)
+bt_pad_setup	KEYWORD2
+bt_pad_read	KEYWORD2

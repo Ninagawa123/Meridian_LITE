@@ -1,10 +1,20 @@
 {
     "name": "MrdBtPAD",
     "version": "1.0.0",
-    "description": "Meridian Module - Bluetooth PAD",
-    "keywords": "Meridian, Bluetooth, PAD",
-    "author": "Meridian Team",
-    "license": "MIT License",
+    "description": "Meridian Module - Bluetooth gamepad/controller input support for wireless robot control",
+    "keywords": [
+        "meridian",
+        "bluetooth",
+        "gamepad",
+        "wireless",
+        "controller"
+    ],
+    "authors": {
+        "name": "Meridian Team"
+    },
+    "license": "MIT",
+    "frameworks": "arduino",
+    "platforms": "esp32",
     "dependencies": {
         "MrdCommon": "*",
         "ESP32Wiimote": "*",

@@ -1,0 +1,9 @@
+# Syntax Coloring Map For MrdEEPROM
+
+# Datatypes (KEYWORD1)
+EEPROM_DATA	KEYWORD1
+
+# Methods and Functions (KEYWORD2)
+eeprom_read	KEYWORD2
+eeprom_write	KEYWORD2
+eeprom_clear	KEYWORD2

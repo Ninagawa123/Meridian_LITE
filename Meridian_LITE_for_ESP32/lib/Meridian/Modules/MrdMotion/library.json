@@ -1,10 +1,20 @@
 {
     "name": "MrdMotion",
     "version": "1.0.0",
-    "description": "Meridian Module - Motion",
-    "keywords": "Meridian, Motion, Sensor",
-    "author": "Meridian Team",
-    "license": "MIT License",
+    "description": "Meridian Module - Motion planning, inverse kinematics, and motion playback",
+    "keywords": [
+        "meridian",
+        "motion",
+        "kinematics",
+        "inverse-kinematics",
+        "animation"
+    ],
+    "authors": {
+        "name": "Meridian Team"
+    },
+    "license": "MIT",
+    "frameworks": "arduino",
+    "platforms": "esp32",
     "dependencies": {
         "MrdCommon": "*"
     },

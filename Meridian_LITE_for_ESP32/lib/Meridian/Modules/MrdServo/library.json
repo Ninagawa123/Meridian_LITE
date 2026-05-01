@@ -1,10 +1,20 @@
 {
     "name": "MrdServo",
     "version": "1.0.0",
-    "description": "Meridian Module - Servo",
-    "keywords": "Meridian, Servo, Actuator",
-    "author": "Meridian Team",
-    "license": "MIT License",
+    "description": "Meridian Module - Multi-protocol servo and actuator control (ICS, Futaba, Dynamixel)",
+    "keywords": [
+        "meridian",
+        "servo",
+        "actuator",
+        "motor-control",
+        "dynamixel"
+    ],
+    "authors": {
+        "name": "Meridian Team"
+    },
+    "license": "MIT",
+    "frameworks": "arduino",
+    "platforms": "esp32",
     "dependencies": {
         "IcsClass_V210": "*",
         "gs2d": "*"

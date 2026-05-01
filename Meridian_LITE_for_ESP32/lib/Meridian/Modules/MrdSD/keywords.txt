@@ -1,0 +1,11 @@
+# Syntax Coloring Map For MrdSD
+
+# Datatypes (KEYWORD1)
+SD_FILE	KEYWORD1
+SD_LOG	KEYWORD1
+
+# Methods and Functions (KEYWORD2)
+sd_init	KEYWORD2
+sd_write	KEYWORD2
+sd_read	KEYWORD2
+sd_list_files	KEYWORD2

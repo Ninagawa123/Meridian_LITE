@@ -1,0 +1,9 @@
+# Syntax Coloring Map For MrdEthernet
+
+# Datatypes (KEYWORD1)
+ETHER_CONFIG	KEYWORD1
+
+# Methods and Functions (KEYWORD2)
+ether_setup	KEYWORD2
+ether_send	KEYWORD2
+ether_receive	KEYWORD2

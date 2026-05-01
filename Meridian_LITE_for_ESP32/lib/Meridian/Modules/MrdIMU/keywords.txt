@@ -1,0 +1,9 @@
+# Syntax Coloring Map For MrdIMU
+
+# Datatypes (KEYWORD1)
+IMU_SENSOR	KEYWORD1
+
+# Methods and Functions (KEYWORD2)
+imu_setup	KEYWORD2
+imu_read	KEYWORD2
+imu_calibrate	KEYWORD2

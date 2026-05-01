@@ -1,10 +1,17 @@
 {
     "name": "MrdCommon",
     "version": "1.0.0",
-    "description": "Meridian Module - Common",
-    "keywords": "Meridian, Common, Utilities",
-    "author": "Meridian Team",
-    "license": "MIT License",
+    "description": "Meridian Module - Common utilities and types for Meridian framework",
+    "keywords": [
+        "meridian",
+        "common",
+        "utilities",
+        "types"
+    ],
+    "authors": {
+        "name": "Meridian Team"
+    },
+    "license": "MIT",
     "dependencies": {
         "ninagawa123/Meridian": "^0.1.0"
     },
