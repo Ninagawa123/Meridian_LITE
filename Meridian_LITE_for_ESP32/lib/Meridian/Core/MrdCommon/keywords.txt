@@ -1,0 +1,14 @@
+# Syntax Coloring Map For MrdCommon
+
+# Datatypes (KEYWORD1)
+IMUM	KEYWORD1
+MOVING	KEYWORD1
+JOINT	KEYWORD1
+
+# Methods and Functions (KEYWORD2)
+mrd_get_time	KEYWORD2
+printMotion	KEYWORD2
+
+# Constants (LITERAL1)
+AXIS_ZX	LITERAL1
+INVERT	LITERAL1

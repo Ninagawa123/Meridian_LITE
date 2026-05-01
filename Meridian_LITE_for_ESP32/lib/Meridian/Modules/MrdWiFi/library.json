@@ -1,10 +1,20 @@
 {
     "name": "MrdWiFi",
     "version": "1.0.0",
-    "description": "Meridian Module - WiFi",
-    "keywords": "Meridian, WiFi, Networking",
-    "author": "Meridian Team",
-    "license": "MIT License",
+    "description": "Meridian Module - WiFi connectivity for wireless robot control and data transmission",
+    "keywords": [
+        "meridian",
+        "wifi",
+        "wireless",
+        "network",
+        "communication"
+    ],
+    "authors": {
+        "name": "Meridian Team"
+    },
+    "license": "MIT",
+    "frameworks": "arduino",
+    "platforms": "esp32",
     "dependencies": {
         "MrdCommon": "*"
     },

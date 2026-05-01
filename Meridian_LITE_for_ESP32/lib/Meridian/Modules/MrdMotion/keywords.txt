@@ -1,0 +1,10 @@
+# Syntax Coloring Map For MrdMotion
+
+# Datatypes (KEYWORD1)
+MOTION_DATA	KEYWORD1
+IK_SOLVER	KEYWORD1
+
+# Methods and Functions (KEYWORD2)
+motion_play	KEYWORD2
+solve_ik	KEYWORD2
+motion_interpolate	KEYWORD2

@@ -1,0 +1,10 @@
+# Syntax Coloring Map For MrdWiFi
+
+# Datatypes (KEYWORD1)
+WIFI_CONFIG	KEYWORD1
+
+# Methods and Functions (KEYWORD2)
+wifi_setup	KEYWORD2
+wifi_connect	KEYWORD2
+wifi_send	KEYWORD2
+wifi_receive	KEYWORD2

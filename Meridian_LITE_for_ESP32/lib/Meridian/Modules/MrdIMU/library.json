@@ -1,10 +1,20 @@
 {
     "name": "MrdIMU",
     "version": "1.0.0",
-    "description": "Meridian Module - IMU",
-    "keywords": "Meridian, IMU, Sensor",
-    "author": "Meridian Team",
-    "license": "MIT License",
+    "description": "Meridian Module - IMU sensor support for orientation and motion detection",
+    "keywords": [
+        "meridian",
+        "imu",
+        "sensor",
+        "accelerometer",
+        "gyroscope"
+    ],
+    "authors": {
+        "name": "Meridian Team"
+    },
+    "license": "MIT",
+    "frameworks": "arduino",
+    "platforms": "esp32",
     "dependencies": {
         "adafruit/Adafruit BNO055": "^1.5.3",
         "electroniccats/MPU6050": "^0.5.0",

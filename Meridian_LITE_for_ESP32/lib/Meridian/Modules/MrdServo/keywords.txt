@@ -1,0 +1,11 @@
+# Syntax Coloring Map For MrdServo
+
+# Datatypes (KEYWORD1)
+SERVO_CONFIG	KEYWORD1
+SERVO_CMD	KEYWORD1
+
+# Methods and Functions (KEYWORD2)
+servo_setup	KEYWORD2
+servo_write	KEYWORD2
+servo_read	KEYWORD2
+servo_move	KEYWORD2

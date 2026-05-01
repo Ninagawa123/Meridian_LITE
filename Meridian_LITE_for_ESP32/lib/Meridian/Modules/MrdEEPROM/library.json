@@ -1,10 +1,20 @@
 {
     "name": "MrdEEPROM",
     "version": "1.0.0",
-    "description": "Meridian Module - EEPROM",
-    "keywords": "Meridian, EEPROM, Storage",
-    "author": "Meridian Team",
-    "license": "MIT License",
+    "description": "Meridian Module - EEPROM storage for configuration, calibration data, and parameters",
+    "keywords": [
+        "meridian",
+        "eeprom",
+        "storage",
+        "configuration",
+        "calibration"
+    ],
+    "authors": {
+        "name": "Meridian Team"
+    },
+    "license": "MIT",
+    "frameworks": "arduino",
+    "platforms": "esp32",
     "dependencies": {
         "MrdCommon": "*"
     },

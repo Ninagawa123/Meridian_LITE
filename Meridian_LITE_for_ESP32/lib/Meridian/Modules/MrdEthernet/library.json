@@ -1,10 +1,20 @@
 {
     "name": "MrdEthernet",
     "version": "1.0.0",
-    "description": "Meridian Module - Ethernet",
-    "keywords": "Meridian, Ethernet, Networking",
-    "author": "Meridian Team",
-    "license": "MIT License",
+    "description": "Meridian Module - Wired Ethernet connectivity for robot control and data transmission",
+    "keywords": [
+        "meridian",
+        "ethernet",
+        "network",
+        "communication",
+        "wired"
+    ],
+    "authors": {
+        "name": "Meridian Team"
+    },
+    "license": "MIT",
+    "frameworks": "arduino",
+    "platforms": "esp32",
     "dependencies": {
         "arduino-libraries/Ethernet": "^2.0.2"
     },
