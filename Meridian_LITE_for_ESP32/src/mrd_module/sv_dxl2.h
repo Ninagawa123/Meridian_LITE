@@ -1,7 +1,7 @@
 #ifndef __MERIDIAN_SERVO_DYNAMIXEL_H__
 #define __MERIDIAN_SERVO_DYNAMIXEL_H__
 
-#include "mrd_common.h"
+#include "../config.h"
 
 //==================================================================================================
 //  DYNAMIXELサーボ関連の処理  ----------------------------------------------------------------------
@@ -9,7 +9,7 @@
 
 /// @brief スタブ関数.
 /// @return 常にfalseを返す.
-inline bool mrd_servo_dxl20_x() {
+inline bool mrd_servo_SERVO_TYPE_DXL20_x() {
   return false;
 }
 

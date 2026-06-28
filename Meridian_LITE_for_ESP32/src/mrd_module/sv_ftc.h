@@ -1,7 +1,7 @@
 #ifndef __MERIDIAN_SERVO_FEETECH_H__
 #define __MERIDIAN_SERVO_FEETECH_H__
 
-#include "mrd_common.h"
+#include "../config.h"
 
 //==================================================================================================
 //  FEETECH TTLサーボ関連の処理  --------------------------------------------------------------------

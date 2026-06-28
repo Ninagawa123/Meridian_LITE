@@ -1,28 +1,5 @@
-#ifndef __MERIDIAN_CONFIG__
-#define __MERIDIAN_CONFIG__
-
-// IMU/AHRSセンサ選択用のプリプロセッサ定数 (enumより先に定義が必要)
-// これらの値はプリプロセッサの#if条件で使用される
-#define IMUAHRS_NONE    0
-#define IMUAHRS_MPU6050 1
-#define IMUAHRS_MPU9250 2
-#define IMUAHRS_BNO055  3
-
-// サーボタイプ選択用のプリプロセッサ定数 (enumより先に定義が必要)
-// これらの値はプリプロセッサの#if条件で使用される
-#define SERVO_TYPE_NONE    0
-#define SERVO_TYPE_PWM_S   1
-#define SERVO_TYPE_PCA9685 11
-#define SERVO_TYPE_FTBRSX  21
-#define SERVO_TYPE_DXL1    31
-#define SERVO_TYPE_DXL2    32
-#define SERVO_TYPE_KOICS3  43
-#define SERVO_TYPE_KOPMX   44
-#define SERVO_TYPE_JRXBUS  51
-#define SERVO_TYPE_FTCSTS  61
-#define SERVO_TYPE_FTCSCS  62
-
-#include "mrd_common.h"
+#ifndef __MERIDIAN_CONFIG_H__
+#define __MERIDIAN_CONFIG_H__
 
 //==================================================================================================
 //  MERIDIAN - LITE - ESP32の配線
@@ -73,30 +50,30 @@
 //   36          -  OK/アナログ入力のみ（PD/PD/出力不可）
 
 //==================================================================================================
-//  サーボIDとロボット部位, 軸との対応表 (KHR-3HVの例)
+//  サーボIDとロボット部位、軸との対応表 (KHR-3HVの例)
 //==================================================================================================
 //
-// ID    Parts/Axis <ICS_Left_Upper SIO1,SIO2>
+// ID    Parts/Axis ＜ICS_Left_Upper SIO1,SIO2＞
 // [L00] 頭/ヨー
 // [L01] 左肩/ピッチ
 // [L02] 左肩/ロール
 // [L03] 左肘/ヨー
 // [L04] 左肘/ピッチ
 // [L05] -
-// ID    Parts/Axis <ICS_Left_Lower SIO3,SIO4>
+// ID    Parts/Axis ＜ICS_Left_Lower SIO3,SIO4＞
 // [L06] 左股/ロール
 // [L07] 左股/ピッチ
 // [L08] 左膝/ピッチ
 // [L09] 左足首/ピッチ
 // [L10] 左足首/ロール
-// ID    Parts/Axis  <ICS_Right_Upper SIO5,SIO6>
+// ID    Parts/Axis  ＜ICS_Right_Upper SIO5,SIO6＞
 // [R00] 腰/ヨー
 // [R01] 右肩/ピッチ
 // [R02] 右肩/ロール
 // [R03] 右肘/ヨー
 // [R04] 右肘/ピッチ
 // [R05] -
-// ID    Parts/Axis  <ICS_Right_Lower SIO7,SIO8>
+// ID    Parts/Axis  ＜ICS_Right_Lower SIO7,SIO8＞
 // [R06] 右股/ロール
 // [R07] 右股/ピッチ
 // [R08] 右膝/ピッチ
@@ -109,9 +86,9 @@
 //
 // [00]      マスターコマンド デフォルトは90 で配列数も同時に示す
 // [01]      シーケンス番号
-// [02]-[04] IMU/AHRS:acc_x,acc_y,acc_z      加速度x,y,z
-// [05]-[07] IMU/AHRS:gyro_x,gyro_y,gyro_z   ジャイロx,y,z
-// [08]-[10] IMU/AHRS:mag_x,mag_y,mag_z      磁気コンパスx,y,z
+// [02]-[04] IMU/AHRS:acc＿x,acc＿y,acc＿z    加速度x,y,z
+// [05]-[07] IMU/AHRS:gyro＿x,gyro＿y,gyro＿z ジャイロx,y,z
+// [08]-[10] IMU/AHRS:mag＿x,mag＿y,mag＿z    磁気コンパスx,y,z
 // [11]      IMU/AHRS:temp                   温度
 // [12]-[14] IMU/AHRS:DMP ROLL,PITCH,YAW     DMP推定値 ロール,ピッチ,ヨー
 // [15]      ボタンデータ1
@@ -138,38 +115,37 @@
 //-------------------------------------------------------------------------
 
 // Meridimの基本設定
-#define MRDM_LEN        90  // Meridim配列の長さ設定(デフォルトは90)
-#define FRAME_DURATION  10  // 1フレームあたりの単位時間(単位ms, デフォルトは10)
-#define CHARGE_TIME     200 // 起動時のコンデンサチャージ待機時間(単位ms)
-#define MRD_L_ORIGIDX   20  // Meridim配列のL系統の最初のインデックス(デフォルトは20)
-#define MRD_R_ORIGIDX   50  // Meridim配列のR系統の最初のインデックス(デフォルトは50)
-#define MRD_SERVO_SLOTS 15  // Meridim配列の1系統あたりの最大接続サーボ数(デフォルトは15)
+#define MRDM_LEN       90  // Meridim配列の長さ設定(デフォルトは90)
+#define FRAME_DURATION 10  // 1フレームあたりの単位時間(単位ms, デフォルトは10)
+#define CHARGE_TIME    200 // 起動時のコンデンサチャージ待機時間(単位ms)
+#define MRD_L_ORIGIDX  20  // Meridim配列のL系統の最初のインデックス(デフォルトは20)
+#define MRD_R_ORIGIDX  50  // Meridim配列のR系統の最初のインデックス(デフォルトは50)
+#define MRD_SV_SLOTS   15  // Meridim配列の1系統あたりの最大接続サーボ数(デフォルトは15)
 
 // 各種ハードウェアのマウント有無
-#define MOUNT_SD      1              // SDカードリーダーの有無(0:なし, 1:あり)
-#define MOUNT_IMUAHRS IMUAHRS_BNO055 // IMU/AHRSの搭載 (0:なし, 1:MPU6050, 2:MPU9250, 3:BNO055)
-#define MOUNT_PAD     PC             // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
+#define MOUNT_SD      0               // SDカードリーダーの有無s(0:なし, 1:あり)
+#define MOUNT_IMUAHRS IMU_TYPE_BNO055 // IMU/AHRSの搭載 IMU_TYPE_NONE, IMU_TYPE_MPU6050, IMU_TYPE_MPU9250, IMU_TYPE_BNO055
+#define MOUNT_PAD     KRR5FH          // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
 
 // 動作モード
 #define MODE_ESP32_STANDALONE 0 // ESP32をボードに挿さず動作確認(0:NO, 1:YES)
 #define MODE_UDP_RECEIVE      1 // PCからのデータ受信(0:OFF, 1:ON, 通常は1)
 #define MODE_UDP_SEND         1 // PCへのデータ送信(0:OFF, 1:ON, 通常は1)
 
-// Wifi/有線LANの設定(SSID, パスワード, 固定IP, MACアドレス等は別途keys.hで指定)
-#define MODE_ETHER    0 // WiFiか有線LANか(0:wifi, 1:有線LAN, 通常は0)
-#define MODE_FIXED_IP 0 // WiFi用IPアドレスを固定するか(0:NO, 1:YES)
+// Wifiの設定(SSID,パスワード等は別途keys.hで指定)
+#define MODE_FIXED_IP 1 // IPアドレスを固定するか(0:NO, 1:YES)
 #define UDP_TIMEOUT   4 // UDPの待受タイムアウト(単位ms,推奨値0)
 
 // EEPROMの設定
-#define EEPROM_SIZE    540 // 使用するEEPROMのサイズ(バイト)
-#define EEPROM_SET     0   // 起動時にEEPROMにconfig.hの内容をセット(mrd_set_eeprom)
-#define EEPROM_PROTECT 0   // EEPROMの書き込み保護(0:保護しない, 1:書き込み禁止)
-#define EEPROM_LOAD    1   // 起動時にEEPROMの内容を諸設定にロードする
-#define EEPROM_DUMP    0   // 起動時のEEPROMデータのダンプ表示
-#define EEPROM_STYLE   Dec // 起動時のEEPROM内容のダンプ表示の書式(Bin,Hex,Dec)
+#define EEPROM_SIZE    540           // 使用するEEPROMのサイズ(バイト)
+#define EEPROM_SET     1             // 起動時にEEPROMにconfig.hの内容をセット(mrd_set_eeprom)
+#define EEPROM_PROTECT 0             // EEPROMの書き込み保護(0:保護しない, 1:書き込み禁止)
+#define EEPROM_LOAD    1             // 起動時にEEPROMの内容を諸設定にロードする
+#define EEPROM_DUMP    1             // 起動時のEEPROM内容のダンプ表示
+#define EEPROM_STYLE   DISP_TYPE_DEC // 起動時のEEPROM内容のダンプ表示の書式
 
 // 動作チェックモード
-#define CHECK_SD_RW     1 // 起動時のSDカードリーダーの読み書きチェック
+#define CHECK_SD_RW     0 // 起動時のSDカードリーダーの読み書きチェック
 #define CHECK_EEPROM_RW 0 // 起動時のEEPROMの動作チェック
 
 // シリアルモニタリング
@@ -188,8 +164,16 @@
 // #define I2C1_SPEED 100000  // I2Cの速度(100kHz推奨?)
 // #define I2C1_MERIMOTE_ADDR 0x58 // MerimoteのI2Cアドレス
 
+// MPU6050キャリブレーション値 (デバイス固有, 必要に応じて調整)
+#define MPU6050_ACCEL_OFFSET_X -1745
+#define MPU6050_ACCEL_OFFSET_Y -1034
+#define MPU6050_ACCEL_OFFSET_Z 966
+#define MPU6050_GYRO_OFFSET_X  176
+#define MPU6050_GYRO_OFFSET_Y  -6
+#define MPU6050_GYRO_OFFSET_Z  -25
+
 // SPI設定
-#define SPI0_SPEED 30000000 // SPI通信の速度(30MHz)
+#define SPI0_SPEED 6000000 // SPI通信の速度(6000000kHz推奨)
 
 // PC接続関連設定
 #define SERIAL_PC_BPS     115200 // PCとのシリアル速度(モニタリング表示用)
@@ -197,62 +181,221 @@
 
 // JOYPAD関連設定
 #define PAD_INIT_TIMEOUT 10000 // 起動時のJOYPADの接続確立のタイムアウト(ms)
-#define PAD_INTERVAL     10    // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
-#define PAD_BUTTON_MARGE 1     // 0:JOYPADのボタンデータをMeridim受信値に論理積, 1:Meridim受信値に論理和
+#define PAD_INTERVAL     4     // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
+#define PAD_BUTTON_MERGE 1     // 0:JOYPADのボタンデータをMeridim受信値に論理積, 1:Meridim受信値に論理和
 #define PAD_GENERALIZE   1     // ジョイパッドの入力値をPS系に一般化する
 
 // ピンアサイン
-#define PIN_ERR_LED        25 // LED用 処理が時間内に収まっていない場合に点灯
-#define PIN_EN_L           33 // サーボL系統のENピン
-#define PIN_EN_R           4  // サーボR系統のENピン
-#define PIN_CHIPSELECT_SD  15 // SDカード用のCSピン
-#define PIN_CHIPSELECT_LAN 5  // 有線LAN用のCSピン
-#define PIN_RESET_LAN      14 // W5500リセットピン(※ボード裏から半田付けにてフリーピンに配線)
-#define PIN_I2C0_SDA       22 // I2CのSDAピン
-#define PIN_I2C0_SCL       21 // I2CのSCLピン
-#define PIN_LED_BT         26 // Bluetooth接続確認用ピン(点滅はペアリング,点灯でリンク確立)
+#define PIN_ERR_LED       25 // LED用 処理が時間内に収まっていない場合に点灯
+#define PIN_EN_L          33 // サーボL系統のENピン
+#define PIN_EN_R          4  // サーボR系統のENピン
+#define PIN_CHIPSELECT_SD 15 // SDカード用のCSピン
+#define PIN_I2C0_SDA      22 // I2CのSDAピン
+#define PIN_I2C0_SCL      21 // I2CのSCLピン
+#define PIN_LED_BT        26 // Bluetooth接続確認用ピン(点滅はペアリング,点灯でリンク確立)
 
 //-------------------------------------------------------------------------
 // サーボ設定
 //-------------------------------------------------------------------------
 
 // コマンドサーボの種類
-// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
-// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
-// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
-// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
-// 51: JRXBUS (JRPROPO_XBUS)[WIP]
-// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
-#define MOUNT_SERVO_TYPE_L SERVO_TYPE_KOICS3 // L系統のコマンドサーボの種類 (43)
-#define MOUNT_SERVO_TYPE_R SERVO_TYPE_KOICS3 // R系統のコマンドサーボの種類 (43)
+// 00: SERVO_TYPE_NONE (マウントなし),            01: SERVO_TYPE_PWM_S1 (Single PWM)[WIP]
+// 11: SERVO_TYPE_PCA9685 (I2C_PCA9685toPWM)[WIP], 21: SERVO_TYPE_FTBRSX (FUTABA_RSxTTL)[WIP]
+// 31: SERVO_TYPE_DXL1 (DYNAMIXEL 1.0)[WIP],       32: SERVO_TYPE_DXL2 (DYNAMIXEL 2.0)[WIP]
+// 43: SERVO_TYPE_KRSICS3 (KONDO_ICS 3.5 / 3.6),    44: SERVO_TYPE_PMX (KONDO_PMX)[WIP]
+// 51: SERVO_TYPE_JRXBUS (JRPROPO_XBUS)[WIP]
+// 61: SERVO_TYPE_FTCSTS (FEETECH_STS)[WIP],       62: SERVO_TYPE_FTCSCS (FEETECH_SCS)[WIP]
+#define MOUNT_SV_TYPE_L 43 // L系統のコマンドサーボの種類
+#define MOUNT_SV_TYPE_R 43 // R系統のコマンドサーボの種類
 
 // サーボ関連設定
-#define SERVO_BAUDRATE_L    1250000 // L系統のICSサーボの通信速度bps
-#define SERVO_BAUDRATE_R    1250000 // R系統のICSサーボの通信速度bps
-#define SERVO_TIMEOUT_L     2       // L系統のICS返信待ちのタイムアウト時間
-#define SERVO_TIMEOUT_R     2       // R系統のICS返信待ちのタイムアウト時間
-#define SERVO_LOST_ERR_WAIT 6       // 連続何フレームサーボ信号をロストしたら異常とするか
+#define SV_BAUDRATE_L    1250000 // L系統のICSサーボの通信速度bps
+#define SV_BAUDRATE_R    1250000 // R系統のICSサーボの通信速度bps
+#define SV_TIMEOUT_L     2       // L系統のICS返信待ちのタイムアウト時間
+#define SV_TIMEOUT_R     2       // R系統のICS返信待ちのタイムアウト時間
+#define SV_LOST_ERR_WAIT 6       // 連続何フレームサーボ信号をロストしたら異常とするか
 
 // 各サーボ系統の最大サーボマウント数
 #define IXL_MAX 15 // L系統の最大サーボ数. 標準は15.
 #define IXR_MAX 15 // R系統の最大サーボ数. 標準は15.
 
-// サーボのマウント/種類 (0:NOSERVO, 43:KONDO ICS, 等)
-// インデックス 0-10: アクティブサーボ, 11-14: 予約
-extern int IXL_MT[IXL_MAX];
-extern int IXR_MT[IXR_MAX];
+//------------------------------------------------------------------------------------
+// サーボ設定値
+//------------------------------------------------------------------------------------
+// Servo type values:
+// 00: SERVO_TYPE_NONE (マウントなし),            01: SERVO_TYPE_PWM_S1 (Single PWM)[WIP]
+// 11: SERVO_TYPE_PCA9685 (I2C_PCA9685toPWM)[WIP], 21: SERVO_TYPE_FTBRSX (FUTABA_RSxTTL)[WIP]
+// 31: SERVO_TYPE_DXL1 (DYNAMIXEL 1.0)[WIP],       32: SERVO_TYPE_DXL2 (DYNAMIXEL 2.0)[WIP]
+// 43: SERVO_TYPE_KRSICS3 (KONDO_ICS 3.5 / 3.6),   44: SERVO_TYPE_PMX (KONDO_PMX)[WIP]
+// 51: SERVO_TYPE_JRXBUS (JRPROPO_XBUS)[WIP]
+// 61: SERVO_TYPE_FTCSTS (FEETECH_STS)[WIP],       62: SERVO_TYPE_FTCSCS (FEETECH_SCS)[WIP]
 
-// サーボのハードウェアID
+#ifdef DEFINE_SERVO_CONFIG // main.cppでのみ定義される
+
+// L系統のサーボのマウント設定
+int IXL_MOUNT[IXL_MAX] = {
+    43, // [00] 頭ヨー
+    43, // [01] 左肩ピッチ
+    43, // [02] 左肩ロール
+    43, // [03] 左肘ヨー
+    43, // [04] 左肘ピッチ
+    43, // [05] 左股ヨー
+    43, // [06] 左股ロール
+    43, // [07] 左股ピッチ
+    43, // [08] 左膝ピッチ
+    43, // [09] 左足首ピッチ
+    43, // [10] 左足首ロール
+    0,  // [11] 予備
+    0,  // [12] 予備
+    0,  // [13] 予備
+    0   // [14] 予備
+};
+
+// R系統のサーボのマウント設定
+int IXR_MOUNT[IXR_MAX] = {
+    43, // [00] 腰ヨー
+    43, // [01] 右肩ピッチ
+    43, // [02] 右肩ロール
+    43, // [03] 右肘ヨー
+    43, // [04] 右肘ピッチ
+    43, // [05] 右股ヨー
+    43, // [06] 右股ロール
+    43, // [07] 右股ピッチ
+    43, // [08] 右膝ピッチ
+    43, // [09] 右足首ピッチ
+    43, // [10] 右足首ロール
+    0,  // [11] 予備
+    0,  // [12] 予備
+    0,  // [13] 予備
+    0   // [14] 予備
+};
+
+// L系統のサーボID設定
+int IXL_ID[IXL_MAX] = {
+    0,  // [00] 頭ヨー
+    1,  // [01] 左肩ピッチ
+    2,  // [02] 左肩ロール
+    3,  // [03] 左肘ヨー
+    4,  // [04] 左肘ピッチ
+    5,  // [05] 左股ヨー
+    6,  // [06] 左股ロール
+    7,  // [07] 左股ピッチ
+    8,  // [08] 左膝ピッチ
+    9,  // [09] 左足首ピッチ
+    10, // [10] 左足首ロール
+    11, // [11] 予備
+    12, // [12] 予備
+    13, // [13] 予備
+    14  // [14] 予備
+};
+
+// R系統のサーボID設定
+int IXR_ID[IXR_MAX] = {
+    0,  // [00] 腰ヨー
+    1,  // [01] 右肩ピッチ
+    2,  // [02] 右肩ロール
+    3,  // [03] 右肘ヨー
+    4,  // [04] 右肘ピッチ
+    5,  // [05] 右股ヨー
+    6,  // [06] 右股ロール
+    7,  // [07] 右股ピッチ
+    8,  // [08] 右膝ピッチ
+    9,  // [09] 右足首ピッチ
+    10, // [10] 右足首ロール
+    11, // [11] 予備
+    12, // [12] 予備
+    13, // [13] 予備
+    14  // [14] 予備
+};
+
+// L系統のサーボ回転方向補正(1:変更なし, -1:逆転)
+int IXL_CW[IXL_MAX] = {
+    1, // [00] 頭ヨー
+    1, // [01] 左肩ピッチ
+    1, // [02] 左肩ロール
+    1, // [03] 左肘ヨー
+    1, // [04] 左肘ピッチ
+    1, // [05] 左股ヨー
+    1, // [06] 左股ロール
+    1, // [07] 左股ピッチ
+    1, // [08] 左膝ピッチ
+    1, // [09] 左足首ピッチ
+    1, // [10] 左足首ロール
+    1, // [11] 予備
+    1, // [12] 予備
+    1, // [13] 予備
+    1  // [14] 予備
+};
+
+// R系統のサーボ回転方向補正(1:変更なし, -1:逆転)
+int IXR_CW[IXR_MAX] = {
+    1, // [00] 腰ヨー
+    1, // [01] 右肩ピッチ
+    1, // [02] 右肩ロール
+    1, // [03] 右肘ヨー
+    1, // [04] 右肘ピッチ
+    1, // [05] 右股ヨー
+    1, // [06] 右股ロール
+    1, // [07] 右股ピッチ
+    1, // [08] 右膝ピッチ
+    1, // [09] 右足首ピッチ
+    1, // [10] 右足首ロール
+    1, // [11] 予備
+    1, // [12] 予備
+    1, // [13] 予備
+    1  // [14] 予備
+};
+
+// L系統のトリム値(degree)
+float IXL_TRIM[IXL_MAX] = {
+    0.0,     // [00] 頭ヨー
+    -20.42,  // [01] 左肩ピッチ
+    -103.55, // [02] 左肩ロール
+    0.85,    // [03] 左肘ヨー
+    88.41,   // [04] 左肘ピッチ
+    0.0,     // [05] 左股ヨー
+    -2.0,    // [06] 左股ロール
+    -17.12,  // [07] 左股ピッチ
+    -68.54,  // [08] 左膝ピッチ
+    -25.7,   // [09] 左足首ピッチ
+    0.0,     // [10] 左足首ロール
+    0.0,     // [11] 予備
+    0.0,     // [12] 予備
+    0.0,     // [13] 予備
+    0.0      // [14] 予備
+};
+
+// R系統のトリム値(degree)
+float IXR_TRIM[IXR_MAX] = {
+    -4.28,  // [00] 腰ヨー
+    0.68,   // [01] 右肩ピッチ
+    -89.41, // [02] 右肩ロール
+    0.0,    // [03] 右肘ヨー
+    91.83,  // [04] 右肘ピッチ
+    0.0,    // [05] 右股ヨー
+    1.0,    // [06] 右股ロール
+    -21.42, // [07] 右股ピッチ
+    -53.68, // [08] 右膝ピッチ
+    -24.12, // [09] 右足首ピッチ
+    0.0,    // [10] 右足首ロール
+    0.0,    // [11] 予備
+    0.0,    // [12] 予備
+    0.0,    // [13] 予備
+    0.0     // [14] 予備
+};
+
+#else // extern宣言のみ
+
+extern int IXL_MOUNT[IXL_MAX];
+extern int IXR_MOUNT[IXR_MAX];
 extern int IXL_ID[IXL_MAX];
 extern int IXR_ID[IXR_MAX];
-
-// サーボの回転方向 (1:正転, -1:逆転)
 extern int IXL_CW[IXL_MAX];
 extern int IXR_CW[IXR_MAX];
-
-// 直立姿勢用サーボトリム値 (度)
 extern float IXL_TRIM[IXL_MAX];
 extern float IXR_TRIM[IXR_MAX];
+
+#endif // DEFINE_SERVO_CONFIG
 
 //-------------------------------------------------------------------------
 //  固定値, マスターコマンド定義
@@ -387,7 +530,7 @@ extern float IXR_TRIM[IXR_MAX];
 // #define MRD_CKSM        89 // チェックサム (MRDM_LEN - 1)
 
 // エラービット MRD_ERR_CODEの上位8bit分
-#define ERRBIT_15_ESP_PC       15 // ESP32 → PC のUDP受信エラー (0:エラーなし, 1:エラー検出)
+#define ERRBIT_15_ESP_PC       15 // ESP32 → PC のUDP受信エラー (0:エラーなし、1:エラー検出)
 #define ERRBIT_14_PC_ESP       14 // PC → ESP32 のUDP受信エラー
 #define ERRBIT_13_ESP_TSY      13 // ESP32 → TeensyのSPI受信エラー
 #define ERRBIT_12_TSY_ESP      12 // Teensy → ESP32 のSPI受信エラー
@@ -396,175 +539,4 @@ extern float IXR_TRIM[IXR_MAX];
 #define ERRBIT_9_BOARD_SKIP    9  // PC → ESP32 → Teensy のフレームスキップエラー(末端で捕捉)
 #define ERRBIT_8_PC_SKIP       8  // Teensy → ESP32 → PC のフレームスキップエラー(末端で捕捉)
 
-//-------------------------------------------------------------------------
-//  サーボ設定配列の実体定義 (main.cppでのみ有効化)
-//-------------------------------------------------------------------------
-#ifdef CONFIG_DEFINE_ARRAYS
-
-// L系統のサーボのマウントの設定
-// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
-// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
-// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
-// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
-// 51: JRXBUS (JRPROPO_XBUS)[WIP]
-// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
-int IXL_MT[IXL_MAX] = {
-    43, // [00]頭ヨー
-    0,  // [01]左肩ピッチ
-    0,  // [02]左肩ロール
-    0,  // [03]左肘ヨー
-    0,  // [04]左肘ピッチ
-    0,  // [05]左股ヨー
-    0,  // [06]左股ロール
-    0,  // [07]左股ピッチ
-    0,  // [08]左膝ピッチ
-    0,  // [09]左足首ピッチ
-    0,  // [10]左足首ロール
-    0,  // [11]追加サーボ用
-    0,  // [12]追加サーボ用
-    0,  // [13]追加サーボ用
-    0   // [14]追加サーボ用
-};
-
-// R系統のサーボのマウントの設定
-// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
-// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
-// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
-// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
-// 51: JRXBUS (JRPROPO_XBUS)[WIP]
-// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
-int IXR_MT[IXR_MAX] = {
-    0, // [00]腰ヨー
-    0, // [01]右肩ピッチ
-    0, // [02]右肩ロール
-    0, // [03]右肘ヨー
-    0, // [04]右肘ピッチ
-    0, // [05]右股ヨー
-    0, // [06]右股ロール
-    0, // [07]右股ピッチ
-    0, // [08]右膝ピッチ
-    0, // [09]右足首ピッチ
-    0, // [10]右足首ロール
-    0, // [11]追加サーボ用
-    0, // [12]追加サーボ用
-    0, // [13]追加サーボ用
-    0  // [14]追加サーボ用
-};
-
-// L系統のコード上のサーボIndexに対し, 実際に呼び出すハードウェアのID番号
-int IXL_ID[IXL_MAX] = {
-    0,  // [00]頭ヨー
-    1,  // [01]左肩ピッチ
-    2,  // [02]左肩ロール
-    3,  // [03]左肘ヨー
-    4,  // [04]左肘ピッチ
-    5,  // [05]左股ヨー
-    6,  // [06]左股ロール
-    7,  // [07]左股ピッチ
-    8,  // [08]左膝ピッチ
-    9,  // [09]左足首ピッチ
-    10, // [10]左足首ロール
-    11, // [11]追加サーボ用
-    12, // [12]追加サーボ用
-    13, // [13]追加サーボ用
-    14  // [14]追加サーボ用
-};
-
-// R系統のコード上のサーボIndexに対し, 実際に呼び出すハードウェアのID番号
-int IXR_ID[IXR_MAX] = {
-    0,  // [00]腰ヨー
-    1,  // [01]右肩ピッチ
-    2,  // [02]右肩ロール
-    3,  // [03]右肘ヨー
-    4,  // [04]右肘ピッチ
-    5,  // [05]右股ヨー
-    6,  // [06]右股ロール
-    7,  // [07]右股ピッチ
-    8,  // [08]右膝ピッチ
-    9,  // [09]右足首ピッチ
-    10, // [10]右足首ロール
-    11, // [11]追加サーボ用
-    12, // [12]追加サーボ用
-    13, // [13]追加サーボ用
-    14  // [14]追加サーボ用
-};
-
-// L系統のサーボ回転方向補正(1:変更なし, -1:逆転)
-int IXL_CW[IXL_MAX] = {
-    1, // [00]頭ヨー
-    1, // [01]左肩ピッチ
-    1, // [02]左肩ロール
-    1, // [03]左肘ヨー
-    1, // [04]左肘ピッチ
-    1, // [05]左股ヨー
-    1, // [06]左股ロール
-    1, // [07]左股ピッチ
-    1, // [08]左膝ピッチ
-    1, // [09]左足首ピッチ
-    1, // [10]左足首ロール
-    1, // [11]追加サーボ用
-    1, // [12]追加サーボ用
-    1, // [13]追加サーボ用
-    1  // [14]追加サーボ用
-};
-
-// R系統のサーボ回転方向補正(1:変更なし, -1:逆転)
-int IXR_CW[IXR_MAX] = {
-    1, // [00]腰ヨー
-    1, // [01]右肩ピッチ
-    1, // [02]右肩ロール
-    1, // [03]右肘ヨー
-    1, // [04]右肘ピッチ
-    1, // [05]右股ヨー
-    1, // [06]右股ロール
-    1, // [07]右股ピッチ
-    1, // [08]右膝ピッチ
-    1, // [09]右足首ピッチ
-    1, // [10]右足首ロール
-    1, // [11]追加サーボ用
-    1, // [12]追加サーボ用
-    1, // [13]追加サーボ用
-    1  // [14]追加サーボ用
-};
-
-// L系統のトリム値(degree)
-float IXL_TRIM[IXL_MAX] = {
-    0.0,     // [00]頭ヨー
-    -20.42,  // [01]左肩ピッチ
-    -103.55, // [02]左肩ロール
-    0.85,    // [03]左肘ヨー
-    88.41,   // [04]左肘ピッチ
-    0.0,     // [05]左股ヨー
-    -2.0,    // [06]左股ロール
-    -17.12,  // [07]左股ピッチ
-    -68.54,  // [08]左膝ピッチ
-    -25.7,   // [09]左足首ピッチ
-    0.0,     // [10]左足首ロール
-    0.0,     // [11]追加サーボ用
-    0.0,     // [12]追加サーボ用
-    0.0,     // [13]追加サーボ用
-    0.0      // [14]追加サーボ用
-};
-
-// R系統のトリム値(degree)
-float IXR_TRIM[IXR_MAX] = {
-    -4.28,  // [00]腰ヨー
-    0.68,   // [01]右肩ピッチ
-    -89.41, // [02]右肩ロール
-    0.0,    // [03]右肘ヨー
-    91.83,  // [04]右肘ピッチ
-    0.0,    // [05]右股ヨー
-    1.0,    // [06]右股ロール
-    -21.42, // [07]右股ピッチ
-    -53.68, // [08]右膝ピッチ
-    -24.12, // [09]右足首ピッチ
-    0.0,    // [10]右足首ロール
-    0.0,    // [11]追加サーボ用
-    0.0,    // [12]追加サーボ用
-    0.0,    // [13]追加サーボ用
-    0.0     // [14]追加サーボ用
-};
-
-#endif // CONFIG_DEFINE_ARRAYS
-
-#endif // __MERIDIAN_CONFIG__
+#endif // __MERIDIAN_CONFIG_H__
