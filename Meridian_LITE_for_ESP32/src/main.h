@@ -10,7 +10,7 @@
 #include <Meridian.h>                   // Meridianのライブラリ導入
 extern MERIDIANFLOW::Meridian mrd;
 class MrdHalfDuplexUart;  // 半二重UARTバス (mrd_servo.h で定義)
-class IcsHalfDuplexClass; // ICSサーボ (mrd_module/sv_ics_hd.h で定義)
+class IcsHalfDuplexClass; // ICSサーボ (mrd_module/sv_ics.h で定義)
 extern MrdHalfDuplexUart sv_bus_L;
 extern MrdHalfDuplexUart sv_bus_R;
 extern IcsHalfDuplexClass ics_L;

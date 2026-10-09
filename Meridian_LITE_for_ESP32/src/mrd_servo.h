@@ -247,7 +247,6 @@ private:
 
 // 各プロトコル層の読み込み (半二重UARTバスの定義より後に読み込むこと)
 #include "mrd_module/sv_ftbrx.h"
-#include "mrd_module/sv_ics_hd.h"
 #include "mrd_module/sv_ics.h"
 
 //==================================================================================================
