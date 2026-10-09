@@ -4,8 +4,36 @@
 #include "config.h"
 #include "main.h"
 #include "mrd_disp.h"
+#include "mrd_servo.h" // 半二重UARTバス(MrdHalfDuplexUart). 本ファイルは mrd_servo.h から読み込まれる
 
 #include "gs2d_krs.h"
+#include <IcsBaseClass.h>
+
+//==================================================================================================
+//  KONDO ICS プロトコル層 (半二重UARTバス上で動作)
+//==================================================================================================
+
+/// @brief IcsBaseClassの送受信をMrdHalfDuplexUartに委譲するICSクラス.
+///        setPos, setFree, getKrrAllData等はIcsBaseClassのものをそのまま使用する.
+class IcsHalfDuplexClass : public IcsBaseClass {
+public:
+  /// @brief コンストラクタ.
+  /// @param a_bus 使用する半二重UARTバス.
+  /// @param a_baud ICSの通信速度(115200, 625000, 1250000bps).
+  IcsHalfDuplexClass(MrdHalfDuplexUart &a_bus, unsigned long a_baud)
+      : bus_(a_bus), baud_(a_baud) {}
+
+  /// @brief ICS用のフレーム形式(8E1)でバスを開始する.
+  bool begin() { return bus_.begin(baud_, SERIAL_8E1); }
+
+  bool synchronize(byte *txBuf, byte txLen, byte *rxBuf, byte rxLen) override {
+    return bus_.transfer(txBuf, txLen, rxBuf, rxLen);
+  }
+
+private:
+  MrdHalfDuplexUart &bus_;
+  unsigned long baud_;
+};
 
 //==================================================================================================
 //  KONDO ICSサーボ関連の処理
@@ -21,8 +49,8 @@
 /// @param a_err_cnt サーボのエラーカウント
 /// @param a_stat サーボのステータス
 /// @param ics サーボクラスのインスタンス
-float mrd_servo_process_ics(int a_servo_id, int a_cmd, float a_tgt, float a_tgt_past, int a_trim,
-                            int a_cw, int &a_err_cnt, uint16_t &a_stat, IcsHardSerialClass &ics) {
+float mrd_servo_process_ics(int a_servo_id, int a_cmd, float a_tgt, float a_tgt_past, float a_trim,
+                            int a_cw, int &a_err_cnt, uint16_t &a_stat, IcsBaseClass &ics) {
   int val_tmp = 0;
   if (a_cmd == 1) { // コマンドが1ならPos指定
     val_tmp = ics.setPos(a_servo_id, mrd.Deg2Krs(a_tgt, a_trim, a_cw));
