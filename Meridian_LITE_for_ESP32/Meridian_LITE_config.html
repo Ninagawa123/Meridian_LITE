@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meridian LITE Config</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --text: #1d2330;
+    --muted: #6b7280;
+    --line: #e3e6eb;
+    --accent: #2563eb;
+    --accent-weak: #e8efff;
+    --changed: #f59e0b;
+    --danger: #dc2626;
+    --ok: #16a34a;
+    --input-bg: #ffffff;
+    --child-line: #c9d4ea;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b;
+      --card: #1b2029;
+      --text: #e6e9ef;
+      --muted: #9aa3b2;
+      --line: #2b313c;
+      --accent: #5b8cff;
+      --accent-weak: #1f2a44;
+      --changed: #fbbf24;
+      --danger: #f87171;
+      --ok: #4ade80;
+      --input-bg: #141820;
+      --child-line: #33415c;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 20px;
+  }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 16px; line-height: 1.2; margin: 0 12px 0 0; white-space: nowrap; display: flex; flex-direction: column; }
+  .version { font-size: 11px; font-weight: normal; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+  .version:empty { display: none; }
+  .paths { display: flex; flex-wrap: wrap; gap: 6px 12px; flex: 1 1 360px; min-width: 0; }
+  .path { display: flex; align-items: center; gap: 6px; flex: 1 1 200px; min-width: 0; }
+  .path label { color: var(--muted); white-space: nowrap; }
+  .path input { flex: 1; min-width: 0; font-family: ui-monospace, Menlo, monospace; }
+  .status { max-width: 980px; margin: 6px auto 0; color: var(--muted); font-size: 12px; min-height: 18px; }
+  .status.err { color: var(--danger); }
+  .status.ok { color: var(--ok); }
+  main { max-width: 980px; margin: 0 auto; padding: 16px 20px 80px; }
+  button {
+    font: inherit;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button:disabled { opacity: .45; cursor: default; }
+  input[type=text], input[type=number], select {
+    font: inherit;
+    color: var(--text);
+    background: var(--input-bg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 4px 8px;
+  }
+  input[type=number] { width: 120px; text-align: right; }
+  select { max-width: 100%; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-bottom: 14px;
+  }
+  .card > h2 {
+    font-size: 14px;
+    margin: 0;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card > h2 .sub { font-weight: normal; color: var(--muted); font-size: 12px; }
+  .rows { padding: 4px 0; }
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    padding: 7px 16px;
+  }
+  .row + .row, .children + .row { border-top: 1px solid var(--line); }
+  .label { display: flex; flex-direction: column; min-width: 0; flex: 1 1 260px; }
+  .label .name { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .label .key { color: var(--muted); font-size: 11px; font-family: ui-monospace, Menlo, monospace; }
+  .label .hint { color: var(--muted); font-size: 12px; }
+  .ctrl { display: flex; align-items: center; gap: 6px; }
+  .unit { color: var(--muted); font-size: 12px; min-width: 2em; }
+  .children { margin: 0 16px 8px 30px; border-left: 2px solid var(--child-line); }
+  .children .row { padding: 6px 0 6px 14px; }
+  .children .row + .row { border-top: none; }
+  .badge { font-size: 11px; padding: 0 6px; border-radius: 9px; background: var(--accent-weak); color: var(--muted); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--changed); display: none; }
+  .row.changed .dot { display: inline-block; }
+  .row.missing { opacity: .5; }
+  .readonly { font-family: ui-monospace, Menlo, monospace; color: var(--muted); }
+
+  /* switch */
+  .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch span {
+    position: absolute; inset: 0; border-radius: 22px;
+    background: var(--line); transition: background .15s;
+  }
+  .switch span::before {
+    content: ""; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px;
+    border-radius: 50%; background: #fff; transition: transform .15s;
+    box-shadow: 0 1px 2px rgba(0,0,0,.3);
+  }
+  .switch input:checked + span { background: var(--accent); }
+  .switch input:checked + span::before { transform: translateX(18px); }
+  .switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .switch input:disabled + span { opacity: .5; }
+
+  /* servo table */
+  .tabs { display: flex; gap: 4px; padding: 8px 16px 0; }
+  .tabs button { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  .tabs button.on { background: var(--accent-weak); border-color: var(--accent); }
+  .table-wrap { overflow-x: auto; padding: 0 16px 12px; }
+  table { border-collapse: collapse; width: 100%; min-width: 620px; }
+  th, td { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+  th { color: var(--muted); font-weight: normal; font-size: 12px; }
+  td.idx { color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+  td input[type=number] { width: 90px; }
+  tr.off td:not(.mt) { opacity: .4; }
+  td.changed-cell { box-shadow: inset 3px 0 0 var(--changed); }
+  details > summary { cursor: pointer; padding: 10px 16px; font-weight: bold; list-style: none; }
+  details > summary::before { content: "▸ "; color: var(--muted); }
+  details[open] > summary::before { content: "▾ "; }
+  details[open] > summary { border-bottom: 1px solid var(--line); }
+  .note { color: var(--muted); font-size: 12px; padding: 4px 16px 10px; }
+  .hidden { display: none !important; }
+  .empty { text-align: center; color: var(--muted); padding: 60px 20px; }
+  .children .children { margin: 0 0 6px 14px; }
+  input.text { width: 240px; max-width: 100%; font-family: ui-monospace, Menlo, monospace; }
+  input.invalid { border-color: var(--danger); }
+  .err-hint { color: var(--danger); font-size: 12px; }
+  .ctrl.wrap { flex-wrap: wrap; justify-content: flex-end; }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1>Meridian LITE Config <span id="version" class="version" title="main.cpp の VERSION"></span></h1>
+    <div class="paths">
+      <div class="path">
+        <label for="path">config.h</label>
+        <input id="path" type="text" value="src/config.h" spellcheck="false">
+      </div>
+      <div class="path">
+        <label for="pathKeys">keys.h</label>
+        <input id="pathKeys" type="text" value="src/keys.h" spellcheck="false">
+      </div>
+    </div>
+    <button id="btnFolder" title="Meridian_LITE_for_ESP32 フォルダを選択">フォルダを選択</button>
+    <button id="btnReload" disabled>再読み込み</button>
+    <button id="btnSave" class="primary" disabled>保存</button>
+  </div>
+  <div id="status" class="status"></div>
+</header>
+
+<main id="main">
+  <div class="empty" id="empty">
+    「フォルダを選択」で <b>Meridian_LITE_for_ESP32</b> フォルダを選ぶと、<br>
+    上のパス (既定: <code>src/config.h</code>, <code>src/keys.h</code>) のファイルを読み込みます。<br>
+    初回だけブラウザが読み書きの許可を求めます。<br><br>
+    <span style="font-size:12px">Chrome / Edge で開いてください。その他のブラウザでは、ファイルを開いてダウンロード保存する方式になります。</span>
+  </div>
+  <div id="form" class="hidden"></div>
+</main>
+
+<!-- ===================================================================
+     config.h の解析と書き換え (DOM非依存. 値の部分だけを置き換える)
+     =================================================================== -->
+<script id="core">
+// 行の改行コードを保ったまま分割する
+function splitLines(text) {
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  return { lines: text.split(eol), eol };
+}
+
+const DEFINE_RE = /^(\s*#define\s+)([A-Za-z_]\w*)(\s+)(.*?)(\s*)(\/\/.*)?$/;
+
+// #define を読み取る. 同じ名前が複数回(#if の分岐など)出てくるものは dup=true
+function parseDefines(text) {
+  const { lines } = splitLines(text);
+  const defs = {};
+  lines.forEach((line, i) => {
+    const m = line.match(DEFINE_RE);
+    if (!m) return;
+    const name = m[2];
+    let value = m[4].trim();
+    // 文字列リテラルは空白やスラッシュを含みうるので, 閉じ引用符までを値とする
+    const rest = line.slice(m[1].length + m[2].length + m[3].length);
+    const str = rest.match(/^"(?:[^"\\]|\\.)*"/);
+    if (str) value = str[0];
+    if (defs[name]) {
+      defs[name].dup = true;
+      return;
+    }
+    defs[name] = { value, line: i, dup: false, single: !!str || /^\S+$/.test(value), string: !!str };
+  });
+  return defs;
+}
+
+const ARRAY_ITEM_RE = /^(\s*)(-?\d+(?:\.\d+)?)(\s*,?)(\s*)(\/\/\s*(.*))?$/;
+
+// int/float の配列 (int IXL_MT[IXL_MAX] = { ... };) を読み取る
+function parseArray(text, name) {
+  const { lines } = splitLines(text);
+  const head = new RegExp("^\\s*(int|float)\\s+" + name + "\\s*\\[[^\\]]*\\]\\s*=\\s*\\{");
+  const start = lines.findIndex((l) => head.test(l));
+  if (start < 0) return null;
+  const items = [];
+  for (let i = start + 1; i < lines.length; i++) {
+    if (/^\s*\};/.test(lines[i])) break;
+    const m = lines[i].match(ARRAY_ITEM_RE);
+    if (!m) continue; // コメントだけの行など
+    const label = (m[6] || "").replace(/^\[\d+\]\s*/, "").trim();
+    items.push({ value: m[2], line: i, label });
+  }
+  return { type: lines[start].match(head)[1], items };
+}
+
+// 値の文字列を差し替える. 後ろのコメント位置がなるべくずれないよう空白で調整する
+function replaceToken(line, oldVal, newVal, afterRe) {
+  const idx = line.indexOf(oldVal, line.search(afterRe));
+  if (idx < 0) return line;
+  const before = line.slice(0, idx);
+  let rest = line.slice(idx + oldVal.length);
+  const comma = rest.match(/^,?/)[0];
+  rest = rest.slice(comma.length);
+  const sp = rest.match(/^\s*/)[0];
+  rest = rest.slice(sp.length);
+  let pad = sp;
+  if (rest.startsWith("//")) {
+    const n = Math.max(1, sp.length + oldVal.length - newVal.length);
+    pad = " ".repeat(n);
+  }
+  return before + newVal + comma + pad + rest;
+}
+
+// 変更内容を元のテキストに反映する
+// changes: { defines: {NAME: "value"}, arrays: {NAME: {index: "value"}} }
+function applyChanges(text, changes) {
+  const { lines, eol } = splitLines(text);
+  const defs = parseDefines(text);
+  for (const [name, val] of Object.entries(changes.defines || {})) {
+    const d = defs[name];
+    if (!d || d.dup || !d.single || d.value === val) continue;
+    const re = new RegExp("#define\\s+" + name + "\\s+");
+    const start = lines[d.line].search(re);
+    const after = start + lines[d.line].slice(start).match(re)[0].length;
+    lines[d.line] = lines[d.line].slice(0, after) + replaceToken(lines[d.line].slice(after), d.value, val, /\S/);
+  }
+  for (const [name, vals] of Object.entries(changes.arrays || {})) {
+    const arr = parseArray(text, name);
+    if (!arr) continue;
+    for (const [i, val] of Object.entries(vals)) {
+      const it = arr.items[Number(i)];
+      if (!it || it.value === val) continue;
+      lines[it.line] = replaceToken(lines[it.line], it.value, val, /\S/);
+    }
+  }
+  return lines.join(eol);
+}
+
+// 変更行の一覧 (確認・テスト用)
+function diffLines(a, b) {
+  const A = splitLines(a).lines, B = splitLines(b).lines;
+  const out = [];
+  for (let i = 0; i < Math.max(A.length, B.length); i++) {
+    if (A[i] !== B[i]) out.push({ line: i + 1, before: A[i], after: B[i] });
+  }
+  return out;
+}
+
+// float の配列要素は小数点付きで書く (0 -> 0.0)
+function formatNumber(v, isFloat) {
+  if (v === "" || v === null || isNaN(Number(v))) return null;
+  const n = Number(v);
+  if (!isFloat) return String(Math.trunc(n));
+  return Number.isInteger(n) ? n.toFixed(1) : String(n);
+}
+
+// C の文字列リテラル <-> 文字列
+function unquote(v) {
+  return v.slice(1, -1).replace(/\\(.)/g, "$1");
+}
+function quote(s) {
+  return '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+}
+
+// 形式チェック (問題なければ空文字)
+function checkFormat(fmt, s) {
+  if (fmt === "ip") {
+    const p = s.split(".");
+    const ok = p.length === 4 && p.every((x) => /^\d{1,3}$/.test(x) && Number(x) <= 255);
+    return ok ? "" : "IPアドレスの形式ではありません (例: 192.168.1.10)";
+  }
+  if (fmt === "mac") {
+    return /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(s) ? "" : "MACアドレスの形式ではありません (例: 02:00:00:12:34:56)";
+  }
+  if (fmt === "port") {
+    return /^\d+$/.test(s) && Number(s) >= 1 && Number(s) <= 65535 ? "" : "1〜65535 の番号を指定してください";
+  }
+  return "";
+}
+
+// main.cpp の #define VERSION "..." を読み取る (見つからなければ null)
+function parseVersion(text) {
+  const d = parseDefines(text).VERSION;
+  return d && d.string ? unquote(d.value) : null;
+}
+
+if (typeof module !== "undefined") {
+  module.exports = { parseDefines, parseArray, applyChanges, diffLines, formatNumber, quote, unquote, checkFormat, parseVersion };
+}
+</script>
+
+<!-- ===================================================================
+     画面の定義 (親子構造). show(親の値) が true のとき子を表示する
+     =================================================================== -->
+<script>
+const SERVO_TYPES = [
+  ["0", "なし (NOSERVO)"],
+  ["1", "PWM_S1 (Single PWM) [WIP]"],
+  ["11", "PCA9685 (I2C→PWM) [WIP]"],
+  ["21", "FTBRSX (FUTABA RSxTTL) [WIP]"],
+  ["31", "DXL1 (DYNAMIXEL 1.0) [WIP]"],
+  ["32", "DXL2 (DYNAMIXEL 2.0) [WIP]"],
+  ["43", "KOICS3 (KONDO ICS 3.5/3.6)"],
+  ["44", "KOPMX (KONDO PMX) [WIP]"],
+  ["51", "JRXBUS (JR PROPO XBUS) [WIP]"],
+  ["61", "FTCSTS (FEETECH STS) [WIP]"],
+  ["62", "FTCSCS (FEETECH SCS) [WIP]"],
+];
+const ON = (v) => v === "1";
+const NOT = (x) => (v) => v !== x;
+
+const servoLine = (s, name) => ({
+  key: "MOUNT_SERVO_TYPE_" + s, type: "select", label: name + "のサーボ", options: SERVO_TYPES,
+  children: [
+    { key: "SERVO_BAUDRATE_" + s, type: "select", label: "通信速度", unit: "bps", show: NOT("0"),
+      options: [["115200", "115200"], ["625000", "625000"], ["1250000", "1250000"]] },
+    { key: "SERVO_TIMEOUT_" + s, type: "number", label: "応答待ちタイムアウト", unit: "ms", min: 1, show: NOT("0") },
+    { key: "SERVO_ECHO_" + s, type: "select", label: "送信エコー処理", show: NOT("0"),
+      options: [["2", "起動時に自動判定 (推奨)"], ["1", "あり (SN74LXC1T45版)"], ["0", "なし (3ステート版)"]] },
+  ],
+});
+
+const SCHEMA = [
+  { title: "ボード", items: [
+    { key: "MRD_BOARD_SERVO_IF", type: "select", label: "サーボIF回路",
+      hint: "R系統のTX/RXピンと, 受信中のTX出力OFFがこれに連動します",
+      options: [["0", "3ステートバッファ版 (Ver L1.43より前・無印)"], ["1", "SN74LXC1T45版 (Ver L1.43以上)"]],
+      children: [
+        { type: "info", label: "R系統 TX / RX", text: (v) => (v === "1" ? "GPIO14 / GPIO13" : "GPIO17 / GPIO16") },
+        { type: "info", label: "受信中のTX出力OFF (SERVO_TX_RELEASE)", text: (v) => (v === "1" ? "有効" : "無効") },
+      ] },
+  ] },
+  { title: "動作モード", items: [
+    { key: "MODE_ESP32_STANDALONE", type: "switch", label: "ボード単体動作", hint: "ONにするとサーボ通信を行いません (ESP32単体での動作確認用)" },
+    { key: "MODE_UDP_RECEIVE", type: "switch", label: "PCからのUDP受信", children: [
+      { key: "UDP_TIMEOUT_US", type: "number", label: "受信待ちタイムアウト", unit: "µs", min: 0, step: 100 },
+      { key: "UDP_POLL_US", type: "number", label: "受信確認の間隔", unit: "µs", min: 1, step: 10 },
+    ] },
+    { key: "MODE_UDP_SEND", type: "switch", label: "PCへのUDP送信" },
+  ] },
+  { title: "ネットワーク", sub: "通信方式は config.h, アドレス類は keys.h に保存", items: [
+    { key: "MODE_ETHER", type: "select", label: "通信方式", options: [["0", "WiFi"], ["1", "有線LAN (W5500)"]], children: [
+      // WiFi
+      { key: "WIFI_AP_SSID", type: "text", label: "WiFi SSID", show: (v) => v === "0" },
+      { key: "WIFI_AP_PASS", type: "password", label: "WiFi パスワード", show: (v) => v === "0" },
+      { key: "WIFI_SEND_IP", type: "text", fmt: "ip", label: "送り先PCのIPアドレス", show: (v) => v === "0" },
+      { key: "MODE_FIXED_IP", type: "switch", label: "ESP32のIPアドレスを固定", show: (v) => v === "0", children: [
+        { key: "FIXED_IP_ADDR", type: "text", fmt: "ip", label: "ESP32のIPアドレス" },
+        { key: "FIXED_IP_GATEWAY", type: "text", fmt: "ip", label: "ゲートウェイ (ルーター)" },
+        { key: "FIXED_IP_SUBNET", type: "text", fmt: "ip", label: "サブネットマスク" },
+      ] },
+      // 有線LAN
+      { key: "ETHER_LOCAL_IP", type: "text", fmt: "ip", label: "ESP32のIPアドレス", show: (v) => v === "1" },
+      { key: "ETHER_GATEWAY", type: "text", fmt: "ip", label: "送り先PCのIPアドレス", show: (v) => v === "1",
+        hint: "keys.h 上の名前は ETHER_GATEWAY ですが, 送り先PCのIPアドレスとして使われます" },
+      { key: "ETHER_SUBNET", type: "text", fmt: "ip", label: "サブネットマスク", show: (v) => v === "1" },
+      { key: "ETHER_DNS", type: "text", fmt: "ip", label: "DNSサーバー", show: (v) => v === "1" },
+      { key: "ETHER_MAC", type: "text", fmt: "mac", label: "MACアドレス (W5500)", show: (v) => v === "1" },
+    ] },
+    { key: "UDP_SEND_PORT", type: "number", fmt: "port", label: "送り先PCのポート番号", min: 1 },
+    { key: "UDP_RECV_PORT", type: "number", fmt: "port", label: "ESP32の受信ポート番号", min: 1 },
+  ] },
+  { title: "周辺機器", items: [
+    { key: "MOUNT_SD", type: "switch", label: "SDカード", children: [
+      { key: "CHECK_SD_RW", type: "switch", label: "起動時に読み書きチェック" },
+    ] },
+    { key: "MOUNT_IMUAHRS", type: "select", label: "IMU / AHRS",
+      options: [["NO_IMU", "なし"], ["MPU6050_IMU", "MPU6050"], ["MPU9250_IMU", "MPU9250 (未実装)"], ["BNO055_AHRS", "BNO055"]],
+      children: [
+        { key: "IMUAHRS_INTERVAL", type: "number", label: "読み取り間隔", unit: "ms", min: 1, show: NOT("NO_IMU") },
+        { key: "IMUAHRS_STOCK", type: "number", label: "移動平均のデータ数", min: 1, show: (v) => v === "MPU6050_IMU" },
+        { key: "I2C0_SPEED", type: "select", label: "I2C速度", unit: "Hz", show: NOT("NO_IMU"),
+          options: [["100000", "100kHz"], ["400000", "400kHz (推奨)"]] },
+      ] },
+    { key: "MOUNT_PAD", type: "select", label: "ジョイパッド",
+      options: [["PC", "PC (コンソールから入力)"], ["MERIMOTE", "MERIMOTE (未導入)"], ["BLUERETRO", "BLUERETRO (未導入)"],
+        ["SBDBT", "SBDBT (未導入)"], ["KRR5FH", "KRR-5FH (KRC-5FH)"], ["WIIMOTE", "WIIMOTE"], ["WIIMOTE_C", "WIIMOTE + Classic"]],
+      children: [
+        { key: "PAD_INIT_TIMEOUT", type: "number", label: "接続待ちタイムアウト", unit: "ms", min: 0, step: 1000,
+          show: (v) => v.startsWith("WIIMOTE") },
+        { key: "PAD_INTERVAL", type: "number", label: "読み取り間隔", unit: "フレーム", min: 1, hint: "KRC-5FHは4推奨", show: NOT("PC") },
+        { key: "PAD_BUTTON_MARGE", type: "select", label: "Meridimのボタン値との合成", show: NOT("PC"),
+          options: [["1", "論理和 (OR)"], ["0", "論理積 (AND)"]] },
+        { key: "PAD_GENERALIZE", type: "switch", label: "ボタン配置をPS系に一般化", show: NOT("PC") },
+      ] },
+  ] },
+  { title: "EEPROM", items: [
+    { key: "EEPROM_SET", type: "switch", label: "起動時に config.h の値を書き込む" },
+    { key: "EEPROM_LOAD", type: "switch", label: "起動時にサーボ設定を読み込む" },
+    { key: "EEPROM_PROTECT", type: "switch", label: "書き込み禁止 (保護)" },
+    { key: "EEPROM_DUMP", type: "switch", label: "起動時に内容を表示", children: [
+      { key: "EEPROM_STYLE", type: "select", label: "表示形式", options: [["Dec", "10進数"], ["Hex", "16進数"], ["Bin", "2進数"]] },
+    ] },
+    { key: "CHECK_EEPROM_RW", type: "switch", label: "起動時に読み書きチェック", unused: true },
+  ] },
+  { title: "シリアルモニタ", items: [
+    { key: "SERIAL_PC_BPS", type: "select", label: "通信速度", unit: "bps",
+      options: [["115200", "115200"], ["230400", "230400"], ["460800", "460800"], ["921600", "921600"]] },
+    { key: "SERIAL_PC_TIMEOUT", type: "number", label: "接続待ちタイムアウト", unit: "ms", min: 0, step: 100 },
+    { key: "MONITOR_FLOW", type: "switch", label: "処理フローを表示" },
+    { key: "MONITOR_SEQ", type: "switch", label: "シーケンス番号を表示" },
+    { key: "MONITOR_ERR_ALL", type: "switch", label: "全経路の受信エラーを表示" },
+    { key: "MONITOR_FRAME_DELAY", type: "switch", label: "フレーム遅延を表示", unused: true },
+    { key: "MONITOR_ERR_SERVO", type: "switch", label: "サーボエラーを表示", unused: true },
+    { key: "MONITOR_PAD", type: "switch", label: "リモコンのデータを表示", unused: true },
+    { key: "MONITOR_SUPPRESS_DURATION", type: "number", label: "起動直後のタイムアウト表示を抑制", unit: "ms", min: 0, step: 1000 },
+  ] },
+  { title: "サーボ", id: "servoCard", items: [
+    servoLine("L", "L系統"),
+    servoLine("R", "R系統"),
+    { key: "SERVO_LOST_ERR_WAIT", type: "number", label: "通信異常と判定する連続失敗数", unit: "フレーム", min: 1 },
+    { key: "SERVO_STEP_MAX", type: "number", label: "1フレームあたりの最大移動量", unit: "deg", min: 0, step: 0.1, float: true },
+  ] },
+];
+
+const ADVANCED = [
+  { title: "Meridim / タイミング", items: [
+    { key: "FRAME_DURATION", type: "number", label: "1フレームの時間", unit: "ms", min: 1 },
+    { key: "CHARGE_TIME", type: "number", label: "起動時のコンデンサ充電待ち", unit: "ms", min: 0 },
+    { key: "MRDM_LEN", type: "number", label: "Meridim配列の長さ", min: 1 },
+    { key: "MRD_L_ORIGIDX", type: "number", label: "L系統の先頭インデックス", min: 0 },
+    { key: "MRD_R_ORIGIDX", type: "number", label: "R系統の先頭インデックス", min: 0 },
+    { key: "MRD_SERVO_SLOTS", type: "number", label: "1系統あたりの最大サーボ数", min: 1 },
+    { key: "EEPROM_SIZE", type: "number", label: "EEPROMのサイズ", unit: "byte", min: 1 },
+    { key: "SPI0_SPEED", type: "number", label: "SPI速度", unit: "Hz", min: 1, step: 1000000 },
+  ] },
+  { title: "ピンアサイン", items: [
+    { key: "PIN_EN_L", type: "number", label: "L系統 EN (DIR)", min: 0 },
+    { key: "PIN_TX_L", type: "number", label: "L系統 TX", min: 0 },
+    { key: "PIN_RX_L", type: "number", label: "L系統 RX", min: 0 },
+    { key: "PIN_EN_R", type: "number", label: "R系統 EN (DIR)", min: 0 },
+    { type: "info", label: "R系統 TX / RX", text: () => (val("MRD_BOARD_SERVO_IF") === "1" ? "GPIO14 / GPIO13" : "GPIO17 / GPIO16"),
+      hint: "「ボード」のサーボIF回路で切り替わります" },
+    { key: "PIN_ERR_LED", type: "number", label: "エラーLED", min: 0 },
+    { key: "PIN_LED_BT", type: "number", label: "Bluetooth LED", min: 0 },
+    { key: "PIN_I2C0_SDA", type: "number", label: "I2C SDA", min: 0 },
+    { key: "PIN_I2C0_SCL", type: "number", label: "I2C SCL", min: 0 },
+    { key: "PIN_CHIPSELECT_SD", type: "number", label: "SDカード CS", min: 0 },
+    { key: "PIN_CHIPSELECT_LAN", type: "number", label: "有線LAN CS", min: 0 },
+    { key: "PIN_RESET_LAN", type: "number", label: "W5500 リセット", min: 0, unused: true },
+  ] },
+];
+
+const SERVO_ARRAYS = {
+  L: { mt: "IXL_MT", id: "IXL_ID", cw: "IXL_CW", trim: "IXL_TRIM" },
+  R: { mt: "IXR_MT", id: "IXR_ID", cw: "IXR_CW", trim: "IXR_TRIM" },
+};
+</script>
+
+<!-- ===================================================================
+     画面の生成と状態管理
+     =================================================================== -->
+<script>
+const $ = (s) => document.querySelector(s);
+
+// 扱うファイル. keys.h は任意 (見つからなくても config.h だけで動作する)
+const FILES = {
+  config: { input: "#path", lsKey: "meridian-config-path", def: "src/config.h", backup: true, required: true },
+  keys: { input: "#pathKeys", lsKey: "meridian-keys-path", def: "src/keys.h", backup: false, required: false },
+};
+const state = {
+  root: null,     // 選択したフォルダ (FileSystemDirectoryHandle)
+  files: {},      // fileId -> { text, path }  読み込んだ時点の内容
+  defs: {},       // 読み込んだ時点の #define (全ファイル分. defs[key].file で所属ファイル)
+  arrays: {},     // 読み込んだ時点の配列 (config.h)
+  defines: {},    // 編集中の #define の値
+  arrayVals: {},  // 編集中の配列の値
+  fallbackName: null,
+  servoTab: "L",
+  showPass: false,
+};
+const fsSupported = "showDirectoryPicker" in window;
+
+function setStatus(msg, cls = "") {
+  const el = $("#status");
+  el.textContent = msg;
+  el.className = "status " + cls;
+}
+const val = (key) => state.defines[key];
+const pathOf = (id) => $(FILES[id].input).value.trim();
+
+// ---- IndexedDB にフォルダの許可を保存する ----
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("meridian-config", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("kv");
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function idbGet(k) {
+  try {
+    const db = await idb();
+    return await new Promise((res) => {
+      const q = db.transaction("kv").objectStore("kv").get(k);
+      q.onsuccess = () => res(q.result);
+      q.onerror = () => res(undefined);
+    });
+  } catch { return undefined; }
+}
+async function idbSet(k, v) {
+  try {
+    const db = await idb();
+    db.transaction("kv", "readwrite").objectStore("kv").put(v, k);
+  } catch { /* 保存できなくても動作には影響しない */ }
+}
+function lsGet(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
+
+// ---- ファイルの読み書き ----
+async function resolveFile(root, path) {
+  const parts = path.split(/[\\/]+/).filter(Boolean);
+  if (!parts.length) throw new Error("パスが空です");
+  let dir = root;
+  for (const p of parts.slice(0, -1)) {
+    if (p === ".") continue;
+    if (p === "..") throw new Error("「..」は使えません (選択したフォルダより上は読めません)");
+    dir = await dir.getDirectoryHandle(p);
+  }
+  const name = parts[parts.length - 1];
+  return { dir, file: await dir.getFileHandle(name), name };
+}
+async function readText(fileHandle) {
+  return await (await fileHandle.getFile()).text();
+}
+async function writeText(fileHandle, text) {
+  const w = await fileHandle.createWritable();
+  await w.write(text);
+  await w.close();
+}
+
+async function pickFolder() {
+  if (!fsSupported) return openFallback();
+  try {
+    state.root = await window.showDirectoryPicker({ id: "meridian-lite", mode: "readwrite" });
+  } catch (e) {
+    if (e.name !== "AbortError") setStatus("フォルダを開けませんでした: " + e.message, "err");
+    return;
+  }
+  await idbSet("root", state.root);
+  await load();
+}
+
+async function ensurePermission() {
+  if (!state.root) return false;
+  const opt = { mode: "readwrite" };
+  if ((await state.root.queryPermission(opt)) === "granted") return true;
+  return (await state.root.requestPermission(opt)) === "granted";
+}
+
+async function load() {
+  if (!state.root) return;
+  if (!(await ensurePermission())) {
+    setStatus("フォルダへのアクセスが許可されませんでした", "err");
+    return;
+  }
+  const texts = {};
+  const notes = [];
+  for (const id of Object.keys(FILES)) {
+    const path = pathOf(id);
+    try {
+      const { file } = await resolveFile(state.root, path);
+      texts[id] = await readText(file);
+      notes.push(path);
+    } catch (e) {
+      if (FILES[id].required) {
+        showForm(false);
+        setStatus(`${state.root.name}/${path} を読み込めません: ${e.message}`, "err");
+        return;
+      }
+      notes.push(`${path} は見つかりません (この項目は編集できません)`);
+    }
+  }
+  loadTexts(texts);
+  setStatus(`${state.root.name}: ${notes.join(" / ")} を読み込みました`, "ok");
+  await loadVersion();
+}
+
+// config.h と同じフォルダの main.cpp からバージョンを読み取って表示する (読み込みのみ)
+async function loadVersion() {
+  const dir = pathOf("config").replace(/[^\\/]*$/, "");
+  let v = null;
+  try {
+    const { file } = await resolveFile(state.root, dir + "main.cpp");
+    v = parseVersion(await readText(file));
+  } catch { /* main.cpp が無い場合は表示しない */ }
+  showVersion(v);
+}
+function showVersion(v) {
+  const el = $("#version");
+  el.textContent = v || "";
+  el.title = v ? "main.cpp の VERSION" : "";
+}
+
+function loadTexts(texts) {
+  state.files = {};
+  state.defs = {};
+  for (const [id, text] of Object.entries(texts)) {
+    state.files[id] = { text };
+    for (const [k, d] of Object.entries(parseDefines(text))) {
+      if (!state.defs[k]) state.defs[k] = { ...d, file: id };
+    }
+  }
+  state.defines = {};
+  for (const [k, d] of Object.entries(state.defs)) state.defines[k] = d.value;
+  state.arrays = {};
+  state.arrayVals = {};
+  const cfg = texts.config || "";
+  for (const side of Object.values(SERVO_ARRAYS)) {
+    for (const name of Object.values(side)) {
+      const a = parseArray(cfg, name);
+      if (a) {
+        state.arrays[name] = a;
+        state.arrayVals[name] = a.items.map((it) => it.value);
+      }
+    }
+  }
+  render();
+  showForm(true);
+}
+
+function buildChanges(fileId) {
+  const defines = {};
+  for (const [k, d] of Object.entries(state.defs)) {
+    if (d.file === fileId && state.defines[k] !== d.value) defines[k] = state.defines[k];
+  }
+  const arrays = {};
+  if (fileId === "config") {
+    for (const [name, a] of Object.entries(state.arrays)) {
+      a.items.forEach((it, i) => {
+        if (state.arrayVals[name][i] !== it.value) (arrays[name] ||= {})[i] = state.arrayVals[name][i];
+      });
+    }
+  }
+  return { defines, arrays };
+}
+function changeCount(fileId) {
+  if (!fileId) return Object.keys(state.files).reduce((n, id) => n + changeCount(id), 0);
+  const c = buildChanges(fileId);
+  return Object.keys(c.defines).length + Object.values(c.arrays).reduce((n, o) => n + Object.keys(o).length, 0);
+}
+
+// 変更した項目のうち形式が正しくないもの
+function invalidChanges() {
+  const bad = [];
+  const walk = (items) => items.forEach((it) => {
+    if (it.key && it.fmt && state.defs[it.key] && state.defines[it.key] !== state.defs[it.key].value) {
+      const d = state.defs[it.key];
+      const s = d.string ? unquote(state.defines[it.key]) : state.defines[it.key];
+      if (checkFormat(it.fmt, s)) bad.push(it.label);
+    }
+    if (it.children) walk(it.children);
+  });
+  [...SCHEMA, ...ADVANCED].forEach((sec) => walk(sec.items));
+  return bad;
+}
+
+async function save() {
+  const total = changeCount();
+  if (!total) return;
+  const bad = invalidChanges();
+  if (bad.length) {
+    setStatus("形式が正しくない値があるため保存しませんでした: " + bad.join(", "), "err");
+    return;
+  }
+  const newTexts = {};
+  for (const [id, f] of Object.entries(state.files)) {
+    newTexts[id] = changeCount(id) ? applyChanges(f.text, buildChanges(id)) : f.text;
+  }
+  if (!fsSupported || !state.root) return downloadFallback(newTexts.config);
+  try {
+    if (!(await ensurePermission())) throw new Error("書き込みが許可されませんでした");
+    // 先に全ファイルの外部変更を確認してから書き込む
+    const targets = [];
+    for (const id of Object.keys(state.files)) {
+      if (!changeCount(id)) continue;
+      const r = await resolveFile(state.root, pathOf(id));
+      const disk = await readText(r.file);
+      targets.push({ id, ...r, disk });
+    }
+    const changedOutside = targets.filter((t) => t.disk !== state.files[t.id].text).map((t) => t.name);
+    if (changedOutside.length) {
+      const go = confirm(`読み込んだあとに ${changedOutside.join(", ")} が他のプログラムで変更されています。\n` +
+        "上書きすると、その変更は失われます。\n上書きしますか？\n\n" +
+        "「キャンセル」で保存を中止します。「再読み込み」で最新の内容を読み直せます。");
+      if (!go) return;
+    }
+    const saved = [];
+    for (const t of targets) {
+      if (FILES[t.id].backup) {
+        const bak = await t.dir.getFileHandle(t.name + ".bak", { create: true });
+        await writeText(bak, t.disk);
+      }
+      await writeText(t.file, newTexts[t.id]);
+      saved.push(`${t.name} ${changeCount(t.id)}件` + (FILES[t.id].backup ? ` (元の内容は ${t.name}.bak)` : ""));
+    }
+    loadTexts(newTexts);
+    setStatus(`保存しました: ${saved.join(", ")} — ${new Date().toLocaleTimeString()}`, "ok");
+  } catch (e) {
+    setStatus("保存できませんでした: " + e.message, "err");
+  }
+}
+
+// ---- File System Access API が無いブラウザ用 (config.h のみ) ----
+function openFallback() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".h,text/plain";
+  input.onchange = async () => {
+    const f = input.files[0];
+    if (!f) return;
+    state.fallbackName = f.name;
+    loadTexts({ config: await f.text() });
+    setStatus(`${f.name} を読み込みました (このブラウザでは保存時にダウンロードされます. keys.h は編集できません)`, "ok");
+  };
+  input.click();
+}
+function downloadFallback(text) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
+  a.download = state.fallbackName || "config.h";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  loadTexts({ config: text });
+  setStatus("変更した config.h をダウンロードしました。src/ の config.h と置き換えてください。", "ok");
+}
+
+// ---- 画面生成 ----
+function showForm(on) {
+  $("#form").classList.toggle("hidden", !on);
+  $("#empty").classList.toggle("hidden", on);
+  $("#btnReload").disabled = !on || !fsSupported;
+  updateSaveButton();
+}
+function updateSaveButton() {
+  const n = state.files.config ? changeCount() : 0;
+  $("#btnSave").disabled = !n;
+  $("#btnSave").textContent = n ? `保存 (${n}件)` : "保存";
+}
+
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (v !== undefined && v !== null && v !== false) e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of kids.flat(Infinity)) if (c !== null && c !== undefined && c !== false) e.append(c);
+  return e;
+}
+
+// 形式チェックの結果 (値を表示用に変換してから判定する)
+function formatError(item) {
+  const d = state.defs[item.key];
+  if (!item.fmt || !d) return "";
+  return checkFormat(item.fmt, d.string ? unquote(val(item.key)) : val(item.key));
+}
+
+function control(item) {
+  const d = state.defs[item.key];
+  const v = val(item.key);
+  if (!d) {
+    const where = FILES.keys && /^(WIFI_|UDP_|FIXED_IP_|ETHER_)/.test(item.key) ? "keys.h" : "config.h";
+    return el("span", { class: "readonly" }, `${where} に見つかりません`);
+  }
+  const editable = !d.dup && d.single;
+  if (!editable) return el("span", { class: "readonly" }, d.value);
+  const set = (nv) => { state.defines[item.key] = nv; render(); };
+  if (item.type === "switch") {
+    const cb = el("input", { type: "checkbox", onchange: (e) => set(e.target.checked ? "1" : "0") });
+    cb.checked = v === "1";
+    return el("label", { class: "switch", title: item.key }, cb, el("span"));
+  }
+  if (item.type === "select") {
+    const opts = [...item.options];
+    if (!opts.some(([o]) => o === v)) opts.push([v, `${v} (現在の値)`]);
+    const s = el("select", { onchange: (e) => set(e.target.value) },
+      opts.map(([o, l]) => el("option", { value: o }, l)));
+    s.value = v;
+    return el("span", { class: "ctrl" }, s, item.unit ? el("span", { class: "unit" }, item.unit) : null);
+  }
+  if (item.type === "text" || item.type === "password") {
+    const shown = d.string ? unquote(v) : v;
+    const isPass = item.type === "password";
+    const inp = el("input", {
+      type: isPass && !state.showPass ? "password" : "text", class: "text" + (formatError(item) ? " invalid" : ""),
+      value: shown, spellcheck: "false", autocomplete: "off",
+      onchange: (e) => set(d.string ? quote(e.target.value) : e.target.value.trim()),
+    });
+    const toggle = isPass ? el("button", { type: "button", title: "パスワードの表示を切り替え",
+      onclick: () => { state.showPass = !state.showPass; render(); } }, state.showPass ? "隠す" : "表示") : null;
+    const err = formatError(item);
+    return el("span", { class: "ctrl wrap" }, inp, toggle, err ? el("span", { class: "err-hint" }, err) : null);
+  }
+  if (item.type === "number") {
+    const err = formatError(item);
+    const inp = el("input", { type: "number", min: item.min, max: item.fmt === "port" ? 65535 : undefined,
+      step: item.step || 1, value: v, class: err ? "invalid" : "",
+      onchange: (e) => {
+        const raw = e.target.value.trim();
+        if (raw === "" || isNaN(Number(raw))) { e.target.value = val(item.key); return; }
+        set(item.float ? (raw.includes(".") ? raw : raw + ".0") : String(Math.trunc(Number(raw))));
+      } });
+    return el("span", { class: "ctrl wrap" }, inp, el("span", { class: "unit" }, item.unit || ""),
+      err ? el("span", { class: "err-hint" }, err) : null);
+  }
+  return null;
+}
+
+function row(item, parentVal) {
+  if (item.show && !item.show(parentVal)) return null;
+  if (item.type === "info") {
+    return el("div", { class: "row" },
+      el("div", { class: "label" }, el("span", { class: "name" }, item.label),
+        item.hint ? el("span", { class: "hint" }, item.hint) : null),
+      el("span", { class: "readonly" }, item.text(parentVal)));
+  }
+  const d = state.defs[item.key];
+  const changed = d && state.defines[item.key] !== d.value;
+  const fileTag = d && d.file === "keys" ? " · keys.h" : "";
+  const r = el("div", { class: "row" + (changed ? " changed" : "") + (d ? "" : " missing") },
+    el("div", { class: "label" },
+      el("span", { class: "name" }, el("span", { class: "dot", title: "変更あり" }), item.label,
+        item.unused ? el("span", { class: "badge", title: "コード内で参照されていません" }, "未使用") : null),
+      el("span", { class: "key" }, item.key + fileTag),
+      item.hint ? el("span", { class: "hint" }, item.hint) : null),
+    control(item));
+  const out = [r];
+  if (item.children && d) {
+    const kids = item.children.map((c) => row(c, val(item.key))).filter(Boolean);
+    const showKids = item.type === "switch" ? ON(val(item.key)) : true;
+    if (kids.length && showKids) out.push(el("div", { class: "children" }, kids));
+  }
+  return out;
+}
+
+function card(sec) {
+  return el("section", { class: "card", id: sec.id },
+    el("h2", {}, sec.title, sec.sub ? el("span", { class: "sub" }, sec.sub) : null),
+    el("div", { class: "rows" }, sec.items.map((it) => row(it)).flat().filter(Boolean)));
+}
+
+function servoTable() {
+  const side = state.servoTab;
+  const names = SERVO_ARRAYS[side];
+  const mt = state.arrays[names.mt];
+  if (!mt) return el("div", { class: "note" }, "サーボの配列が config.h に見つかりません");
+  const setArr = (name, i, v) => { state.arrayVals[name][i] = v; render(); };
+  const cell = (name, i, node) => {
+    const a = state.arrays[name];
+    const changed = a && a.items[i] && state.arrayVals[name][i] !== a.items[i].value;
+    return el("td", { class: changed ? "changed-cell" : "" }, node);
+  };
+  const rows = mt.items.map((it, i) => {
+    const mount = state.arrayVals[names.mt][i];
+    const mtSel = el("select", { onchange: (e) => setArr(names.mt, i, e.target.value) },
+      SERVO_TYPES.map(([o, l]) => el("option", { value: o }, l)));
+    if (!SERVO_TYPES.some(([o]) => o === mount)) mtSel.append(el("option", { value: mount }, mount));
+    mtSel.value = mount;
+    const num = (name, isFloat, step) => {
+      if (!state.arrays[name] || state.arrayVals[name][i] === undefined) return el("span", { class: "readonly" }, "-");
+      return el("input", { type: "number", step, value: state.arrayVals[name][i],
+        onchange: (e) => {
+          const f = formatNumber(e.target.value, isFloat);
+          if (f === null) { e.target.value = state.arrayVals[name][i]; return; }
+          setArr(name, i, f);
+        } });
+    };
+    let cw = el("span", { class: "readonly" }, "-");
+    if (state.arrays[names.cw]) {
+      const cb = el("input", { type: "checkbox", onchange: (e) => setArr(names.cw, i, e.target.checked ? "-1" : "1") });
+      cb.checked = state.arrayVals[names.cw][i] === "-1";
+      cw = el("label", { class: "switch", title: "ONで逆転 (-1)" }, cb, el("span"));
+    }
+    return el("tr", { class: mount === "0" ? "off" : "" },
+      el("td", { class: "idx" }, String(i).padStart(2, "0")),
+      el("td", {}, it.label || "-"),
+      el("td", { class: "mt" + (mount !== it.value ? " changed-cell" : "") }, mtSel),
+      cell(names.id, i, num(names.id, false, 1)),
+      cell(names.cw, i, cw),
+      cell(names.trim, i, num(names.trim, true, 0.01)));
+  });
+  return el("div", { class: "table-wrap" },
+    el("table", {},
+      el("thead", {}, el("tr", {}, ["#", "部位", "サーボの種類", "ID", "逆転", "トリム (deg)"].map((h) => el("th", {}, h)))),
+      el("tbody", {}, rows)));
+}
+
+function render() {
+  const form = $("#form");
+  const scrollY = window.scrollY;
+  const openAdv = form.querySelector("details")?.open ?? false;
+  form.innerHTML = "";
+  SCHEMA.forEach((sec) => form.append(card(sec)));
+  if (val("MODE_ESP32_STANDALONE") === "1") {
+    $("#servoCard").prepend(el("div", { class: "note" }, "ボード単体動作がONのため, サーボ通信は行われません"));
+  }
+  const tabs = el("div", { class: "tabs" }, ["L", "R"].map((s) =>
+    el("button", { class: state.servoTab === s ? "on" : "", onclick: () => { state.servoTab = s; render(); } }, s + "系統")));
+  form.append(el("section", { class: "card" },
+    el("h2", {}, "サーボ表", el("span", { class: "sub" }, "マウント・ID・回転方向・トリム")),
+    tabs, servoTable()));
+  const adv = el("details", { class: "card" }, el("summary", {}, "詳細設定"),
+    ADVANCED.map((sec) => el("div", {},
+      el("div", { class: "note", style: "padding-top:10px;font-weight:bold" }, sec.title),
+      el("div", { class: "rows" }, sec.items.map((it) => row(it)).flat().filter(Boolean)))));
+  adv.open = openAdv;
+  form.append(adv);
+  updateSaveButton();
+  window.scrollTo(0, scrollY);
+}
+
+// ---- 起動 ----
+for (const [id, f] of Object.entries(FILES)) {
+  const input = $(f.input);
+  input.value = lsGet(f.lsKey, f.def);
+  input.addEventListener("change", () => {
+    lsSet(f.lsKey, input.value.trim());
+    if (state.root) {
+      if (changeCount() && !confirm("保存していない変更を破棄して読み直しますか？")) return;
+      load();
+    }
+  });
+}
+$("#btnFolder").addEventListener("click", pickFolder);
+$("#btnReload").addEventListener("click", () => {
+  if (changeCount() && !confirm("保存していない変更を破棄して読み直しますか？")) return;
+  load();
+});
+$("#btnSave").addEventListener("click", save);
+window.addEventListener("beforeunload", (e) => {
+  if (state.files.config && changeCount()) { e.preventDefault(); e.returnValue = ""; }
+});
+
+(async () => {
+  if (!fsSupported) {
+    $("#btnFolder").textContent = "config.h を開く";
+    $("#pathKeys").disabled = true;
+    setStatus("このブラウザは直接保存に対応していません (Chrome / Edge 推奨)。保存はダウンロードになり, keys.h は編集できません。");
+    return;
+  }
+  const saved = await idbGet("root");
+  if (!saved) return;
+  state.root = saved;
+  if ((await saved.queryPermission({ mode: "readwrite" })) === "granted") {
+    await load();
+  } else {
+    setStatus(`前回のフォルダ「${saved.name}」があります。`);
+    const b = el("button", { class: "primary", onclick: async () => { b.remove(); await load(); } }, `「${saved.name}」に再接続`);
+    $("#status").append(" ", b);
+  }
+})();
+</script>
+</body>
+</html>
