@@ -71,6 +71,16 @@ public:
     m_serial.println(" bps");
   }
 
+  /// @brief 指定されたUARTラインの送信エコー処理の有無を表示する.
+  /// @param a_line UART通信ライン(L, R, またはC).
+  /// @param a_echo エコー処理を行う場合はtrue.
+  void servo_echo(UartLine a_line, bool a_echo) {
+    m_serial.print("Set UART_");
+    m_serial.print(mrd_get_line_name(a_line));
+    m_serial.print(" echo     : ");
+    m_serial.println(a_echo ? "detected (SN74LXC1T45)" : "none (3-state buffer)");
+  }
+
   /// @brief 指定されたUARTラインのサーボIDを表示する.
   /// @param a_label UARTラインのラベル.
   /// @param a_max サーボの最大数.
@@ -78,7 +88,7 @@ public:
   /// @param a_id サーボIDの配列.
   void print_servo_ids(const char *a_label, int a_max, int *a_mount, const int *a_id) {
     m_serial.print(a_label);
-    for (int i = 0; i <= a_max; i++) {
+    for (int i = 0; i < a_max; i++) {
       if (a_mount[i] != 0) {
         if (a_id[i] < 10) {
           m_serial.print(" ");
@@ -267,6 +277,15 @@ public:
       }
     }
     return false;
+  }
+
+  /// @brief デバッグ用のフロー表示. 表示OFF時は何もしない(文字列オブジェクトを生成しない).
+  /// @param a_text 表示する文字列.
+  /// @param a_disp 表示するかどうかのブール値.
+  void flow(const char *a_text, bool a_disp) {
+    if (a_disp) {
+      m_serial.print(a_text);
+    }
   }
 
   /// @brief 期待するシーケンス番号と実施に受信したシーケンス番号を表示する.

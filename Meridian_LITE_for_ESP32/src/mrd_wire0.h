@@ -116,31 +116,22 @@ bool mrd_wire0_setup(ImuAhrsType a_imuahrs_type, int a_i2c0_speed, AhrsValue &a_
 //  センサデータの取得処理
 //------------------------------------------------------------------------------------
 
+/// @brief ahrs.read をCore0のセンサスレッドとメインループで受け渡すための排他用スピンロック.
+portMUX_TYPE ahrs_mux = portMUX_INITIALIZER_UNLOCKED;
+
 /// @brief bno055からI2C経由でデータを読み取るスレッド用関数. IMUAHRS_INTERVALの間隔で実行する.
+///        I2Cの読み取りを先に済ませ, ahrs.read への書き込みだけを排他区間で行う.
 void mrd_wire0_Core0_bno055_r(void *args) {
   while (1) {
-    // 加速度センサ値の取得と表示 - VECTOR_ACCELEROMETER - m/s^2
+    // 加速度センサ値 - VECTOR_ACCELEROMETER - m/s^2
     imu::Vector<3> accelerometer = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-    ahrs.read[0] = (float)accelerometer.x();
-    ahrs.read[1] = (float)accelerometer.y();
-    ahrs.read[2] = (float)accelerometer.z();
-
-    // ジャイロセンサ値の取得 - VECTOR_GYROSCOPE - rad/s
+    // ジャイロセンサ値 - VECTOR_GYROSCOPE - rad/s
     imu::Vector<3> gyroscope = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
-    ahrs.read[3] = gyroscope.x();
-    ahrs.read[4] = gyroscope.y();
-    ahrs.read[5] = gyroscope.z();
-
-    // 磁力センサ値の取得と表示  - VECTOR_MAGNETOMETER - uT
+    // 磁力センサ値 - VECTOR_MAGNETOMETER - uT
     imu::Vector<3> magnetometer = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_MAGNETOMETER);
-    ahrs.read[6] = magnetometer.x();
-    ahrs.read[7] = magnetometer.y();
-    ahrs.read[8] = magnetometer.z();
-
-    // センサフュージョンによる方向推定値の取得と表示 - VECTOR_EULER - degrees
+    // センサフュージョンによる方向推定値 - VECTOR_EULER - degrees
     imu::Vector<3> euler = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-    ahrs.read[12] = euler.y();                   // DMP_ROLL推定値
-    ahrs.read[13] = euler.z();                   // DMP_PITCH推定値
+
     ahrs.yaw_source = euler.x();                 // ヨー軸のソースデータ保持
     float yaw_tmp = euler.x() - ahrs.yaw_origin; // DMP_YAW推定値
     if (yaw_tmp >= 180) {
@@ -148,10 +139,24 @@ void mrd_wire0_Core0_bno055_r(void *args) {
     } else if (yaw_tmp < -180) {
       yaw_tmp = yaw_tmp + 360;
     }
-    ahrs.read[14] = yaw_tmp; // DMP_YAW推定値
-    ahrs.ypr[0] = ahrs.read[14];
-    ahrs.ypr[1] = ahrs.read[13];
-    ahrs.ypr[2] = ahrs.read[12];
+
+    portENTER_CRITICAL(&ahrs_mux);
+    ahrs.read[0] = (float)accelerometer.x();
+    ahrs.read[1] = (float)accelerometer.y();
+    ahrs.read[2] = (float)accelerometer.z();
+    ahrs.read[3] = gyroscope.x();
+    ahrs.read[4] = gyroscope.y();
+    ahrs.read[5] = gyroscope.z();
+    ahrs.read[6] = magnetometer.x();
+    ahrs.read[7] = magnetometer.y();
+    ahrs.read[8] = magnetometer.z();
+    ahrs.read[12] = euler.y(); // DMP_ROLL推定値
+    ahrs.read[13] = euler.z(); // DMP_PITCH推定値
+    ahrs.read[14] = yaw_tmp;   // DMP_YAW推定値
+    portEXIT_CRITICAL(&ahrs_mux);
+    ahrs.ypr[0] = yaw_tmp;
+    ahrs.ypr[1] = euler.z();
+    ahrs.ypr[2] = euler.y();
 
     // センサフュージョンの方向推定値のクオータニオン
     // imu::Quaternion quat = bno.getQuat();
@@ -246,21 +251,24 @@ bool mrd_wire0_read_ahrs_i2c(AhrsValue &a_ahrs) { // ※wireTimer0.beginの引�
 /// @return データの書き込みが成功した場合はtrue, それ以外の場合はfalseを返す.
 bool meriput90_ahrs(Meridim90Union &a_meridim, float a_ahrs_result[], int a_type) {
   if (a_type == BNO055_AHRS) {
-    flg.imuahrs_available = false;
-    a_meridim.sval[2] = mrd.float2HfShort(a_ahrs_result[0]);   // IMU/AHRS_acc_x
-    a_meridim.sval[3] = mrd.float2HfShort(a_ahrs_result[1]);   // IMU/AHRS_acc_y
-    a_meridim.sval[4] = mrd.float2HfShort(a_ahrs_result[2]);   // IMU/AHRS_acc_z
-    a_meridim.sval[5] = mrd.float2HfShort(a_ahrs_result[3]);   // IMU/AHRS_gyro_x
-    a_meridim.sval[6] = mrd.float2HfShort(a_ahrs_result[4]);   // IMU/AHRS_gyro_y
-    a_meridim.sval[7] = mrd.float2HfShort(a_ahrs_result[5]);   // IMU/AHRS_gyro_z
-    a_meridim.sval[8] = mrd.float2HfShort(a_ahrs_result[6]);   // IMU/AHRS_mag_x
-    a_meridim.sval[9] = mrd.float2HfShort(a_ahrs_result[7]);   // IMU/AHRS_mag_y
-    a_meridim.sval[10] = mrd.float2HfShort(a_ahrs_result[8]);  // IMU/AHRS_mag_z
-    a_meridim.sval[11] = mrd.float2HfShort(a_ahrs_result[15]); // temperature
-    a_meridim.sval[12] = mrd.float2HfShort(a_ahrs_result[12]); // DMP_ROLL推定値
-    a_meridim.sval[13] = mrd.float2HfShort(a_ahrs_result[13]); // DMP_PITCH推定値
-    a_meridim.sval[14] = mrd.float2HfShort(a_ahrs_result[14]); // DMP_YAW推定値
-    flg.imuahrs_available = true;
+    // センサスレッドの書き込み途中の値を読まないよう, 排他区間でまとめてコピーしてから変換する
+    float val_tmp[16];
+    portENTER_CRITICAL(&ahrs_mux);
+    memcpy(val_tmp, a_ahrs_result, sizeof(val_tmp));
+    portEXIT_CRITICAL(&ahrs_mux);
+    a_meridim.sval[2] = mrd.float2HfShort(val_tmp[0]);   // IMU/AHRS_acc_x
+    a_meridim.sval[3] = mrd.float2HfShort(val_tmp[1]);   // IMU/AHRS_acc_y
+    a_meridim.sval[4] = mrd.float2HfShort(val_tmp[2]);   // IMU/AHRS_acc_z
+    a_meridim.sval[5] = mrd.float2HfShort(val_tmp[3]);   // IMU/AHRS_gyro_x
+    a_meridim.sval[6] = mrd.float2HfShort(val_tmp[4]);   // IMU/AHRS_gyro_y
+    a_meridim.sval[7] = mrd.float2HfShort(val_tmp[5]);   // IMU/AHRS_gyro_z
+    a_meridim.sval[8] = mrd.float2HfShort(val_tmp[6]);   // IMU/AHRS_mag_x
+    a_meridim.sval[9] = mrd.float2HfShort(val_tmp[7]);   // IMU/AHRS_mag_y
+    a_meridim.sval[10] = mrd.float2HfShort(val_tmp[8]);  // IMU/AHRS_mag_z
+    a_meridim.sval[11] = mrd.float2HfShort(val_tmp[15]); // temperature
+    a_meridim.sval[12] = mrd.float2HfShort(val_tmp[12]); // DMP_ROLL推定値
+    a_meridim.sval[13] = mrd.float2HfShort(val_tmp[13]); // DMP_PITCH推定値
+    a_meridim.sval[14] = mrd.float2HfShort(val_tmp[14]); // DMP_YAW推定値
     return true;
   }
   return false;

@@ -178,4 +178,13 @@ bool mrd_meriput90_cksm(Meridim90Union &a_meridim, int len = 90) {
   return true;
 }
 
+/// @brief 目標値の変化量を基準値から±a_step_maxの範囲に制限する.
+/// @param a_tgt 目標値.
+/// @param a_base 基準値(前回の指令値など).
+/// @param a_step_max 最大変化量.
+/// @return 制限後の目標値.
+float mrd_limit_step(float a_tgt, float a_base, float a_step_max) {
+  return constrain(a_tgt, a_base - a_step_max, a_base + a_step_max);
+}
+
 #endif //__MERIDIAN_UTILITY_H__

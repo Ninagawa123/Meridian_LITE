@@ -4,6 +4,7 @@
 // ヘッダファイルの読み込み
 #include "config.h"
 #include "main.h"
+#include "mrd_servo.h" // ICSサーボのインスタンス(KRC-5FH受信機の読み取りに使用)
 
 // ライブラリ導入
 #include <ESP32Wiimote.h> // Wiiコントローラー
@@ -30,7 +31,7 @@ constexpr unsigned short PAD_TABLE_KRC5FH_TO_COMMON[16] = { //
 /// @brief KRC-5FHジョイパッドからデータを読み取り, 指定された間隔でデータを更新する.
 /// @param a_interval 読み取り間隔(ミリ秒).
 /// @return 更新されたジョイパッドの状態を64ビット整数で返す.
-uint64_t mrd_pad_read_krc(uint a_interval, IcsHardSerialClass &a_ics) {
+uint64_t mrd_pad_read_krc(uint a_interval, IcsBaseClass &a_ics) {
   static uint64_t pre_val_tmp = 0; // 前回の値を保持する静的変数
   int8_t pad_analog_tmp[4] = {0};  // アナログ入力のデータ組み立て用
   static int calib[4] = {0};       // アナログスティックのキャリブレーション値

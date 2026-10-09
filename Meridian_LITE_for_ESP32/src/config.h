@@ -11,6 +11,7 @@
 //   22          -  BNO005 SDA
 //   GND         -  BNO005 GND
 //
+// サーボIF: 3ステートバッファ版 (MRD_BOARD_SERVO_IF 0)
 //   4  EN       -  ICS変換基板 R系統 EN
 //   16 RX       -  ICS変換基板 R系統 TX
 //   17 TX       -  ICS変換基板 R系統 RX
@@ -22,6 +23,17 @@
 //   27 TX       -  ICS変換基板 L系統 RX
 //   5V          -  ICS変換基板 IOREF
 //   GND         -  ICS変換基板 GND
+//
+// サーボIF: SN74LXC1T45版 (MRD_BOARD_SERVO_IF 1)
+//   4  EN       -  SN74LXC1T45 R系統 DIR (H:送信 A->B, L:受信 B->A)
+//   13 RX       -  SN74LXC1T45 R系統 A (直結)
+//   14 TX       -  SN74LXC1T45 R系統 A (直結, 受信中は出力OFF)
+//   33 EN       -  SN74LXC1T45 L系統 DIR (H:送信 A->B, L:受信 B->A)
+//   32 RX       -  SN74LXC1T45 L系統 A (直結)
+//   27 TX       -  SN74LXC1T45 L系統 A (直結, 受信中は出力OFF)
+//   3V3         -  SN74LXC1T45 VCCA
+//   5V          -  SN74LXC1T45 VCCB
+//   GND         -  SN74LXC1T45 GND
 //
 //   19          -  SPI_MISO
 //   23          -  SPI_MOSI
@@ -40,8 +52,8 @@
 //   10          -  NG(FLASH WP)
 //   11          -  NG(FLASH CS)
 //   12          -  NG(起動時LOW必須/電圧設定1.8Vor3.3V)
-//   13          -  OK/LED?
-//   14          -  OK/(SPI HS CLK)
+//   13          -  OK/LED? (SN74LXC1T45版ではサーボR系統 RX)
+//   14          -  OK/(SPI HS CLK) (SN74LXC1T45版ではサーボR系統 TX)
 //   25          -  OK/BOARD PIN(Input/Output)/DAC出力0-3.3V
 //   26          -  OK/BOARD PIN(Input/Output)/DAC出力0-3.3V
 //   34          -  OK/BOARD PIN, アナログ入力のみ（PD/PD/出力不可）
@@ -114,6 +126,10 @@
 //  各種設定
 //-------------------------------------------------------------------------
 
+// Meridian Boardのバージョン(サーボIF回路の違い)
+// 1: Ver L1.43以上 (SN74LXC1T45版), 0: それ以前もしくは無印 (3ステートバッファ版)
+#define MRD_BOARD_SERVO_IF 1
+
 // Meridimの基本設定
 #define MRDM_LEN        90  // Meridim配列の長さ設定(デフォルトは90)
 #define FRAME_DURATION  10  // 1フレームあたりの単位時間(単位ms, デフォルトは10)
@@ -123,30 +139,31 @@
 #define MRD_SERVO_SLOTS 15  // Meridim配列の1系統あたりの最大接続サーボ数(デフォルトは15)
 
 // 各種ハードウェアのマウント有無
-#define MOUNT_SD      0           // SDカードリーダーの有無s(0:なし, 1:あり)
-#define MOUNT_IMUAHRS BNO055_AHRS // IMU/AHRSの搭載 NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS
-#define MOUNT_PAD     PC          // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
+#define MOUNT_SD      0      // SDカードリーダーの有無s(0:なし, 1:あり)
+#define MOUNT_IMUAHRS NO_IMU // IMU/AHRSの搭載 NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS
+#define MOUNT_PAD     PC     // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
 
 // 動作モード
-#define MODE_ESP32_STANDALONE 1 // ESP32をボードに挿さず動作確認(0:NO, 1:YES)
+#define MODE_ESP32_STANDALONE 0 // ESP32をボードに挿さず動作確認(0:NO, 1:YES)
 #define MODE_UDP_RECEIVE      1 // PCからのデータ受信(0:OFF, 1:ON, 通常は1)
 #define MODE_UDP_SEND         1 // PCへのデータ送信(0:OFF, 1:ON, 通常は1)
 
 // Wifi/有線LANの設定(SSID, パスワード, 固定IP, MACアドレス等は別途keys.hで指定)
-#define MODE_ETHER    0 // WiFiか有線LANか(0:wifi, 1:有線LAN, 通常は0)
-#define MODE_FIXED_IP 0 // WiFi用IPアドレスを固定するか(0:NO, 1:YES)
-#define UDP_TIMEOUT   4 // UDPの待受タイムアウト(単位ms,推奨値0)
+#define MODE_ETHER     0    // WiFiか有線LANか(0:wifi, 1:有線LAN, 通常は0)
+#define MODE_FIXED_IP  0    // WiFi用IPアドレスを固定するか(0:NO, 1:YES)
+#define UDP_TIMEOUT_US 4000 // UDPの待受タイムアウト(単位us)
+#define UDP_POLL_US    100  // UDP待受中の受信確認間隔(単位us)
 
 // EEPROMの設定
 #define EEPROM_SIZE    540 // 使用するEEPROMのサイズ(バイト)
-#define EEPROM_SET     0   // 起動時にEEPROMにconfig.hの内容をセット(mrd_set_eeprom)
+#define EEPROM_SET     1   // 起動時にEEPROMにconfig.hの内容をセット(mrd_set_eeprom)
 #define EEPROM_PROTECT 0   // EEPROMの書き込み保護(0:保護しない, 1:書き込み禁止)
-#define EEPROM_LOAD    1   // 起動時にEEPROMの内容を諸設定にロードする
+#define EEPROM_LOAD    0   // 起動時にEEPROMの内容を諸設定にロードする
 #define EEPROM_DUMP    0   // 起動時のEEPROMデータのダンプ表示
 #define EEPROM_STYLE   Dec // 起動時のEEPROM内容のダンプ表示の書式(Bin,Hex,Dec)
 
 // 動作チェックモード
-#define CHECK_SD_RW     1 // 起動時のSDカードリーダーの読み書きチェック
+#define CHECK_SD_RW     0 // 起動時のSDカードリーダーの読み書きチェック
 #define CHECK_EEPROM_RW 0 // 起動時のEEPROMの動作チェック
 
 // シリアルモニタリング
@@ -179,12 +196,21 @@
 #define PAD_GENERALIZE   1     // ジョイパッドの入力値をPS系に一般化する
 
 // ピンアサイン
-#define PIN_ERR_LED        25 // LED用 処理が時間内に収まっていない場合に点灯
-#define PIN_EN_L           33 // サーボL系統のENピン
-#define PIN_EN_R           4  // サーボR系統のENピン
+#define PIN_ERR_LED 25 // LED用 処理が時間内に収まっていない場合に点灯
+#define PIN_EN_L    33 // サーボL系統のENピン
+#define PIN_TX_L    27 // サーボL系統のTXピン(Serial1)
+#define PIN_RX_L    32 // サーボL系統のRXピン(Serial1)
+#define PIN_EN_R    4  // サーボR系統のENピン
+#if MRD_BOARD_SERVO_IF == 1
+#define PIN_TX_R 14 // サーボR系統のTXピン(Serial2)
+#define PIN_RX_R 13 // サーボR系統のRXピン(Serial2)
+#else
+#define PIN_TX_R 17 // サーボR系統のTXピン(Serial2)
+#define PIN_RX_R 16 // サーボR系統のRXピン(Serial2)
+#endif
 #define PIN_CHIPSELECT_SD  15 // SDカード用のCSピン
 #define PIN_CHIPSELECT_LAN 5  // 有線LAN用のCSピン
-#define PIN_RESET_LAN      14 // W5500リセットピン(※ボード裏から半田付けにてフリーピンに配線)
+#define PIN_RESET_LAN      14 // W5500リセットピン(※ボード裏から半田付けにてフリーピンに配線) ※SN74LXC1T45版ではPIN_TX_Rと重複, 未使用
 #define PIN_I2C0_SDA       22 // I2CのSDAピン
 #define PIN_I2C0_SCL       21 // I2CのSCLピン
 #define PIN_LED_BT         26 // Bluetooth接続確認用ピン(点滅はペアリング,点灯でリンク確立)
@@ -204,11 +230,15 @@
 #define MOUNT_SERVO_TYPE_R 43 // R系統のコマンドサーボの種類
 
 // サーボ関連設定
-#define SERVO_BAUDRATE_L    1250000 // L系統のICSサーボの通信速度bps
-#define SERVO_BAUDRATE_R    1250000 // R系統のICSサーボの通信速度bps
-#define SERVO_TIMEOUT_L     2       // L系統のICS返信待ちのタイムアウト時間
-#define SERVO_TIMEOUT_R     2       // R系統のICS返信待ちのタイムアウト時間
-#define SERVO_LOST_ERR_WAIT 6       // 連続何フレームサーボ信号をロストしたら異常とするか
+#define SERVO_BAUDRATE_L    1250000                   // L系統のICSサーボの通信速度bps
+#define SERVO_BAUDRATE_R    1250000                   // R系統のICSサーボの通信速度bps
+#define SERVO_TIMEOUT_L     2                         // L系統のICS返信待ちのタイムアウト時間
+#define SERVO_TIMEOUT_R     2                         // R系統のICS返信待ちのタイムアウト時間
+#define SERVO_ECHO_L        2                         // L系統の送信エコー処理(0:なし/3ステート版, 1:あり/SN74LXC1T45版, 2:起動時に自動判定)
+#define SERVO_ECHO_R        2                         // R系統の送信エコー処理(0:なし/3ステート版, 1:あり/SN74LXC1T45版, 2:起動時に自動判定)
+#define SERVO_TX_RELEASE    (MRD_BOARD_SERVO_IF == 1) // 受信中にTXピンの出力を切る(TX/RXが1T45のA端子に直結の基板用)
+#define SERVO_LOST_ERR_WAIT 6                         // 連続何フレームサーボ信号をロストしたら異常とするか
+#define SERVO_STEP_MAX      3.0                       // 1フレームあたりの指令値の最大変化量(degree)
 
 // 各サーボ系統の最大サーボマウント数
 #define IXL_MAX 15 // L系統の最大サーボ数. 標準は15.

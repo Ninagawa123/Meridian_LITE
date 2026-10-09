@@ -1,7 +1,7 @@
 #ifndef __MERIDIAN_LITE_MAIN__
 #define __MERIDIAN_LITE_MAIN__
 
-#define VERSION "Meridian_LITE_v1.1.1_2026_04.26" // バージョン表示
+#define VERSION "Meridian_LITE_v1.2.0_2026_10.09" // バージョン表示
 
 /// @file    Meridian_LITE_for_ESP32/src/main.cpp
 /// @brief   Meridian is a system that smartly realizes the digital twin of a robot.
@@ -32,8 +32,12 @@
 #include "mrd_wire0.h"
 
 MERIDIANFLOW::Meridian mrd;
-IcsHardSerialClass ics_L(&Serial1, PIN_EN_L, SERVO_BAUDRATE_L, SERVO_TIMEOUT_L);
-IcsHardSerialClass ics_R(&Serial2, PIN_EN_R, SERVO_BAUDRATE_R, SERVO_TIMEOUT_R);
+
+// サーボ系統ごとの半二重UARTバスと, その上で動くプロトコル層
+MrdHalfDuplexUart sv_bus_L(&Serial1, PIN_RX_L, PIN_TX_L, PIN_EN_L, SERVO_ECHO_L, SERVO_TIMEOUT_L, SERVO_TX_RELEASE);
+MrdHalfDuplexUart sv_bus_R(&Serial2, PIN_RX_R, PIN_TX_R, PIN_EN_R, SERVO_ECHO_R, SERVO_TIMEOUT_R, SERVO_TX_RELEASE);
+IcsHalfDuplexClass ics_L(sv_bus_L, SERVO_BAUDRATE_L);
+IcsHalfDuplexClass ics_R(sv_bus_R, SERVO_BAUDRATE_R);
 
 // ライブラリ導入
 #include <Arduino.h>
@@ -53,7 +57,11 @@ void IRAM_ATTR frame_timer() {
   portENTER_CRITICAL_ISR(&timer_mux);
   count_timer++;
   portEXIT_CRITICAL_ISR(&timer_mux);
-  xSemaphoreGiveFromISR(timer_semaphore, NULL); // セマフォを与える
+  BaseType_t woken = pdFALSE;
+  xSemaphoreGiveFromISR(timer_semaphore, &woken); // セマフォを与える
+  if (woken == pdTRUE) {
+    portYIELD_FROM_ISR(); // 待機中のメインループを次のティックを待たずに再開させる
+  }
 }
 
 //==================================================================================================
@@ -84,7 +92,7 @@ void setup() {
   // サーボ値の初期設定
   sv.num_max = max(mrd_max_used_index(IXL_MT, IXL_MAX),  //
                    mrd_max_used_index(IXR_MT, IXR_MAX)); // サーボ処理回数
-  for (int i = 0; i <= sv.num_max; i++) {                // configで設定した値を反映させる
+  for (int i = 0; i < sv.num_max; i++) {                 // configで設定した値を反映させる
     sv.ixl_mount[i] = IXL_MT[i];
     sv.ixr_mount[i] = IXR_MT[i];
     sv.ixl_type[i] = IXL_MT[i];
@@ -105,6 +113,8 @@ void setup() {
   mrd_servo_begin(R, MOUNT_SERVO_TYPE_R);         // サーボモータの通信初期設定. Serial2
   mrd_disp.servo_protocol(L, MOUNT_SERVO_TYPE_L); // サーボプロトコルの表示
   mrd_disp.servo_protocol(R, MOUNT_SERVO_TYPE_R);
+  mrd_disp.servo_echo(L, sv_bus_L.echo()); // 送信エコー処理の有無の表示
+  mrd_disp.servo_echo(R, sv_bus_R.echo());
 
   // マウントされたサーボIDの表示
   mrd_disp.servo_mounts_2lines(sv);
@@ -240,32 +250,28 @@ void loop() {
   //------------------------------------------------------------------------------------
   //  [ 1 ] UDP送信
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[1]", monitor.flow); // デバグ用フロー表示
+  mrd_disp.flow("[1]", monitor.flow); // デバグ用フロー表示
 
   // @[1-1] UDP送信の実行
   if (flg.udp_send_mode) // UDPの送信実施フラグの確認(モード確認)
   {
-    flg.udp_busy = true; // UDP使用中フラグをアゲる
-    if (!MODE_ETHER) {   // 0ならwifi通信
+    if (!MODE_ETHER) { // 0ならwifi通信
       mrd_wifi_udp_send(s_udp_meridim.bval, MRDM_BYTE, udp);
     } else { // 1なら有線LAN通信
       // 事前にパース済みのIPアドレスを使用
       mrd_ether_udp_send(s_udp_meridim.bval, MRDM_BYTE, udp_et, ether_send_ip, UDP_SEND_PORT);
     }
-    flg.udp_busy = false; // UDP使用中フラグをサゲる
-    flg.udp_rcvd = false; // UDP受信完了フラグをサゲる
   }
 
   //------------------------------------------------------------------------------------
   //  [ 2 ] UDP受信
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[2]", monitor.flow); // デバグ用フロー表示
+  mrd_disp.flow("[2]", monitor.flow); // デバグ用フロー表示
 
   // @[2-1] UDPの受信待ち受けループ
   if (flg.udp_receive_mode) // UDPの受信実施フラグの確認(モード確認)
   {
-    unsigned long start_tmp = millis();
-    flg.udp_busy = true;  // UDP使用中フラグをアゲる
+    unsigned long wait_start_us = micros();
     flg.udp_rcvd = false; // UDP受信完了フラグをサゲる
     while (!flg.udp_rcvd) {
       // UDP受信処理
@@ -281,23 +287,21 @@ void loop() {
         }
       }
       // タイムアウト抜け処理
-      unsigned long current_tmp = millis();
-      if (current_tmp - start_tmp >= UDP_TIMEOUT) {
+      if (micros() - wait_start_us >= UDP_TIMEOUT_US) {
         if (millis() > MONITOR_SUPPRESS_DURATION) { // 起動直後はエラー表示を抑制
           Serial.println("UDP timeout");
         }
         flg.udp_rcvd = false;
         break;
       }
-      delay(1);
+      delayMicroseconds(UDP_POLL_US); // 受信確認の間隔
     }
   }
-  flg.udp_busy = false; // UDP使用中フラグをサゲる
 
   // @[2-2] チェックサムを確認
   if (mrd.cksm_rslt(r_udp_meridim.sval, MRDM_LEN)) // Check sum OK!
   {
-    mrd.monitor_check_flow("CsOK", monitor.flow); // デバグ用フロー表示
+    mrd_disp.flow("CsOK", monitor.flow); // デバグ用フロー表示
 
     // @[2-3] UDP受信配列から UDP送信配列にデータを転写
     memcpy(s_udp_meridim.bval, r_udp_meridim.bval, MRDM_LEN * 2);
@@ -305,24 +309,20 @@ void loop() {
     // @[2-4a] エラービット14番(ESP32のPCからのUDP受信エラー検出)をサゲる
     mrd_clear_bit16(s_udp_meridim.usval[MRD_ERR], ERRBIT_14_PC_ESP);
 
-    if (s_udp_meridim.sval[0] == MCMD_EEPROM_SAVE_TRIM) {
-      Serial.println(r_udp_meridim.sval[0]);
-    }
-
   } else // チェックサムがNGならバッファから転記せず前回のデータを使用する
   {
 
     // @[2-4b] エラービット14番(ESP32のPCからのUDP受信エラー検出)をアゲる
     mrd_set_bit16(s_udp_meridim.usval[MRD_ERR], ERRBIT_14_PC_ESP);
     err.pc_esp++;
-    mrd.monitor_check_flow("CsErr*", monitor.flow); // デバグ用フロー表示
+    mrd_disp.flow("CsErr*", monitor.flow); // デバグ用フロー表示
   }
 
   // @[2-5] シーケンス番号チェック
   mrdsq.r_expect = mrd_seq_predict_num(mrdsq.r_expect); // シーケンス番号予想値の生成
 
   // @[2-6] シーケンス番号のシリアルモニタ表示
-  mrd_disp.seq_number(mrdsq.r_expect, r_udp_meridim.usval[MRD_SEQ], monitor.seq_num);
+  mrd_disp.seq_number(mrdsq.r_expect, s_udp_meridim.usval[MRD_SEQ], monitor.seq_num);
 
   if (mrd.seq_compare_nums(mrdsq.r_expect, int(s_udp_meridim.usval[MRD_SEQ]))) {
 
@@ -343,7 +343,7 @@ void loop() {
   //------------------------------------------------------------------------------------
   //  [ 3 ] MasterCommand group1 の処理
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[3]", monitor.flow); // デバグ用フロー表示
+  mrd_disp.flow("[3]", monitor.flow); // デバグ用フロー表示
 
   // @[3-1] MasterCommand group1 の処理
   execute_master_command_1(s_udp_meridim, flg.meridim_rcvd, sv, Serial);
@@ -351,7 +351,7 @@ void loop() {
   //------------------------------------------------------------------------------------
   //  [ 4 ] センサー類読み取り
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[4]", monitor.flow); // デバグ用フロー表示
+  mrd_disp.flow("[4]", monitor.flow); // デバグ用フロー表示
 
   // @[4-1] センサ値のMeridimへの転記
   meriput90_ahrs(s_udp_meridim, ahrs.read, MOUNT_IMUAHRS); // BNO055_AHRS
@@ -359,7 +359,7 @@ void loop() {
   //------------------------------------------------------------------------------------
   //  [ 5 ] リモコンの読み取り
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[5]", monitor.flow); // デバグ用フロー表示
+  mrd_disp.flow("[5]", monitor.flow); // デバグ用フロー表示
 
   // @[5-1] リモコンデータの書き込み
   if (MOUNT_PAD > 0) { // リモコンがマウントされていれば
@@ -374,7 +374,7 @@ void loop() {
   //------------------------------------------------------------------------------------
   //  [ 6 ] MasterCommand group2 の処理
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[6]", monitor.flow); // デバグ用フロー表示
+  mrd_disp.flow("[6]", monitor.flow); // デバグ用フロー表示
 
   // @[6-1] MasterCommand group2 の処理
   execute_master_command_2(s_udp_meridim, flg.meridim_rcvd, sv, Serial);
@@ -382,34 +382,21 @@ void loop() {
   //------------------------------------------------------------------------------------
   //  [ 7 ] ESP32内部で位置制御する場合の処理
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[7]", monitor.flow); // デバグ用フロー表示
+  mrd_disp.flow("[7]", monitor.flow); // デバグ用フロー表示
 
-  // @[7-1] 前回のラストに読み込んだサーボ位置をサーボ配列に書き込む
-  for (int i = 0; i <= sv.num_max; i++) {
-    sv.ixl_tgt_past[i] = sv.ixl_tgt[i];                    // 前回のdegreeをキープ
-    sv.ixr_tgt_past[i] = sv.ixr_tgt[i];                    // 前回のdegreeをキープ
-    sv.ixl_tgt[i] = s_udp_meridim.sval[i * 2 + 21] * 0.01; // 受信したdegreeを格納
-    sv.ixr_tgt[i] = s_udp_meridim.sval[i * 2 + 51] * 0.01; // 受信したdegreeを格納
-  }
-
-  // 移動差が大きい時に和らげる補正フィルタ
-  float tgt_gap_max = 3.0; // ギャップの最大値
-
-  for (int i = 0; i <= sv.num_max; i++) {
-    if (abs(sv.ixl_tgt[i] - sv.ixl_tgt_past[i]) > tgt_gap_max) {
-      if (sv.ixl_tgt[i] > sv.ixl_tgt_past[i]) {
-        sv.ixl_tgt[i] = sv.ixl_tgt[i] - tgt_gap_max;
-      } else {
-        sv.ixl_tgt[i] = sv.ixl_tgt[i] + tgt_gap_max;
-      }
-    }
-    if (abs(sv.ixr_tgt[i] - sv.ixr_tgt_past[i]) > tgt_gap_max) {
-      if (sv.ixr_tgt[i] > sv.ixr_tgt_past[i]) {
-        sv.ixr_tgt[i] = sv.ixr_tgt[i] - tgt_gap_max;
-      } else {
-        sv.ixr_tgt[i] = sv.ixr_tgt[i] + tgt_gap_max;
-      }
-    }
+  // @[7-1] 前回読み込んだサーボ位置を保持し, 受信した目標値をサーボ配列に書き込む.
+  //        1フレームあたりの指令値の変化量はSERVO_STEP_MAX[degree]に制限する.
+  //        制限の基準は前回の指令値. 脱力中(コマンド0)は読み込んだ実角度を基準にし,
+  //        トルクオン時に現在の姿勢から動き出すようにする.
+  for (int i = 0; i < sv.num_max; i++) {
+    sv.ixl_tgt_past[i] = sv.ixl_tgt[i]; // 前回のdegreeをキープ
+    sv.ixr_tgt_past[i] = sv.ixr_tgt[i]; // 前回のdegreeをキープ
+    float base_l = (s_udp_meridim.sval[i * 2 + 20] == 1) ? sv.ixl_cmd_past[i] : sv.ixl_tgt_past[i];
+    float base_r = (s_udp_meridim.sval[i * 2 + 50] == 1) ? sv.ixr_cmd_past[i] : sv.ixr_tgt_past[i];
+    sv.ixl_tgt[i] = mrd_limit_step(s_udp_meridim.sval[i * 2 + 21] * 0.01, base_l, SERVO_STEP_MAX);
+    sv.ixr_tgt[i] = mrd_limit_step(s_udp_meridim.sval[i * 2 + 51] * 0.01, base_r, SERVO_STEP_MAX);
+    sv.ixl_cmd_past[i] = sv.ixl_tgt[i]; // 今回の指令値を次回の基準としてキープ
+    sv.ixr_cmd_past[i] = sv.ixr_tgt[i];
   }
 
   // @[7-2] ESP32による次回動作の計算
@@ -425,7 +412,7 @@ void loop() {
   //------------------------------------------------------------------------------------
   //  [ 8 ] サーボ動作の実行
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[8]", monitor.flow); // デバグ用フロー表示
+  mrd_disp.flow("[8]", monitor.flow); // デバグ用フロー表示
 
   // @[8-1] サーボ受信値の処理
   if (!MODE_ESP32_STANDALONE) {                                                      // サーボ処理を行うかどうか
@@ -438,10 +425,10 @@ void loop() {
   //------------------------------------------------------------------------------------
   //  [ 9 ] サーボ受信値の処理
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[9]", monitor.flow); // デバグ用フロー表示
+  mrd_disp.flow("[9]", monitor.flow); // デバグ用フロー表示
 
   // @[9-1] サーボIDごとにの現在位置もしくは計算結果を配列に格納
-  for (int i = 0; i <= sv.num_max; i++) {
+  for (int i = 0; i < sv.num_max; i++) {
     // 最新のサーボ角度をdegreeで格納
     s_udp_meridim.sval[i * 2 + 21] = mrd.float2HfShort(sv.ixl_tgt[i]);
     s_udp_meridim.sval[i * 2 + 51] = mrd.float2HfShort(sv.ixr_tgt[i]);
@@ -450,7 +437,7 @@ void loop() {
   //------------------------------------------------------------------------------------
   //  [ 10 ] エラーリポートの作成
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[10]", monitor.flow); // デバグ用フロー表示
+  mrd_disp.flow("[10]", monitor.flow); // デバグ用フロー表示
 
   // @[10-1] エラーリポートの表示
   // mrd_msg_all_err(err, monitor.all_err);
@@ -459,14 +446,14 @@ void loop() {
   //------------------------------------------------------------------------------------
   //  [ 11 ] MasterCommand group3 の処理
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[11]", monitor.flow); // デバグ用フロー表示
+  mrd_disp.flow("[11]", monitor.flow); // デバグ用フロー表示
 
   execute_master_command_3(s_udp_meridim, flg.meridim_rcvd, sv, Serial);
 
   //------------------------------------------------------------------------------------
   //  [ 12 ] UDP送信信号作成
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[12]", monitor.flow); // デバグ用フロー表示
+  mrd_disp.flow("[12]", monitor.flow); // デバグ用フロー表示
 
   // @[12-1] フレームスキップ検出用のカウントをカウントアップして送信用に格納
   mrdsq.s_increment = mrd.seq_increase_num(mrdsq.s_increment);
@@ -481,19 +468,19 @@ void loop() {
   //------------------------------------------------------------------------------------
   //   [ 13 ] フレーム終端処理
   //------------------------------------------------------------------------------------
-  mrd.monitor_check_flow("[13]", monitor.flow); // 動作チェック用シリアル表示
+  mrd_disp.flow("[13]", monitor.flow); // 動作チェック用シリアル表示
 
   // @[13-1] count_timerがcount_frameに追いつくまで待機
+  //         タイマー割り込みでセマフォが与えられるまでブロックし, その間CPUを空ける.
   count_frame++;
   while (true) {
-    if (xSemaphoreTake(timer_semaphore, 0) == pdTRUE) {
-      portENTER_CRITICAL(&timer_mux);
-      unsigned long current_count_timer = count_timer; // ハードウェアタイマーの値を読む
-      portEXIT_CRITICAL(&timer_mux);
-      if (current_count_timer >= count_frame) {
-        break;
-      }
+    portENTER_CRITICAL(&timer_mux);
+    unsigned long current_count_timer = count_timer; // ハードウェアタイマーの値を読む
+    portEXIT_CRITICAL(&timer_mux);
+    if (current_count_timer >= count_frame) {
+      break;
     }
+    xSemaphoreTake(timer_semaphore, portMAX_DELAY);
   }
 
   // @[13-2] 必要に応じてフレームの遅延累積時間frameDelayをリセット
@@ -501,9 +488,10 @@ void loop() {
     portENTER_CRITICAL(&timer_mux);
     count_frame = count_timer;
     portEXIT_CRITICAL(&timer_mux);
+    flg.count_frame_reset = false; // リセットは1回だけ行う
   }
 
-  mrd.monitor_check_flow("\n", monitor.flow); // 動作チェック用シリアル表示
+  mrd_disp.flow("\n", monitor.flow); // 動作チェック用シリアル表示
 }
 
 #endif // __MERIDIAN_LITE_MAIN__

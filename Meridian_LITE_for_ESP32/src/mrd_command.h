@@ -188,11 +188,7 @@ bool execute_master_command_3(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
   }
   // コマンド[90]: 1~999は MeridimのLength. デフォルトは90
 
-  // コマンド:[0] 全サーボ脱力
-  if (a_meridim.sval[MRD_MASTER] == 0) {
-    mrd_servo_all_off(a_meridim);
-    return true;
-  }
+  // コマンド:[0] 全サーボ脱力 は第2群で実行済み
 
   // コマンド:[1] サーボオン 通常動作
 
