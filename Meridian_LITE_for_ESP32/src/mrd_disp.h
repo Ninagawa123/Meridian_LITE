@@ -143,8 +143,7 @@ public:
         m_serial.println(" - Not supported yet.");
         break;
       case 32:
-        m_serial.print("DYNAMIXEL Protocol 2.0");
-        m_serial.println(" - Not supported yet.");
+        m_serial.println("DYNAMIXEL Protocol 2.0 (X series)");
         break;
       case 43:
         m_serial.println("ICS3.5/3.6(KONDO,KRS)");

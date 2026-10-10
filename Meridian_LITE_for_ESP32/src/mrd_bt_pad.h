@@ -190,8 +190,8 @@ uint64_t mrd_bt_read_wiimote() {
 /// @note WIIMOTEの場合は, スレッドがpad_array.ui64valを自動更新.
 uint64_t mrd_pad_read(PadType a_pad_type, uint64_t a_pad_data) {
 
-  if (a_pad_type == KRR5FH) { // KRR5FH
-    return mrd_pad_read_krc(PAD_INTERVAL, ics_R);
+  if (a_pad_type == KRR5FH) { // KRR5FH (R系統のICSに接続する受信機. R系統がICS以外なら読まない)
+    return (MOUNT_SERVO_TYPE_R == 43) ? mrd_pad_read_krc(PAD_INTERVAL, ics_R) : 0;
   }
 
   if (a_pad_type == WIIMOTE) { // Wiimote

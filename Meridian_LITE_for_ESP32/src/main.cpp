@@ -38,6 +38,8 @@ MrdHalfDuplexUart sv_bus_L(&Serial1, PIN_RX_L, PIN_TX_L, PIN_EN_L, SERVO_ECHO_L,
 MrdHalfDuplexUart sv_bus_R(&Serial2, PIN_RX_R, PIN_TX_R, PIN_EN_R, SERVO_ECHO_R, SERVO_TIMEOUT_R, SERVO_TX_RELEASE);
 IcsHalfDuplexClass ics_L(sv_bus_L, SERVO_BAUDRATE_L);
 IcsHalfDuplexClass ics_R(sv_bus_R, SERVO_BAUDRATE_R);
+Dxl2HalfDuplexClass dxl_L(sv_bus_L, SERVO_BAUDRATE_L, SERVO_DXL_TIMEOUT_US);
+Dxl2HalfDuplexClass dxl_R(sv_bus_R, SERVO_BAUDRATE_R, SERVO_DXL_TIMEOUT_US);
 
 // ライブラリ導入
 #include <Arduino.h>
@@ -57,9 +59,9 @@ void IRAM_ATTR frame_timer() {
   portENTER_CRITICAL_ISR(&timer_mux);
   count_timer++;
   portEXIT_CRITICAL_ISR(&timer_mux);
-  BaseType_t woken = pdFALSE;
-  xSemaphoreGiveFromISR(timer_semaphore, &woken); // セマフォを与える
-  if (woken == pdTRUE) {
+  BaseType_t woken_tmp = pdFALSE;
+  xSemaphoreGiveFromISR(timer_semaphore, &woken_tmp); // セマフォを与える
+  if (woken_tmp == pdTRUE) {
     portYIELD_FROM_ISR(); // 待機中のメインループを次のティックを待たずに再開させる
   }
 }
@@ -113,8 +115,12 @@ void setup() {
   mrd_servo_begin(R, MOUNT_SERVO_TYPE_R);         // サーボモータの通信初期設定. Serial2
   mrd_disp.servo_protocol(L, MOUNT_SERVO_TYPE_L); // サーボプロトコルの表示
   mrd_disp.servo_protocol(R, MOUNT_SERVO_TYPE_R);
-  mrd_disp.servo_echo(L, sv_bus_L.echo()); // 送信エコー処理の有無の表示
-  mrd_disp.servo_echo(R, sv_bus_R.echo());
+  if (MOUNT_SERVO_TYPE_L != 0) { // 送信エコー処理の有無の表示 (サーボなしの系統は通信しないので表示しない)
+    mrd_disp.servo_echo(L, sv_bus_L.echo());
+  }
+  if (MOUNT_SERVO_TYPE_R != 0) {
+    mrd_disp.servo_echo(R, sv_bus_R.echo());
+  }
 
   // マウントされたサーボIDの表示
   mrd_disp.servo_mounts_2lines(sv);
@@ -271,7 +277,7 @@ void loop() {
   // @[2-1] UDPの受信待ち受けループ
   if (flg.udp_receive_mode) // UDPの受信実施フラグの確認(モード確認)
   {
-    unsigned long wait_start_us = micros();
+    unsigned long wait_start_tmp = micros();
     flg.udp_rcvd = false; // UDP受信完了フラグをサゲる
     while (!flg.udp_rcvd) {
       // UDP受信処理
@@ -287,7 +293,7 @@ void loop() {
         }
       }
       // タイムアウト抜け処理
-      if (micros() - wait_start_us >= UDP_TIMEOUT_US) {
+      if (micros() - wait_start_tmp >= UDP_TIMEOUT_US) {
         if (millis() > MONITOR_SUPPRESS_DURATION) { // 起動直後はエラー表示を抑制
           Serial.println("UDP timeout");
         }
@@ -391,10 +397,10 @@ void loop() {
   for (int i = 0; i < sv.num_max; i++) {
     sv.ixl_tgt_past[i] = sv.ixl_tgt[i]; // 前回のdegreeをキープ
     sv.ixr_tgt_past[i] = sv.ixr_tgt[i]; // 前回のdegreeをキープ
-    float base_l = (s_udp_meridim.sval[i * 2 + 20] == 1) ? sv.ixl_cmd_past[i] : sv.ixl_tgt_past[i];
-    float base_r = (s_udp_meridim.sval[i * 2 + 50] == 1) ? sv.ixr_cmd_past[i] : sv.ixr_tgt_past[i];
-    sv.ixl_tgt[i] = mrd_limit_step(s_udp_meridim.sval[i * 2 + 21] * 0.01, base_l, SERVO_STEP_MAX);
-    sv.ixr_tgt[i] = mrd_limit_step(s_udp_meridim.sval[i * 2 + 51] * 0.01, base_r, SERVO_STEP_MAX);
+    const float base_l_tmp = (s_udp_meridim.sval[MRD_L_ORIGIDX + i * 2] == 1) ? sv.ixl_cmd_past[i] : sv.ixl_tgt_past[i];
+    const float base_r_tmp = (s_udp_meridim.sval[MRD_R_ORIGIDX + i * 2] == 1) ? sv.ixr_cmd_past[i] : sv.ixr_tgt_past[i];
+    sv.ixl_tgt[i] = mrd_limit_step(s_udp_meridim.sval[MRD_L_ORIGIDX + 1 + i * 2] * 0.01, base_l_tmp, SERVO_STEP_MAX);
+    sv.ixr_tgt[i] = mrd_limit_step(s_udp_meridim.sval[MRD_R_ORIGIDX + 1 + i * 2] * 0.01, base_r_tmp, SERVO_STEP_MAX);
     sv.ixl_cmd_past[i] = sv.ixl_tgt[i]; // 今回の指令値を次回の基準としてキープ
     sv.ixr_cmd_past[i] = sv.ixr_tgt[i];
   }
@@ -428,10 +434,22 @@ void loop() {
   mrd_disp.flow("[9]", monitor.flow); // デバグ用フロー表示
 
   // @[9-1] サーボIDごとにの現在位置もしくは計算結果を配列に格納
-  for (int i = 0; i < sv.num_max; i++) {
-    // 最新のサーボ角度をdegreeで格納
-    s_udp_meridim.sval[i * 2 + 21] = mrd.float2HfShort(sv.ixl_tgt[i]);
-    s_udp_meridim.sval[i * 2 + 51] = mrd.float2HfShort(sv.ixr_tgt[i]);
+  //        マウントしていない軸(num_maxより後ろも含む)は, 受信値を返さないようコマンド・角度とも0にする
+  for (int i = 0; i < MRD_SERVO_SLOTS; i++) {
+    const bool mount_l_tmp = (MOUNT_SERVO_TYPE_L != 0) && (i < sv.num_max) && (i < IXL_MAX) && sv.ixl_mount[i];
+    const bool mount_r_tmp = (MOUNT_SERVO_TYPE_R != 0) && (i < sv.num_max) && (i < IXR_MAX) && sv.ixr_mount[i];
+    if (mount_l_tmp) {
+      s_udp_meridim.sval[MRD_L_ORIGIDX + 1 + i * 2] = mrd.float2HfShort(sv.ixl_tgt[i]); // 最新のサーボ角度(degree)
+    } else {
+      s_udp_meridim.sval[MRD_L_ORIGIDX + i * 2] = 0;
+      s_udp_meridim.sval[MRD_L_ORIGIDX + 1 + i * 2] = 0;
+    }
+    if (mount_r_tmp) {
+      s_udp_meridim.sval[MRD_R_ORIGIDX + 1 + i * 2] = mrd.float2HfShort(sv.ixr_tgt[i]);
+    } else {
+      s_udp_meridim.sval[MRD_R_ORIGIDX + i * 2] = 0;
+      s_udp_meridim.sval[MRD_R_ORIGIDX + 1 + i * 2] = 0;
+    }
   }
 
   //------------------------------------------------------------------------------------

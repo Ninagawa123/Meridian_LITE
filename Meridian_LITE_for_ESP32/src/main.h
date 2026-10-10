@@ -9,12 +9,15 @@
 #include <MPU6050_6Axis_MotionApps20.h> // MPU6050用
 #include <Meridian.h>                   // Meridianのライブラリ導入
 extern MERIDIANFLOW::Meridian mrd;
-class MrdHalfDuplexUart;  // 半二重UARTバス (mrd_servo.h で定義)
-class IcsHalfDuplexClass; // ICSサーボ (mrd_module/sv_ics.h で定義)
+class MrdHalfDuplexUart;   // 半二重UARTバス (mrd_servo.h で定義)
+class IcsHalfDuplexClass;  // ICSサーボ (mrd_module/sv_ics.h で定義)
+class Dxl2HalfDuplexClass; // DYNAMIXEL Protocol 2.0 (mrd_module/sv_dxl2.h で定義)
 extern MrdHalfDuplexUart sv_bus_L;
 extern MrdHalfDuplexUart sv_bus_R;
 extern IcsHalfDuplexClass ics_L;
 extern IcsHalfDuplexClass ics_R;
+extern Dxl2HalfDuplexClass dxl_L;
+extern Dxl2HalfDuplexClass dxl_R;
 
 //------------------------------------------------------------------------------------
 //  列挙型

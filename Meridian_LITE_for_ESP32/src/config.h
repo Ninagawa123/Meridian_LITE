@@ -139,9 +139,9 @@
 #define MRD_SERVO_SLOTS 15  // Meridim配列の1系統あたりの最大接続サーボ数(デフォルトは15)
 
 // 各種ハードウェアのマウント有無
-#define MOUNT_SD      0      // SDカードリーダーの有無s(0:なし, 1:あり)
-#define MOUNT_IMUAHRS NO_IMU // IMU/AHRSの搭載 NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS
-#define MOUNT_PAD     PC     // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
+#define MOUNT_SD      0           // SDカードリーダーの有無s(0:なし, 1:あり)
+#define MOUNT_IMUAHRS NO_IMU      // IMU/AHRSの搭載 NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS
+#define MOUNT_PAD     PC          // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
 
 // 動作モード
 #define MODE_ESP32_STANDALONE 0 // ESP32をボードに挿さず動作確認(0:NO, 1:YES)
@@ -197,10 +197,10 @@
 
 // ピンアサイン
 #define PIN_ERR_LED 25 // LED用 処理が時間内に収まっていない場合に点灯
-#define PIN_EN_L    33 // サーボL系統のENピン
+#define PIN_EN_L    33 // サーボL系統のENピン(SN74LXC1T45版ではDIR)
 #define PIN_TX_L    27 // サーボL系統のTXピン(Serial1)
 #define PIN_RX_L    32 // サーボL系統のRXピン(Serial1)
-#define PIN_EN_R    4  // サーボR系統のENピン
+#define PIN_EN_R    4  // サーボR系統のENピン(SN74LXC1T45版ではDIR)
 #if MRD_BOARD_SERVO_IF == 1
 #define PIN_TX_R 14 // サーボR系統のTXピン(Serial2)
 #define PIN_RX_R 13 // サーボR系統のRXピン(Serial2)
@@ -222,7 +222,7 @@
 // コマンドサーボの種類
 // 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
 // 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
-// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
+// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0, Xシリーズ)
 // 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
 // 51: JRXBUS (JRPROPO_XBUS)[WIP]
 // 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
@@ -230,15 +230,16 @@
 #define MOUNT_SERVO_TYPE_R 43 // R系統のコマンドサーボの種類
 
 // サーボ関連設定
-#define SERVO_BAUDRATE_L    1250000                   // L系統のICSサーボの通信速度bps
-#define SERVO_BAUDRATE_R    1250000                   // R系統のICSサーボの通信速度bps
-#define SERVO_TIMEOUT_L     4                         // L系統のICS返信待ちのタイムアウト時間
-#define SERVO_TIMEOUT_R     4                         // R系統のICS返信待ちのタイムアウト時間
-#define SERVO_ECHO_L        2                         // L系統の送信エコー処理(0:なし/3ステート版, 1:あり/SN74LXC1T45版, 2:起動時に自動判定)
-#define SERVO_ECHO_R        2                         // R系統の送信エコー処理(0:なし/3ステート版, 1:あり/SN74LXC1T45版, 2:起動時に自動判定)
-#define SERVO_TX_RELEASE    (MRD_BOARD_SERVO_IF == 1) // 受信中にTXピンの出力を切る(TX/RXが1T45のA端子に直結の基板用)
-#define SERVO_LOST_ERR_WAIT 6                         // 連続何フレームサーボ信号をロストしたら異常とするか
-#define SERVO_STEP_MAX      3.0                       // 1フレームあたりの指令値の最大変化量(degree)
+#define SERVO_BAUDRATE_L     1250000                   // L系統の通信速度bps (ICS: 115200/625000/1250000, DXL: 57600〜4000000, 3000000推奨)
+#define SERVO_BAUDRATE_R     1250000                   // R系統の通信速度bps (ICS: 115200/625000/1250000, DXL: 57600〜4000000, 3000000推奨)
+#define SERVO_TIMEOUT_L      4                         // L系統のICS返信待ちのタイムアウト時間(ms). DYNAMIXELは SERVO_DXL_TIMEOUT_US を使う
+#define SERVO_TIMEOUT_R      4                         // R系統のICS返信待ちのタイムアウト時間(ms). DYNAMIXELは SERVO_DXL_TIMEOUT_US を使う
+#define SERVO_DXL_TIMEOUT_US 500                       // DYNAMIXELの応答待ちタイムアウト(us)
+#define SERVO_ECHO_L         2                         // L系統の送信エコー処理(0:なし/3ステート版, 1:あり/SN74LXC1T45版, 2:起動時に自動判定)
+#define SERVO_ECHO_R         2                         // R系統の送信エコー処理(0:なし/3ステート版, 1:あり/SN74LXC1T45版, 2:起動時に自動判定)
+#define SERVO_TX_RELEASE     (MRD_BOARD_SERVO_IF == 1) // 受信中にTXピンの出力を切る(TX/RXが1T45のA端子に直結の基板用)
+#define SERVO_LOST_ERR_WAIT  6                         // 連続何フレームサーボ信号をロストしたら異常とするか
+#define SERVO_STEP_MAX       3.0                       // 1フレームあたりの指令値の最大変化量(degree)
 
 // 各サーボ系統の最大サーボマウント数
 #define IXL_MAX 15 // L系統の最大サーボ数. 標準は15.
@@ -247,7 +248,7 @@
 // L系統のサーボのマウントの設定
 // 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
 // 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
-// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
+// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0, Xシリーズ)
 // 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
 // 51: JRXBUS (JRPROPO_XBUS)[WIP]
 // 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
@@ -273,7 +274,7 @@ int IXL_MT[IXL_MAX] = {
 // R系統のサーボのマウントの設定
 // 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
 // 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
-// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
+// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0, Xシリーズ)
 // 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
 // 51: JRXBUS (JRPROPO_XBUS)[WIP]
 // 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]

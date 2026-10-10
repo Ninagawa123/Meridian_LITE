@@ -21,18 +21,19 @@ public:
   /// @param a_bus 使用する半二重UARTバス.
   /// @param a_baud ICSの通信速度(115200, 625000, 1250000bps).
   IcsHalfDuplexClass(MrdHalfDuplexUart &a_bus, unsigned long a_baud)
-      : bus_(a_bus), baud_(a_baud) {}
+      : m_bus(a_bus), m_baud(a_baud) {}
 
   /// @brief ICS用のフレーム形式(8E1)でバスを開始する.
-  bool begin() { return bus_.begin(baud_, SERIAL_8E1); }
+  bool begin() { return m_bus.begin(m_baud, SERIAL_8E1); }
 
+  /// @brief IcsBaseClass の送受信処理. 半二重UARTバスの transfer() に委譲する.
   bool synchronize(byte *txBuf, byte txLen, byte *rxBuf, byte rxLen) override {
-    return bus_.transfer(txBuf, txLen, rxBuf, rxLen);
+    return m_bus.transfer(txBuf, txLen, rxBuf, rxLen);
   }
 
 private:
-  MrdHalfDuplexUart &bus_;
-  unsigned long baud_;
+  MrdHalfDuplexUart &m_bus; // 使用する半二重UARTバス
+  unsigned long m_baud;     // ICSの通信速度(bps)
 };
 
 //==================================================================================================
@@ -44,7 +45,7 @@ private:
 /// @param a_cmd サーボのコマンド
 /// @param a_tgt サーボの目標位置
 /// @param a_tgt_past 前回のサーボの目標位置
-/// @param a_tgt_trim サーボの補正値
+/// @param a_trim サーボの補正値(degree)
 /// @param a_cw サーボの回転方向補正値
 /// @param a_err_cnt サーボのエラーカウント
 /// @param a_stat サーボのステータス
@@ -91,6 +92,24 @@ void mrd_sv_drive_ics_double(Meridim90Union &a_meridim, ServoParam &a_sv) {
           a_sv.ixr_trim[i], a_sv.ixr_cw[i], a_sv.ixr_err[i], a_sv.ixr_stat[i], ics_R);
     }
     delayMicroseconds(2); // Teensyの場合には必要かも
+  }
+}
+
+/// @brief ICSサーボを1系統だけ駆動する関数 (L/Rで異なる種類のサーボを使う場合)
+/// @param a_meridim Meridimデータの参照
+/// @param a_sv サーボパラメータの配列
+/// @param a_line 駆動する系統
+void mrd_sv_drive_ics_line(Meridim90Union &a_meridim, ServoParam &a_sv, UartLine a_line) {
+  for (int i = 0; i < a_sv.num_max; i++) {
+    if (a_line == L && a_sv.ixl_mount[i]) {
+      a_sv.ixl_tgt[i] = mrd_servo_process_ics(
+          a_sv.ixl_id[i], a_meridim.sval[(i * 2) + 20], a_sv.ixl_tgt[i], a_sv.ixl_tgt_past[i],
+          a_sv.ixl_trim[i], a_sv.ixl_cw[i], a_sv.ixl_err[i], a_sv.ixl_stat[i], ics_L);
+    } else if (a_line == R && a_sv.ixr_mount[i]) {
+      a_sv.ixr_tgt[i] = mrd_servo_process_ics(
+          a_sv.ixr_id[i], a_meridim.sval[(i * 2) + 50], a_sv.ixr_tgt[i], a_sv.ixr_tgt_past[i],
+          a_sv.ixr_trim[i], a_sv.ixr_cw[i], a_sv.ixr_err[i], a_sv.ixr_stat[i], ics_R);
+    }
   }
 }
 
