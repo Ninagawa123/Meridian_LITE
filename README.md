@@ -169,7 +169,7 @@ Meridian consoleを起動し, ESP32DevKitCの電源が入っていると自動�
 - 電源(KHR付属バッテリー, 安定化電源等)
 - Meridian Board - LITE -
   
-## Meridian Boaard - LITE - について  
+## Meridian Board - LITE - について  
 <img width="400" alt="lite_pinassign" src="./docs/images/Meridian_LITE_Board.png">  
   
 "Meridian board -LITE-" はサーボ制御用の半二重通信回路2系統とSPI,I2Cなどの基本的な入出力ピンを備えたボードです. ESP32DevKitCを搭載し, サーボやセンサーを接続して使用します.  
