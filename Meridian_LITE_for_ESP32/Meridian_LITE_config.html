@@ -360,7 +360,7 @@ const SERVO_TYPES = [
   ["11", "PCA9685 (I2C→PWM) [WIP]"],
   ["21", "FTBRSX (FUTABA RSxTTL) [WIP]"],
   ["31", "DXL1 (DYNAMIXEL 1.0) [WIP]"],
-  ["32", "DXL2 (DYNAMIXEL 2.0) [WIP]"],
+  ["32", "DXL2 (DYNAMIXEL 2.0, Xシリーズ)"],
   ["43", "KOICS3 (KONDO ICS 3.5/3.6)"],
   ["44", "KOPMX (KONDO PMX) [WIP]"],
   ["51", "JRXBUS (JR PROPO XBUS) [WIP]"],
@@ -373,9 +373,16 @@ const NOT = (x) => (v) => v !== x;
 const servoLine = (s, name) => ({
   key: "MOUNT_SERVO_TYPE_" + s, type: "select", label: name + "のサーボ", options: SERVO_TYPES,
   children: [
-    { key: "SERVO_BAUDRATE_" + s, type: "select", label: "通信速度", unit: "bps", show: NOT("0"),
+    // 通信速度の選択肢はサーボの種類で切り替える (同じ設定値を種類ごとの行で表示)
+    { key: "SERVO_BAUDRATE_" + s, type: "select", label: "通信速度", unit: "bps", show: (v) => v === "43",
       options: [["115200", "115200"], ["625000", "625000"], ["1250000", "1250000"]] },
-    { key: "SERVO_TIMEOUT_" + s, type: "number", label: "応答待ちタイムアウト", unit: "ms", min: 1, show: NOT("0") },
+    { key: "SERVO_BAUDRATE_" + s, type: "select", label: "通信速度", unit: "bps", show: (v) => v === "32",
+      hint: "サーボ側も DYNAMIXEL Wizard などで同じ速度に設定してください",
+      options: [["57600", "57600 (出荷時)"], ["115200", "115200"], ["1000000", "1000000"], ["2000000", "2000000"],
+        ["3000000", "3000000 (推奨)"], ["4000000", "4000000"]] },
+    { key: "SERVO_BAUDRATE_" + s, type: "number", label: "通信速度", unit: "bps", min: 1,
+      show: (v) => v !== "0" && v !== "43" && v !== "32" },
+    { key: "SERVO_TIMEOUT_" + s, type: "number", label: "応答待ちタイムアウト", unit: "ms", min: 1, show: (v) => v === "43" },
     { key: "SERVO_ECHO_" + s, type: "select", label: "送信エコー処理", show: NOT("0"),
       options: [["2", "起動時に自動判定 (推奨)"], ["1", "あり (SN74LXC1T45版)"], ["0", "なし (3ステート版)"]] },
   ],
@@ -469,6 +476,9 @@ const SCHEMA = [
   { title: "サーボ", id: "servoCard", items: [
     servoLine("L", "L系統"),
     servoLine("R", "R系統"),
+    { key: "SERVO_DXL_TIMEOUT_US", type: "number", label: "DYNAMIXELの応答待ちタイムアウト", unit: "µs", min: 50, step: 50,
+      hint: "応答しない軸で待つ時間. 短いほどフレームへの影響が小さい",
+      show: () => val("MOUNT_SERVO_TYPE_L") === "32" || val("MOUNT_SERVO_TYPE_R") === "32" },
     { key: "SERVO_LOST_ERR_WAIT", type: "number", label: "通信異常と判定する連続失敗数", unit: "フレーム", min: 1 },
     { key: "SERVO_STEP_MAX", type: "number", label: "1フレームあたりの最大移動量", unit: "deg", min: 0, step: 0.1, float: true },
   ] },
