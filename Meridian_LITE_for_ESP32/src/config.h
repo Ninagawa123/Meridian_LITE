@@ -232,8 +232,8 @@
 // サーボ関連設定
 #define SERVO_BAUDRATE_L    1250000                   // L系統のICSサーボの通信速度bps
 #define SERVO_BAUDRATE_R    1250000                   // R系統のICSサーボの通信速度bps
-#define SERVO_TIMEOUT_L     2                         // L系統のICS返信待ちのタイムアウト時間
-#define SERVO_TIMEOUT_R     2                         // R系統のICS返信待ちのタイムアウト時間
+#define SERVO_TIMEOUT_L     4                         // L系統のICS返信待ちのタイムアウト時間
+#define SERVO_TIMEOUT_R     4                         // R系統のICS返信待ちのタイムアウト時間
 #define SERVO_ECHO_L        2                         // L系統の送信エコー処理(0:なし/3ステート版, 1:あり/SN74LXC1T45版, 2:起動時に自動判定)
 #define SERVO_ECHO_R        2                         // R系統の送信エコー処理(0:なし/3ステート版, 1:あり/SN74LXC1T45版, 2:起動時に自動判定)
 #define SERVO_TX_RELEASE    (MRD_BOARD_SERVO_IF == 1) // 受信中にTXピンの出力を切る(TX/RXが1T45のA端子に直結の基板用)
