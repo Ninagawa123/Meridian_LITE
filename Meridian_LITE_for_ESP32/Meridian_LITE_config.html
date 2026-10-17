@@ -171,15 +171,23 @@
   .warn { color: var(--changed); font-size: 12px; }
   .ctrl.wrap { flex-wrap: wrap; justify-content: flex-end; }
   .bit { font-size: 13px; white-space: nowrap; margin-left: 10px; }
+
+  /* language tabs */
+  .lang { display: flex; margin-left: auto; }
+  .lang button { border-radius: 0; padding: 4px 10px; font-size: 12px; }
+  .lang button:first-child { border-radius: 6px 0 0 6px; }
+  .lang button:last-child { border-radius: 0 6px 6px 0; margin-left: -1px; }
+  .lang button.on { background: var(--accent-weak); border-color: var(--accent); position: relative; }
+  html[lang="ja"] [data-lang="en"], html[lang="en"] [data-lang="ja"] { display: none; }
 </style>
 </head>
 <body>
 <header>
   <div class="bar">
-    <h1>Meridian LITE Config <span id="version" class="version" title="main.cpp の VERSION"></span></h1>
+    <h1>Meridian LITE Config <span id="version" class="version"></span></h1>
     <div class="paths">
-      <div class="path base" title="このページのあるフォルダ. パスはここからの相対パス">
-        <label>基準フォルダ</label>
+      <div class="path base" data-tr-title="このページのあるフォルダ. パスはここからの相対パス">
+        <label data-tr="基準フォルダ">基準フォルダ</label>
         <span id="baseDir" class="readonly">./</span>
       </div>
       <div class="path">
@@ -191,20 +199,33 @@
         <input id="pathKeys" type="text" value="src/keys.h" spellcheck="false">
       </div>
     </div>
-    <button id="btnFolder" title="このページのあるフォルダ (Meridian_LITE_for_ESP32) を選択">フォルダを選択</button>
-    <button id="btnReload" disabled>再読み込み</button>
+    <button id="btnFolder" data-tr="フォルダを選択" data-tr-title="このページのあるフォルダ (Meridian_LITE_for_ESP32) を選択">フォルダを選択</button>
+    <button id="btnReload" data-tr="再読み込み" disabled>再読み込み</button>
     <button id="btnSave" class="primary" disabled>保存</button>
+    <div class="lang" role="tablist" aria-label="Language">
+      <button type="button" role="tab" data-set-lang="ja">日本語</button>
+      <button type="button" role="tab" data-set-lang="en">English</button>
+    </div>
   </div>
   <div id="status" class="status"></div>
 </header>
 
 <main id="main">
   <div class="empty" id="empty">
-    「フォルダを選択」で、このページのあるフォルダ <b id="baseName">Meridian_LITE_for_ESP32</b> (<code>./</code>) を選ぶと、<br>
-    そこからの相対パス (既定: <code>src/config.h</code>, <code>src/keys.h</code>) のファイルを読み込みます。<br>
-    その親フォルダを選んだ場合は、中の <b>Meridian_LITE_for_ESP32</b> を自動で使います。<br>
-    初回だけブラウザが読み書きの許可を求めます。<br><br>
-    <span style="font-size:12px">Chrome / Edge で開いてください。その他のブラウザでは、ファイルを開いてダウンロード保存する方式になります。</span>
+    <div data-lang="ja">
+      「フォルダを選択」で、このページのあるフォルダ <b class="baseName">Meridian_LITE_for_ESP32</b> (<code>./</code>) を選ぶと、<br>
+      そこからの相対パス (既定: <code>src/config.h</code>, <code>src/keys.h</code>) のファイルを読み込みます。<br>
+      その親フォルダを選んだ場合は、中の <b class="baseName">Meridian_LITE_for_ESP32</b> を自動で使います。<br>
+      初回だけブラウザが読み書きの許可を求めます。<br><br>
+      <span style="font-size:12px">Chrome / Edge で開いてください。その他のブラウザでは、ファイルを開いてダウンロード保存する方式になります。</span>
+    </div>
+    <div data-lang="en">
+      Press "Select folder" and choose the folder of this page, <b class="baseName">Meridian_LITE_for_ESP32</b> (<code>./</code>).<br>
+      The files at the paths relative to it (default: <code>src/config.h</code>, <code>src/keys.h</code>) are loaded.<br>
+      If you choose its parent folder, <b class="baseName">Meridian_LITE_for_ESP32</b> inside it is used automatically.<br>
+      The browser asks for read/write permission the first time only.<br><br>
+      <span style="font-size:12px">Open this page in Chrome / Edge. Other browsers open the file and save it as a download.</span>
+    </div>
   </div>
   <div id="form" class="hidden"></div>
 </main>
@@ -360,6 +381,350 @@ if (typeof module !== "undefined") {
 </script>
 
 <!-- ===================================================================
+     表示言語 (日本語 / English). 画面の文字列は日本語で書き, 表示時に tr() で英語に置き換える.
+     {0}, {1} ... は tr() の引数で埋める. 英訳が無い文字列は日本語のまま表示する
+     =================================================================== -->
+<script id="i18n">
+let LANG = "ja";
+
+function tr(s, ...args) {
+  const t = LANG === "en" && EN[s] !== undefined ? EN[s] : s;
+  return args.length ? t.replace(/\{(\d+)\}/g, (_, i) => args[i]) : t;
+}
+
+// サーボ表の部位名 (config.h の配列のコメント) を単語ごとに英語にする. 訳せない語が残れば元のまま
+const PART_WORDS = [["追加サーボ用", "Spare"], ["左", "Left "], ["右", "Right "], ["頭", "Head "], ["腰", "Waist "],
+  ["足首", "ankle "], ["肩", "shoulder "], ["肘", "elbow "], ["股", "hip "], ["膝", "knee "],
+  ["ヨー", "yaw"], ["ピッチ", "pitch"], ["ロール", "roll"]];
+function trPart(s) {
+  if (LANG !== "en") return s;
+  const out = PART_WORDS.reduce((a, [j, e]) => a.split(j).join(e), s).trim();
+  return /[　-ヿ一-鿿]/.test(out) ? s : out;
+}
+
+const EN = {
+  // ---- ヘッダ・状態表示 ----
+  "基準フォルダ": "Base folder",
+  "このページのあるフォルダ. パスはここからの相対パス": "The folder of this page. Paths are relative to it",
+  "フォルダを選択": "Select folder",
+  "このページのあるフォルダ (Meridian_LITE_for_ESP32) を選択": "Select the folder of this page (Meridian_LITE_for_ESP32)",
+  "config.h を開く": "Open config.h",
+  "再読み込み": "Reload",
+  "保存": "Save",
+  "保存 ({0}件)": "Save ({0})",
+  "main.cpp の VERSION": "VERSION in main.cpp",
+  "パスが空です": "The path is empty",
+  "「..」は使えません (選択したフォルダより上は読めません)": "\"..\" is not allowed (files above the selected folder cannot be read)",
+  "「{0}」の中の {1} を使います": "using {1} inside \"{0}\"",
+  "基準フォルダ ({0}) と違う「{1}」を選んでいます": "\"{1}\" is selected, which differs from the base folder ({0})",
+  "フォルダを開けませんでした: {0}": "Could not open the folder: {0}",
+  "フォルダへのアクセスが許可されませんでした": "Access to the folder was not permitted",
+  " — このページのあるフォルダ ({0}) を選んでください": " — select the folder of this page ({0})",
+  "{0}/{1} を読み込めません: {2}{3}": "Cannot read {0}/{1}: {2}{3}",
+  "{0} は見つかりません (この項目は編集できません)": "{0} not found (its items cannot be edited)",
+  "{0}: {1} を読み込みました{2}": "{0}: loaded {1}{2}",
+  "形式が正しくない値があるため保存しませんでした: {0}": "Not saved: some values have a wrong format: {0}",
+  "書き込みが許可されませんでした": "Write access was not permitted",
+  "読み込んだあとに {0} が他のプログラムで変更されています。\n上書きすると、その変更は失われます。\n上書きしますか？\n\n「キャンセル」で保存を中止します。「再読み込み」で最新の内容を読み直せます。":
+    "{0} was changed by another program after loading.\nOverwriting loses that change.\nOverwrite?\n\nCancel stops saving. Use \"Reload\" to read the latest contents.",
+  "{0} {1}件": "{0}: {1} changes",
+  "{0} {1}件 (元の内容は {0}.bak)": "{0}: {1} changes (original kept in {0}.bak)",
+  "保存しました: {0} — {1}": "Saved: {0} — {1}",
+  "保存できませんでした: {0}": "Could not save: {0}",
+  "{0} を読み込みました (このブラウザでは保存時にダウンロードされます. keys.h は編集できません)":
+    "Loaded {0} (this browser downloads the file on save; keys.h cannot be edited)",
+  "変更した config.h をダウンロードしました。src/ の config.h と置き換えてください。": "Downloaded the edited config.h. Replace src/config.h with it.",
+  "保存していない変更を破棄して読み直しますか？": "Discard unsaved changes and reload?",
+  "このブラウザは直接保存に対応していません (Chrome / Edge 推奨)。保存はダウンロードになり, keys.h は編集できません。":
+    "This browser cannot save directly (Chrome / Edge recommended). Saving downloads the file, and keys.h cannot be edited.",
+  "前回のフォルダ「{0}」があります。": "Previous folder \"{0}\" is available.",
+  "「{0}」に再接続": "Reconnect to \"{0}\"",
+
+  // ---- 項目の共通部品 ----
+  "{0} に見つかりません": "Not found in {0}",
+  "{0} (現在の値)": "{0} (current value)",
+  "パスワードの表示を切り替え": "Show or hide the password",
+  "隠す": "Hide",
+  "表示": "Show",
+  "式のため config.h を直接編集してください": "An expression: edit config.h directly",
+  "変更あり": "Changed",
+  "コード内で参照されていません": "Not referenced in the code",
+  "未使用": "unused",
+  "IPアドレスの形式ではありません (例: 192.168.1.10)": "Not an IP address (e.g. 192.168.1.10)",
+  "MACアドレスの形式ではありません (例: 02:00:00:12:34:56)": "Not a MAC address (e.g. 02:00:00:12:34:56)",
+  "1〜65535 の番号を指定してください": "Enter a number from 1 to 65535",
+  "フレーム": "frames",
+  "台": "servos",
+  "位置値/秒": "steps/s",
+
+  // ---- サーボ表 ----
+  "サーボ表": "Servo table",
+  "マウント・ID・回転方向・トリム": "Mount, ID, direction, trim",
+  "{0}系統": "{0} line",
+  "サーボの配列が config.h に見つかりません": "Servo arrays not found in config.h",
+  "部位": "Part",
+  "サーボの種類": "Servo type",
+  "逆転": "Reverse",
+  "トリム (deg)": "Trim (deg)",
+  "ONで逆転 (-1)": "ON = reversed (-1)",
+  "この系統はサーボなし": "No servos on this line",
+  "系統の種類と違う": "Differs from the line type",
+  "ボード単体動作がONのため, サーボ通信は行われません": "Standalone board is ON: no servo communication",
+  "詳細設定": "Advanced settings",
+
+  // ---- サーボの種類と通信速度 ----
+  "なし (NOSERVO)": "None (NOSERVO)",
+  "PWM_S (本体ピンPWM)": "PWM_S (board pin PWM)",
+  "DXL2 (DYNAMIXEL 2.0, Xシリーズ)": "DXL2 (DYNAMIXEL 2.0, X series)",
+  "KOPMX (KONDO PMX, RS-485変換経由)": "KOPMX (KONDO PMX, via RS-485 converter)",
+  "通信速度": "Baud rate",
+  "サーボ側も同じ速度に設定してください (出荷時115200, 460800推奨. 691200 は公式資料にない設定値 0x0B)":
+    "Set the servos to the same speed (factory 115200, 460800 recommended. 691200 is setting 0x0B, not in the official manual)",
+  "サーボ側も DYNAMIXEL Wizard などで同じ速度に設定してください": "Set the servos to the same speed with DYNAMIXEL Wizard or similar",
+  "サーボ側も同じ速度に設定してください (AXは出荷時1M, MX/RXは57600)": "Set the servos to the same speed (factory: AX 1M, MX/RX 57600)",
+  "サーボ側も PMX Servo Manager で同じ速度に設定してください": "Set the servos to the same speed with PMX Servo Manager",
+  "115200 (出荷時)": "115200 (factory)",
+  "57600 (出荷時)": "57600 (factory)",
+  "57600 (MX/RX出荷時)": "57600 (MX/RX factory)",
+  "1000000 (AX出荷時)": "1000000 (AX factory)",
+  "1000000 (出荷時・推奨)": "1000000 (factory, recommended)",
+  "460800 (推奨)": "460800 (recommended)",
+  "1250000 (推奨)": "1250000 (recommended)",
+  "3000000 (推奨)": "3000000 (recommended)",
+  "691200 (非公式)": "691200 (unofficial)",
+  "250000 (固定)": "250000 (fixed)",
+  "19200 (固定)": "19200 (fixed)",
+
+  // ---- 系統 ----
+  "L系統のサーボ": "L line servo",
+  "R系統のサーボ": "R line servo",
+  "2種類目のサーボ (混在)": "Second servo type (mixed)",
+  "21/31/32/61/62 の異なる2種類だけ混在できます. 目標位置は毎フレーム両方に送り, 現在位置は種類ごとに交互に読みます":
+    "Only two different types among 21/31/32/61/62 can be mixed. Targets go to both types every frame; positions are read for each type on alternate frames",
+  "なし (混在しない)": "None (no mixing)",
+  "この種類は混在できません (21/31/32/61/62 のみ)": "This type cannot be mixed (21/31/32/61/62 only)",
+  "応答待ちタイムアウト": "Reply timeout",
+  "応答しないサーボで待つ時間. 短いほどフレームへの影響が小さい": "Time to wait for a servo that does not reply. Shorter means less effect on the frame",
+  "送信エコー処理": "TX echo handling",
+  "基板の設定に従う (既定)": "Follow the board setting (default)",
+  "起動時に自動判定": "Detect at boot",
+  "あり (SN74LXC1T45版)": "Echo (SN74LXC1T45 board)",
+  "なし (3ステート版)": "No echo (3-state buffer board)",
+
+  // ---- ボード・動作モード ----
+  "ボード": "Board",
+  "サーボIF回路": "Servo interface circuit",
+  "R系統のTX/RXピン, 送信エコー処理(既定), 受信中のTX出力OFFがこれに連動します":
+    "The R line TX/RX pins, TX echo handling (default) and TX release during receive follow this setting",
+  "3ステートバッファ版 (Ver L1.43より前・無印)": "3-state buffer (before Ver L1.43, unmarked)",
+  "SN74LXC1T45版 (Ver L1.43以上)": "SN74LXC1T45 (Ver L1.43 or later)",
+  "R系統 TX / RX": "R line TX / RX",
+  "受信中のTX出力OFF (SERVO_TX_RELEASE)": "Release TX during receive (SERVO_TX_RELEASE)",
+  "有効": "Enabled",
+  "無効": "Disabled",
+  "動作モード": "Operating mode",
+  "ボード単体動作": "Standalone board",
+  "ONにするとサーボ通信を行いません (ESP32単体での動作確認用)": "When ON, no servo communication is done (for testing the ESP32 alone)",
+  "PCからのUDP受信": "UDP receive from PC",
+  "OFFにするとPCから受信せず, 起動の約0.5秒後に全サーボをトルクONにしてボード内の計算で動かします":
+    "When OFF, nothing is received from the PC; about 0.5 s after boot all servos are torqued on and moved by the board's own calculation",
+  "受信待ちタイムアウト": "Receive timeout",
+  "受信確認の間隔": "Receive poll interval",
+  "受信が途絶えたら脱力するまでの時間": "Time without packets before torque off",
+  "PCからの正しい受信がこの時間ないと全サーボを脱力します (0で脱力しない)":
+    "All servos are torqued off when no valid packet arrives from the PC for this time (0 = never)",
+  "受信しないときのサーボの速さ": "Servo speed without UDP receive",
+  "PCから受信しないとき, トルクON後にサーボを目標へ動かす速さの上限です":
+    "Speed limit for moving the servos to the target after torque on, when not receiving from the PC",
+  "PCへのUDP送信": "UDP send to PC",
+
+  // ---- ネットワーク ----
+  "ネットワーク": "Network",
+  "通信方式は config.h, アドレス類は keys.h に保存": "Connection type is saved in config.h, addresses in keys.h",
+  "通信方式": "Connection",
+  "有線LAN (W5500)": "Wired LAN (W5500)",
+  "WiFi パスワード": "WiFi password",
+  "送り先PCのIPアドレス": "Destination PC IP address",
+  "ESP32のIPアドレスを固定": "Fixed ESP32 IP address",
+  "ESP32のIPアドレス": "ESP32 IP address",
+  "ゲートウェイ (ルーター)": "Gateway (router)",
+  "サブネットマスク": "Subnet mask",
+  "keys.h 上の名前は ETHER_GATEWAY ですが, 送り先PCのIPアドレスとして使われます":
+    "Named ETHER_GATEWAY in keys.h, but used as the destination PC IP address",
+  "DNSサーバー": "DNS server",
+  "MACアドレス (W5500)": "MAC address (W5500)",
+  "送り先PCのポート番号": "Destination PC port",
+  "ESP32の受信ポート番号": "ESP32 receive port",
+
+  // ---- 周辺機器 ----
+  "周辺機器": "Peripherals",
+  "SDカード": "SD card",
+  "起動時に読み書きチェック": "Read/write check at boot",
+  "なし": "None",
+  "MPU9250 (未実装)": "MPU9250 (not implemented)",
+  "読み取り間隔": "Read interval",
+  "移動平均のデータ数": "Moving average samples",
+  "I2C速度": "I2C speed",
+  "400kHz (推奨)": "400kHz (recommended)",
+  "ジョイパッド": "Joypad",
+  "PC (コンソールから入力)": "PC (input from the console)",
+  "MERIMOTE (未導入)": "MERIMOTE (not available)",
+  "SBDBT (RCB3形式)": "SBDBT (RCB3 format)",
+  "WIIMOTE + クラシックコントローラ": "WIIMOTE + Classic Controller",
+  "KRR-5FH の接続": "KRR-5FH connection",
+  "R系統 (ICS) から読みます": "Read via the R line (ICS)",
+  "R系統がICS(43)ではないため読みません": "Not read: the R line is not ICS (43)",
+  "接続待ちタイムアウト": "Connection timeout",
+  "KRC-5FHは4推奨": "4 recommended for KRC-5FH",
+  "Meridimのボタン値との合成": "Combine with the Meridim button value",
+  "論理和 (OR)": "OR",
+  "上書き": "Overwrite",
+  "ボタン配置をPS系に一般化": "Map buttons to the PS layout",
+  "SBDBT の通信速度": "SBDBT baud rate",
+  "SBDBT の PS3 用ファームウェア (RCB3形式) の BAUDRATE1 と合わせてください (既定 2400)":
+    "Match BAUDRATE1 of the SBDBT PS3 firmware (RCB3 format) (default 2400)",
+  "SBDBT の電文が途絶えたら0にする時間": "Reset to 0 after no SBDBT data for",
+  "0 なら最後の値を保ちます. SBDBT が毎回送る設定 (SEND_ON_DIFFERENT_DATA 0) のときに使ってください":
+    "0 keeps the last value. Use it when SBDBT sends every time (SEND_ON_DIFFERENT_DATA 0)",
+  "BlueRetro をつなぐI2C": "I2C bus for BlueRetro",
+  "I2C0 (GPIO22/21. IMU と同じバス)": "I2C0 (GPIO22/21, same bus as the IMU)",
+  "BlueRetro の接続": "BlueRetro connection",
+  "BlueRetro の SCL(GPIO25) を GPIO{0}, SDA(GPIO26) を GPIO{1} (I2C0) へ":
+    "Connect BlueRetro SCL (GPIO25) to GPIO{0} and SDA (GPIO26) to GPIO{1} (I2C0)",
+  "BlueRetro の SCL(GPIO25) を GPIO{0}, SDA(GPIO26) を GPIO{1} (I2C1) へ. LED のピンと重なると LED はなくなります":
+    "Connect BlueRetro SCL (GPIO25) to GPIO{0} and SDA (GPIO26) to GPIO{1} (I2C1). An LED on the same pin is disabled",
+  "SBDBT の接続": "SBDBT connection",
+  "SBDBT の TX を GPIO{0} (PIN_PAD_RX) へ. 3.3V, GND 共通": "Connect SBDBT TX to GPIO{0} (PIN_PAD_RX). Share 3.3V and GND",
+
+  // ---- EEPROM ----
+  "EEPROM の値を使うページ": "Pages loaded from EEPROM",
+  "チェックしたページは, 起動時に EEPROM の値を使います (空・壊れたページは config.h の値). 他は config.h の値":
+    "Checked pages use the EEPROM values at boot (config.h values for empty or broken pages). Others use config.h",
+  "P0 システム": "P0 System",
+  "P1 サーボのスロット": "P1 Servo slots",
+  "P2 スロットの拡張": "P2 Slot extension",
+  "P3 サーボの系統": "P3 Servo lines",
+  "P5 ネットワーク": "P5 Network",
+  "起動時に config.h の値を書き込む": "Write config.h values at boot",
+  "EEPROM の値を使わないページを, config.h の値で EEPROM に書きます": "Writes the config.h values to EEPROM for pages not loaded from EEPROM",
+  "書き込み禁止 (保護)": "Write protect",
+  "起動時に内容を表示": "Dump contents at boot",
+  "表示形式": "Format",
+  "10進数": "Decimal",
+  "16進数": "Hex",
+  "2進数": "Binary",
+
+  // ---- シリアルモニタ ----
+  "シリアルモニタ": "Serial monitor",
+  "platformio.ini の monitor_speed と合わせてください": "Match monitor_speed in platformio.ini",
+  "処理フローを表示": "Show processing flow",
+  "シーケンス番号を表示": "Show sequence numbers",
+  "全経路の受信エラーを表示": "Show receive errors on all paths",
+  "フレーム処理時間とサーボ通信の失敗を表示": "Show frame time and servo communication failures",
+  "100フレームごとに平均/最大の処理時間, 系統ごとの応答待ち, 失敗したスロットを表示":
+    "Every 100 frames: average/max frame time, reply wait per line, failed slots",
+  "UDP受信のタイムアウトを表示": "Show UDP receive timeouts",
+  "サーボエラーを表示": "Show servo errors",
+  "リモコンのデータを表示": "Show joypad data",
+  "起動直後のタイムアウト表示を抑制": "Suppress timeout messages after boot",
+
+  // ---- サーボ ----
+  "サーボ": "Servos",
+  "通信異常と判定する連続失敗数": "Consecutive failures before a servo is lost",
+  "1フレームあたりの最大移動量": "Max movement per frame",
+  "移動フレーム数(Meridim[19])の上限": "Max motion frames (Meridim[19])",
+  "目標が変わったら Meridim[19] のフレーム数かけて直線で補間する. 0にすると補間しない(即時)":
+    "When the target changes, interpolate linearly over Meridim[19] frames. 0 disables interpolation (immediate)",
+  "マウントしていないスロットへの返信": "Reply for unmounted slots",
+  "種類が0のスロット, EEPROM (P1) でマウントを外したスロット, 混在の検査で外れたスロット, サーボなしの系統, 使っている最大のスロットより後ろが対象":
+    "Applies to slots with type 0, slots unmounted by EEPROM (P1), slots removed by the mixing check, lines without servos, and slots after the highest used slot",
+  "コマンド・角度とも0を返す": "Return 0 for command and angle",
+  "受信した値をそのまま返す": "Echo the received values",
+
+  // ---- サーボの種類ごとの設定 ----
+  "サーボの種類ごとの設定": "Per-type servo settings",
+  "使っている種類の項目だけ表示": "Only types in use are shown",
+  "該当なし": "Nothing to show",
+  "設定項目のある種類 (21/31/32/51/61/62/71/PWM) を使っていません": "No type with settings (21/31/32/51/61/62/71/PWM) is in use",
+  "FUTABA: 1フレームに現在位置を読む台数": "FUTABA: positions read per frame",
+  "超える分は次のフレームで順に読む. 460.8kbpsで8台なら100Hzに収まる目安": "The rest are read on the following frames. About 8 servos fit 100 Hz at 460.8 kbps",
+  "DYNAMIXEL: 起動時に応答遅延時間を0にする": "DYNAMIXEL: set return delay time to 0 at boot",
+  "出荷時は500us. 0でないと1台あたり最大0.5ms遅れる (1.0/2.0共通)": "Factory default 500 us. Otherwise up to 0.5 ms delay per servo (1.0 and 2.0)",
+  "FEETECH: 起動時に応答遅延時間を0にする": "FEETECH: set return delay time to 0 at boot",
+  "FEETECH STS: 位置値0-4095の角度範囲": "FEETECH STS: angle range of positions 0-4095",
+  "FEETECH SCS: 位置値0-1023の角度範囲": "FEETECH SCS: angle range of positions 0-1023",
+  "SCS0009等は300deg. 機種により異なる": "300 deg for SCS0009 etc. Depends on the model",
+  "FEETECH SCS: 目標速度": "FEETECH SCS: goal speed",
+  "SCSは0だと駆動しない. 1500で約440deg/s (300deg機種)": "SCS does not move with 0. 1500 is about 440 deg/s (300 deg models)",
+  "JR XBUS: 角度範囲": "JR XBUS: angle range",
+  "通常 ±60deg (900-2100us)": "Normal ±60deg (900-2100us)",
+  "180度モード ±90deg": "180 degree mode ±90deg",
+  "Hitec: 1フレームに送る/読むサーボ数": "Hitec: servos sent/read per frame",
+  "1台約4.2ms. 各サーボ50Hzまで": "About 4.2 ms per servo. Up to 50 Hz per servo",
+  "Hitec: 1degあたりのパルス幅": "Hitec: pulse width per degree",
+  "Hitec: 読み出し時に設定される速度": "Hitec: speed set when reading",
+  "1-255. 0xFFはEEPROMの初期値": "1-255. 0xFF is the EEPROM default",
+
+  // ---- PWMサーボ ----
+  "PWMサーボ": "PWM servos",
+  "サーボ表で種類 1 (本体ピン) / 11 (PCA9685) にしたスロット": "Slots set to type 1 (board pin) / 11 (PCA9685) in the servo table",
+  "ピン25/26の用途": "Use of pins 25/26",
+  "1/2 のとき, エラーLED・Bluetooth LED のピンが 25/26 のままなら LED はなくなります (ピン配置で別のピンにすれば使えます)":
+    "With 1/2, the error LED and Bluetooth LED are disabled while their pins are 25/26 (move them to other pins in the pin assignment to keep them)",
+  "LED (従来)": "LED (classic)",
+  "本体PWMサーボ 2ch": "Board PWM servos 2ch",
+  "PCA9685用I2C (SDA=25, SCL=26)": "I2C for PCA9685 (SDA=25, SCL=26)",
+  "スロットの割り当て": "Slot assignment",
+  "config.h の PWM_PIN_SLOT を直接編集してください": "Edit PWM_PIN_SLOT in config.h directly",
+  "config.h の PCA9685_SLOT を直接編集してください": "Edit PCA9685_SLOT in config.h directly",
+  "PCA9685の枚数": "Number of PCA9685 boards",
+  "1枚": "1 board",
+  "2枚 (偶数/奇数フレームで交互に更新)": "2 boards (updated on alternate even/odd frames)",
+  "PCA9685の内蔵発振器の周波数": "PCA9685 internal oscillator frequency",
+  "個体差でパルス幅がずれる場合に実測値に合わせる": "Set to the measured value if pulse widths are off due to chip variation",
+  "0degのパルス幅": "Pulse width at 0 deg",
+  "パルス幅の下限": "Min pulse width",
+  "パルス幅の上限": "Max pulse width",
+  "1degあたりのパルス幅": "Pulse width per degree",
+
+  // ---- 詳細設定 ----
+  "Meridim / タイミング": "Meridim / timing",
+  "1フレームの時間": "Frame duration",
+  "起動時のコンデンサ充電待ち": "Capacitor charge wait at boot",
+  "Meridim配列の長さ": "Meridim array length",
+  "L系統の先頭インデックス": "L line first index",
+  "R系統の先頭インデックス": "R line first index",
+  "1系統あたりの最大サーボ数": "Max servos per line",
+  "EEPROMのサイズ": "EEPROM size",
+  "1ページ180byteの倍数. 既定 2880 (16ページ). P0〜P5 を使うため 1080 以上":
+    "A multiple of 180 bytes (one page). Default 2880 (16 pages). At least 1080 for P0-P5",
+  "SPI速度": "SPI speed",
+  "ピンアサイン": "Pin assignment",
+  "L系統 EN (DIR)": "L line EN (DIR)",
+  "L系統 TX": "L line TX",
+  "L系統 RX": "L line RX",
+  "R系統 EN (DIR)": "R line EN (DIR)",
+  "「ボード」のサーボIF回路で切り替わります": "Set by the servo interface circuit under \"Board\"",
+  "エラーLED": "Error LED",
+  "-1 でなし. 本体PWM・I2C1 (PCA9685, BlueRetro)・SBDBT の受信と同じピンなら使いません":
+    "-1 for none. Not used when the pin is shared with board PWM, I2C1 (PCA9685, BlueRetro) or SBDBT receive",
+  "-1 でなし. 同上": "-1 for none. Same as above",
+  "本体PWMサーボ0": "Board PWM servo 0",
+  "本体PWMサーボ1": "Board PWM servo 1",
+  "SBDBT の受信ピン": "SBDBT receive pin",
+  "SBDBT の TX をつなぐ. 入力専用ピン (34, 35, 36, 39) を推奨. 12 は起動時の制約があるため不可":
+    "Connect SBDBT TX here. Input-only pins (34, 35, 36, 39) recommended. 12 cannot be used (boot strapping pin)",
+  "SDカード CS": "SD card CS",
+  "有線LAN CS": "Wired LAN CS",
+  "W5500 リセット": "W5500 reset",
+  "PCA9685のI2Cアドレス": "PCA9685 I2C address",
+  "1枚目": "First board",
+  "2枚目": "Second board",
+  "A0をHIGHに": "Set A0 HIGH",
+};
+</script>
+
+<!-- ===================================================================
      画面の定義 (親子構造). show(親の値) が true のとき子を表示する
      =================================================================== -->
 <script>
@@ -388,9 +753,9 @@ const NOT = (x) => (v) => v !== x;
 
 // 種類ごとの通信速度の選択肢(サーボ側の設定値の一覧)
 const BAUDS = {
-  "21": { hint: "サーボ側も同じ速度に設定してください (出荷時115200, 460800推奨)",
+  "21": { hint: "サーボ側も同じ速度に設定してください (出荷時115200, 460800推奨. 691200 は公式資料にない設定値 0x0B)",
     options: [["9600", "9600"], ["14400", "14400"], ["19200", "19200"], ["28800", "28800"], ["38400", "38400"], ["57600", "57600"],
-      ["76800", "76800"], ["115200", "115200 (出荷時)"], ["153600", "153600"], ["230400", "230400"], ["460800", "460800 (推奨)"], ["691200", "691200"]] },
+      ["76800", "76800"], ["115200", "115200 (出荷時)"], ["153600", "153600"], ["230400", "230400"], ["460800", "460800 (推奨)"], ["691200", "691200 (非公式)"]] },
   "32": { hint: "サーボ側も DYNAMIXEL Wizard などで同じ速度に設定してください",
     options: [["9600", "9600"], ["57600", "57600 (出荷時)"], ["115200", "115200"], ["1000000", "1000000"], ["2000000", "2000000"],
       ["3000000", "3000000 (推奨)"], ["4000000", "4000000"], ["4500000", "4500000"]] },
@@ -412,8 +777,8 @@ const baudRows = (key) => Object.entries(BAUDS).map(([t, b]) =>
   ({ key, type: "select", label: "通信速度", unit: "bps", show: (v) => v === t, options: b.options, hint: b.hint }));
 
 // 系統の設定. 2種類目(混在)は1種類目が混在できる種類のときだけ選べる
-const servoLine = (s, name) => ({
-  key: "MOUNT_SERVO_TYPE_" + s, type: "select", label: name + "のサーボ", options: LINE_TYPES,
+const servoLine = (s, label) => ({
+  key: "MOUNT_SERVO_TYPE_" + s, type: "select", label, options: LINE_TYPES,
   children: [
     ...baudRows("SERVO_BAUDRATE_" + s),
     { key: "SERVO_BAUDRATE_" + s, type: "number", label: "通信速度", unit: "bps", min: 1,
@@ -491,12 +856,12 @@ const SCHEMA = [
       options: [["NO_IMU", "なし"], ["MPU6050_IMU", "MPU6050"], ["MPU9250_IMU", "MPU9250 (未実装)"], ["BNO055_AHRS", "BNO055"]],
       children: [
         { key: "IMUAHRS_INTERVAL", type: "number", label: "読み取り間隔", unit: "ms", min: 1, show: NOT("NO_IMU") },
-        { key: "IMUAHRS_STOCK", type: "number", label: "移動平均のデータ数", min: 1, show: (v) => v === "MPU6050_IMU" },
+        { key: "IMUAHRS_STOCK", type: "number", label: "移動平均のデータ数", min: 1, show: (v) => v === "MPU6050_IMU", unused: true },
         { key: "I2C0_SPEED", type: "select", label: "I2C速度", unit: "Hz", show: NOT("NO_IMU"),
           options: [["100000", "100kHz"], ["400000", "400kHz (推奨)"]] },
       ] },
     { key: "MOUNT_PAD", type: "select", label: "ジョイパッド",
-      options: [["PC", "PC (コンソールから入力)"], ["MERIMOTE", "MERIMOTE (未導入)"], ["BLUERETRO", "BlueRetro (Wii extension, I2C1)"],
+      options: [["PC", "PC (コンソールから入力)"], ["MERIMOTE", "MERIMOTE (未導入)"], ["BLUERETRO", "BlueRetro (Wii extension, I2C0 / I2C1)"],
         ["SBDBT", "SBDBT (RCB3形式)"], ["KRR5FH", "KRR-5FH (KRC-5FH)"], ["WIIMOTE", "WIIMOTE"], ["WIIMOTE_C", "WIIMOTE + クラシックコントローラ"]],
       children: [
         { type: "info", label: "KRR-5FH の接続", text: () => (val("MOUNT_SERVO_TYPE_R") === "43" ? "R系統 (ICS) から読みます" :
@@ -515,10 +880,10 @@ const SCHEMA = [
         { key: "PAD_BLUERETRO_I2C", type: "select", label: "BlueRetro をつなぐI2C", show: (v) => v === "BLUERETRO",
           options: [["0", "I2C0 (GPIO22/21. IMU と同じバス)"], ["1", "I2C1 (PIN_I2C1_SDA/SCL)"]] },
         { type: "info", label: "BlueRetro の接続", text: () => val("PAD_BLUERETRO_I2C") === "0" ?
-          "BlueRetro の SCL(GPIO25) を GPIO" + (val("PIN_I2C0_SCL") || "21") + ", SDA(GPIO26) を GPIO" + (val("PIN_I2C0_SDA") || "22") + " (I2C0) へ" :
-          "BlueRetro の SCL(GPIO25) を GPIO" + (val("PIN_I2C1_SCL") || "26") + ", SDA(GPIO26) を GPIO" + (val("PIN_I2C1_SDA") || "25") +
-          " (I2C1) へ. LED のピンと重なると LED はなくなります", show: (v) => v === "BLUERETRO" },
-        { type: "info", label: "SBDBT の接続", text: () => "SBDBT の TX を GPIO" + (val("PIN_PAD_RX") || "34") + " (PIN_PAD_RX) へ. 3.3V, GND 共通",
+          tr("BlueRetro の SCL(GPIO25) を GPIO{0}, SDA(GPIO26) を GPIO{1} (I2C0) へ", val("PIN_I2C0_SCL") || "21", val("PIN_I2C0_SDA") || "22") :
+          tr("BlueRetro の SCL(GPIO25) を GPIO{0}, SDA(GPIO26) を GPIO{1} (I2C1) へ. LED のピンと重なると LED はなくなります",
+            val("PIN_I2C1_SCL") || "26", val("PIN_I2C1_SDA") || "25"), show: (v) => v === "BLUERETRO" },
+        { type: "info", label: "SBDBT の接続", text: () => tr("SBDBT の TX を GPIO{0} (PIN_PAD_RX) へ. 3.3V, GND 共通", val("PIN_PAD_RX") || "34"),
           show: (v) => v === "SBDBT" },
       ] },
   ] },
@@ -548,18 +913,18 @@ const SCHEMA = [
     { key: "MONITOR_SUPPRESS_DURATION", type: "number", label: "起動直後のタイムアウト表示を抑制", unit: "ms", min: 0, step: 1000 },
   ] },
   { title: "サーボ", id: "servoCard", items: [
-    servoLine("L", "L系統"),
-    servoLine("R", "R系統"),
+    servoLine("L", "L系統のサーボ"),
+    servoLine("R", "R系統のサーボ"),
     { key: "SERVO_LOST_ERR_WAIT", type: "number", label: "通信異常と判定する連続失敗数", unit: "フレーム", min: 1 },
     { key: "SERVO_STEP_MAX", type: "number", label: "1フレームあたりの最大移動量", unit: "deg", min: 0, step: 0.1, float: true },
     { key: "SERVO_MOTION_FRAMES_MAX", type: "number", label: "移動フレーム数(Meridim[19])の上限", unit: "フレーム", min: 0,
       hint: "目標が変わったら Meridim[19] のフレーム数かけて直線で補間する. 0にすると補間しない(即時)" },
     { key: "SERVO_UNMOUNT_REPLY", type: "select", label: "マウントしていないスロットへの返信",
-      hint: "種類が0のスロット, 起動時の検査で外したスロット, サーボなしの系統が対象",
+      hint: "種類が0のスロット, EEPROM (P1) でマウントを外したスロット, 混在の検査で外れたスロット, サーボなしの系統, 使っている最大のスロットより後ろが対象",
       options: [["0", "コマンド・角度とも0を返す"], ["1", "受信した値をそのまま返す"]] },
   ] },
   { title: "サーボの種類ごとの設定", sub: "使っている種類の項目だけ表示", items: [
-    { type: "info", label: "該当なし", text: () => "設定項目のある種類 (21/32/51/61/62/71/PWM) を使っていません",
+    { type: "info", label: "該当なし", text: () => "設定項目のある種類 (21/31/32/51/61/62/71/PWM) を使っていません",
       show: () => !usesType("21", "31", "32", "51", "61", "62", "71") && !usesSlotType("1", "11") },
     { key: "SERVO_FTB_READ_PER_FRAME", type: "number", label: "FUTABA: 1フレームに現在位置を読む台数", unit: "台", min: 1,
       hint: "超える分は次のフレームで順に読む. 460.8kbpsで8台なら100Hzに収まる目安", show: () => usesType("21") },
@@ -583,7 +948,7 @@ const SCHEMA = [
   ] },
   { title: "PWMサーボ", sub: "サーボ表で種類 1 (本体ピン) / 11 (PCA9685) にしたスロット", items: [
     { key: "PWM_PIN_MODE", type: "select", label: "ピン25/26の用途",
-      hint: "1/2 にするとエラーLEDとBluetooth LEDは使えません",
+      hint: "1/2 のとき, エラーLED・Bluetooth LED のピンが 25/26 のままなら LED はなくなります (ピン配置で別のピンにすれば使えます)",
       options: [["0", "LED (従来)"], ["1", "本体PWMサーボ 2ch"], ["2", "PCA9685用I2C (SDA=25, SCL=26)"]],
       children: [
         { type: "info", label: "スロットの割り当て", text: () => "config.h の PWM_PIN_SLOT を直接編集してください", show: (v) => v === "1" },
@@ -672,10 +1037,17 @@ const state = {
 };
 const fsSupported = "showDirectoryPicker" in window;
 
-function setStatus(msg, cls = "") {
-  const el = $("#status");
-  el.textContent = msg;
-  el.className = "status " + cls;
+// 状態表示. msg は表示する文字列を返す関数 (言語を切り替えたときに作り直すため). extra はその後ろに置く要素を返す関数
+let statusView = { msg: () => "", cls: "", extra: null };
+function setStatus(msg, cls = "", extra = null) {
+  statusView = { msg, cls, extra };
+  showStatus();
+}
+function showStatus() {
+  const { msg, cls, extra } = statusView;
+  const s = $("#status");
+  s.className = "status " + cls;
+  s.replaceChildren(msg(), ...(extra ? [" ", extra()] : []));
 }
 const val = (key) => state.defines[key];
 const pathOf = (id) => $(FILES[id].input).value.trim();
@@ -711,11 +1083,11 @@ function lsSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
 // ---- ファイルの読み書き ----
 async function resolveFile(root, path) {
   const parts = path.split(/[\\/]+/).filter(Boolean);
-  if (!parts.length) throw new Error("パスが空です");
+  if (!parts.length) throw new Error(tr("パスが空です"));
   let dir = root;
   for (const p of parts.slice(0, -1)) {
     if (p === ".") continue;
-    if (p === "..") throw new Error("「..」は使えません (選択したフォルダより上は読めません)");
+    if (p === "..") throw new Error(tr("「..」は使えません (選択したフォルダより上は読めません)"));
     dir = await dir.getDirectoryHandle(p);
   }
   const name = parts[parts.length - 1];
@@ -742,11 +1114,11 @@ const BASE_DIR = (() => {
 // 選んだフォルダを基準フォルダ(このページのあるフォルダ)に合わせる.
 // 名前が違い, 中に同じ名前のフォルダがあればそれを使う(親フォルダを選んだ場合). なければ選んだフォルダのまま
 async function toBaseDir(dir) {
-  if (!BASE_DIR || dir.name === BASE_DIR) return { dir, note: "", warn: false };
+  if (!BASE_DIR || dir.name === BASE_DIR) return { dir, note: null, warn: false };
   try {
-    return { dir: await dir.getDirectoryHandle(BASE_DIR), note: `「${dir.name}」の中の ${BASE_DIR} を使います`, warn: false };
+    return { dir: await dir.getDirectoryHandle(BASE_DIR), note: () => tr("「{0}」の中の {1} を使います", dir.name, BASE_DIR), warn: false };
   } catch {
-    return { dir, note: `基準フォルダ (${BASE_DIR}) と違う「${dir.name}」を選んでいます`, warn: true };
+    return { dir, note: () => tr("基準フォルダ ({0}) と違う「{1}」を選んでいます", BASE_DIR, dir.name), warn: true };
   }
 }
 
@@ -756,7 +1128,7 @@ async function pickFolder() {
   try {
     picked = await window.showDirectoryPicker({ id: "meridian-lite", mode: "readwrite" });
   } catch (e) {
-    if (e.name !== "AbortError") setStatus("フォルダを開けませんでした: " + e.message, "err");
+    if (e.name !== "AbortError") setStatus(() => tr("フォルダを開けませんでした: {0}", e.message), "err");
     return;
   }
   const { dir, note, warn } = await toBaseDir(picked);
@@ -772,32 +1144,35 @@ async function ensurePermission() {
   return (await state.root.requestPermission(opt)) === "granted";
 }
 
-async function load(note = "", warn = false) {
+// note: 状態表示に添える文字列を返す関数 (toBaseDir の結果)
+async function load(note = null, warn = false) {
   if (!state.root) return;
   if (!(await ensurePermission())) {
-    setStatus("フォルダへのアクセスが許可されませんでした", "err");
+    setStatus(() => tr("フォルダへのアクセスが許可されませんでした"), "err");
     return;
   }
   const texts = {};
-  const notes = [];
+  const notes = []; // 状態表示の各部分を返す関数
+  const root = state.root.name;
   for (const id of Object.keys(FILES)) {
     const path = pathOf(id);
     try {
       const { file } = await resolveFile(state.root, path);
       texts[id] = await readText(file);
-      notes.push(path);
+      notes.push(() => path);
     } catch (e) {
       if (FILES[id].required) {
         showForm(false);
-        const hint = BASE_DIR && state.root.name !== BASE_DIR ? ` — このページのあるフォルダ (${BASE_DIR}) を選んでください` : "";
-        setStatus(`${state.root.name}/${path} を読み込めません: ${e.message}${hint}`, "err");
+        const hint = BASE_DIR && root !== BASE_DIR ? () => tr(" — このページのあるフォルダ ({0}) を選んでください", BASE_DIR) : () => "";
+        setStatus(() => tr("{0}/{1} を読み込めません: {2}{3}", root, path, e.message, hint()), "err");
         return;
       }
-      notes.push(`${path} は見つかりません (この項目は編集できません)`);
+      notes.push(() => tr("{0} は見つかりません (この項目は編集できません)", path));
     }
   }
   loadTexts(texts);
-  setStatus(`${state.root.name}: ${notes.join(" / ")} を読み込みました` + (note ? ` (${note})` : ""), warn ? "err" : "ok");
+  setStatus(() => tr("{0}: {1} を読み込みました{2}", root, notes.map((n) => n()).join(" / "), note ? ` (${note()})` : ""),
+    warn ? "err" : "ok");
   await loadVersion();
 }
 
@@ -814,7 +1189,7 @@ async function loadVersion() {
 function showVersion(v) {
   const el = $("#version");
   el.textContent = v || "";
-  el.title = v ? "main.cpp の VERSION" : "";
+  el.title = v ? tr("main.cpp の VERSION") : "";
 }
 
 function loadTexts(texts) {
@@ -872,7 +1247,7 @@ function invalidChanges() {
     if (it.key && it.fmt && state.defs[it.key] && state.defines[it.key] !== state.defs[it.key].value) {
       const d = state.defs[it.key];
       const s = d.string ? unquote(state.defines[it.key]) : state.defines[it.key];
-      if (checkFormat(it.fmt, s)) bad.push(it.label);
+      if (checkFormat(it.fmt, s)) bad.push(tr(it.label));
     }
     if (it.children) walk(it.children);
   });
@@ -885,7 +1260,7 @@ async function save() {
   if (!total) return;
   const bad = invalidChanges();
   if (bad.length) {
-    setStatus("形式が正しくない値があるため保存しませんでした: " + bad.join(", "), "err");
+    setStatus(() => tr("形式が正しくない値があるため保存しませんでした: {0}", bad.join(", ")), "err");
     return;
   }
   const newTexts = {};
@@ -894,7 +1269,7 @@ async function save() {
   }
   if (!fsSupported || !state.root) return downloadFallback(newTexts.config);
   try {
-    if (!(await ensurePermission())) throw new Error("書き込みが許可されませんでした");
+    if (!(await ensurePermission())) throw new Error(tr("書き込みが許可されませんでした"));
     // 先に全ファイルの外部変更を確認してから書き込む
     const targets = [];
     for (const id of Object.keys(state.files)) {
@@ -905,24 +1280,25 @@ async function save() {
     }
     const changedOutside = targets.filter((t) => t.disk !== state.files[t.id].text).map((t) => t.name);
     if (changedOutside.length) {
-      const go = confirm(`読み込んだあとに ${changedOutside.join(", ")} が他のプログラムで変更されています。\n` +
-        "上書きすると、その変更は失われます。\n上書きしますか？\n\n" +
-        "「キャンセル」で保存を中止します。「再読み込み」で最新の内容を読み直せます。");
+      const msg = "読み込んだあとに {0} が他のプログラムで変更されています。\n上書きすると、その変更は失われます。\n上書きしますか？\n\n「キャンセル」で保存を中止します。「再読み込み」で最新の内容を読み直せます。";
+      const go = confirm(tr(msg, changedOutside.join(", ")));
       if (!go) return;
     }
-    const saved = [];
+    const saved = []; // [ファイル名, 件数, バックアップの有無]
     for (const t of targets) {
       if (FILES[t.id].backup) {
         const bak = await t.dir.getFileHandle(t.name + ".bak", { create: true });
         await writeText(bak, t.disk);
       }
       await writeText(t.file, newTexts[t.id]);
-      saved.push(`${t.name} ${changeCount(t.id)}件` + (FILES[t.id].backup ? ` (元の内容は ${t.name}.bak)` : ""));
+      saved.push([t.name, changeCount(t.id), FILES[t.id].backup]);
     }
     loadTexts(newTexts);
-    setStatus(`保存しました: ${saved.join(", ")} — ${new Date().toLocaleTimeString()}`, "ok");
+    const time = new Date().toLocaleTimeString();
+    setStatus(() => tr("保存しました: {0} — {1}", saved.map(([name, n, bak]) =>
+      tr(bak ? "{0} {1}件 (元の内容は {0}.bak)" : "{0} {1}件", name, n)).join(", "), time), "ok");
   } catch (e) {
-    setStatus("保存できませんでした: " + e.message, "err");
+    setStatus(() => tr("保存できませんでした: {0}", e.message), "err");
   }
 }
 
@@ -936,7 +1312,7 @@ function openFallback() {
     if (!f) return;
     state.fallbackName = f.name;
     loadTexts({ config: await f.text() });
-    setStatus(`${f.name} を読み込みました (このブラウザでは保存時にダウンロードされます. keys.h は編集できません)`, "ok");
+    setStatus(() => tr("{0} を読み込みました (このブラウザでは保存時にダウンロードされます. keys.h は編集できません)", f.name), "ok");
   };
   input.click();
 }
@@ -947,7 +1323,7 @@ function downloadFallback(text) {
   a.click();
   URL.revokeObjectURL(a.href);
   loadTexts({ config: text });
-  setStatus("変更した config.h をダウンロードしました。src/ の config.h と置き換えてください。", "ok");
+  setStatus(() => tr("変更した config.h をダウンロードしました。src/ の config.h と置き換えてください。"), "ok");
 }
 
 // ---- 画面生成 ----
@@ -960,7 +1336,7 @@ function showForm(on) {
 function updateSaveButton() {
   const n = state.files.config ? changeCount() : 0;
   $("#btnSave").disabled = !n;
-  $("#btnSave").textContent = n ? `保存 (${n}件)` : "保存";
+  $("#btnSave").textContent = n ? tr("保存 ({0}件)", n) : tr("保存");
 }
 
 function el(tag, attrs = {}, ...kids) {
@@ -978,7 +1354,7 @@ function el(tag, attrs = {}, ...kids) {
 function formatError(item) {
   const d = state.defs[item.key];
   if (!item.fmt || !d) return "";
-  return checkFormat(item.fmt, d.string ? unquote(val(item.key)) : val(item.key));
+  return tr(checkFormat(item.fmt, d.string ? unquote(val(item.key)) : val(item.key)));
 }
 
 function control(item) {
@@ -986,7 +1362,7 @@ function control(item) {
   const v = val(item.key);
   if (!d) {
     const where = FILES.keys && /^(WIFI_|UDP_|FIXED_IP_|ETHER_)/.test(item.key) ? "keys.h" : "config.h";
-    return el("span", { class: "readonly" }, `${where} に見つかりません`);
+    return el("span", { class: "readonly" }, tr("{0} に見つかりません", where));
   }
   const editable = !d.dup && d.single;
   if (!editable) return el("span", { class: "readonly" }, d.value);
@@ -998,11 +1374,11 @@ function control(item) {
   }
   if (item.type === "select") {
     const opts = [...(typeof item.options === "function" ? item.options() : item.options)];
-    if (!opts.some(([o]) => o === v)) opts.push([v, `${v} (現在の値)`]);
+    if (!opts.some(([o]) => o === v)) opts.push([v, tr("{0} (現在の値)", v)]);
     const s = el("select", { onchange: (e) => set(e.target.value) },
-      opts.map(([o, l]) => el("option", { value: o }, l)));
+      opts.map(([o, l]) => el("option", { value: o }, tr(l))));
     s.value = v;
-    return el("span", { class: "ctrl" }, s, item.unit ? el("span", { class: "unit" }, item.unit) : null);
+    return el("span", { class: "ctrl" }, s, item.unit ? el("span", { class: "unit" }, tr(item.unit)) : null);
   }
   if (item.type === "text" || item.type === "password") {
     const shown = d.string ? unquote(v) : v;
@@ -1012,22 +1388,22 @@ function control(item) {
       value: shown, spellcheck: "false", autocomplete: "off",
       onchange: (e) => set(d.string ? quote(e.target.value) : e.target.value.trim()),
     });
-    const toggle = isPass ? el("button", { type: "button", title: "パスワードの表示を切り替え",
-      onclick: () => { state.showPass = !state.showPass; render(); } }, state.showPass ? "隠す" : "表示") : null;
+    const toggle = isPass ? el("button", { type: "button", title: tr("パスワードの表示を切り替え"),
+      onclick: () => { state.showPass = !state.showPass; render(); } }, tr(state.showPass ? "隠す" : "表示")) : null;
     const err = formatError(item);
     return el("span", { class: "ctrl wrap" }, inp, toggle, err ? el("span", { class: "err-hint" }, err) : null);
   }
   if (item.type === "bits") { // ビットの和(EEPROM_LOAD): ビットごとのチェックボックス
-    if (!/^\d+$/.test(v)) return el("span", { class: "readonly", title: "式のため config.h を直接編集してください" }, v);
+    if (!/^\d+$/.test(v)) return el("span", { class: "readonly", title: tr("式のため config.h を直接編集してください") }, v);
     const n = Number(v);
     return el("span", { class: "ctrl wrap" }, item.bits.map(([b, l]) => {
       const cb = el("input", { type: "checkbox", onchange: (e) => set(String(e.target.checked ? (n | b) : (n & ~b))) });
       cb.checked = (n & b) !== 0;
-      return el("label", { class: "bit" }, cb, " " + l);
+      return el("label", { class: "bit" }, cb, " " + tr(l));
     }));
   }
   if (item.type === "number") {
-    if (isNaN(Number(v))) return el("span", { class: "readonly", title: "式のため config.h を直接編集してください" }, v);
+    if (isNaN(Number(v))) return el("span", { class: "readonly", title: tr("式のため config.h を直接編集してください") }, v);
     const err = formatError(item);
     const inp = el("input", { type: "number", min: item.min, max: item.fmt === "port" ? 65535 : undefined,
       step: item.step || 1, value: v, class: err ? "invalid" : "",
@@ -1036,7 +1412,7 @@ function control(item) {
         if (raw === "" || isNaN(Number(raw))) { e.target.value = val(item.key); return; }
         set(item.float ? (raw.includes(".") ? raw : raw + ".0") : String(Math.trunc(Number(raw))));
       } });
-    return el("span", { class: "ctrl wrap" }, inp, el("span", { class: "unit" }, item.unit || ""),
+    return el("span", { class: "ctrl wrap" }, inp, el("span", { class: "unit" }, tr(item.unit || "")),
       err ? el("span", { class: "err-hint" }, err) : null);
   }
   return null;
@@ -1046,19 +1422,19 @@ function row(item, parentVal) {
   if (item.show && !item.show(parentVal)) return null;
   if (item.type === "info") {
     return el("div", { class: "row" },
-      el("div", { class: "label" }, el("span", { class: "name" }, item.label),
-        item.hint ? el("span", { class: "hint" }, item.hint) : null),
-      el("span", { class: "readonly" }, item.text(parentVal)));
+      el("div", { class: "label" }, el("span", { class: "name" }, tr(item.label)),
+        item.hint ? el("span", { class: "hint" }, tr(item.hint)) : null),
+      el("span", { class: "readonly" }, tr(item.text(parentVal))));
   }
   const d = state.defs[item.key];
   const changed = d && state.defines[item.key] !== d.value;
   const fileTag = d && d.file === "keys" ? " · keys.h" : "";
   const r = el("div", { class: "row" + (changed ? " changed" : "") + (d ? "" : " missing") },
     el("div", { class: "label" },
-      el("span", { class: "name" }, el("span", { class: "dot", title: "変更あり" }), item.label,
-        item.unused ? el("span", { class: "badge", title: "コード内で参照されていません" }, "未使用") : null),
+      el("span", { class: "name" }, el("span", { class: "dot", title: tr("変更あり") }), tr(item.label),
+        item.unused ? el("span", { class: "badge", title: tr("コード内で参照されていません") }, tr("未使用")) : null),
       el("span", { class: "key" }, item.key + fileTag),
-      item.hint ? el("span", { class: "hint" }, item.hint) : null),
+      item.hint ? el("span", { class: "hint" }, tr(item.hint)) : null),
     control(item));
   const out = [r];
   if (item.children && d) {
@@ -1071,7 +1447,7 @@ function row(item, parentVal) {
 
 function card(sec) {
   return el("section", { class: "card", id: sec.id },
-    el("h2", {}, sec.title, sec.sub ? el("span", { class: "sub" }, sec.sub) : null),
+    el("h2", {}, tr(sec.title), sec.sub ? el("span", { class: "sub" }, tr(sec.sub)) : null),
     el("div", { class: "rows" }, sec.items.map((it) => row(it)).flat().filter(Boolean)));
 }
 
@@ -1089,7 +1465,7 @@ function servoTable() {
   const side = state.servoTab;
   const names = SERVO_ARRAYS[side];
   const mt = state.arrays[names.mt];
-  if (!mt) return el("div", { class: "note" }, "サーボの配列が config.h に見つかりません");
+  if (!mt) return el("div", { class: "note" }, tr("サーボの配列が config.h に見つかりません"));
   const setArr = (name, i, v) => { state.arrayVals[name][i] = v; render(); };
   const cell = (name, i, node) => {
     const a = state.arrays[name];
@@ -1099,7 +1475,7 @@ function servoTable() {
   const rows = mt.items.map((it, i) => {
     const mount = state.arrayVals[names.mt][i];
     const mtSel = el("select", { onchange: (e) => setArr(names.mt, i, e.target.value) },
-      SERVO_TYPES.map(([o, l]) => el("option", { value: o }, l)));
+      SERVO_TYPES.map(([o, l]) => el("option", { value: o }, tr(l))));
     if (!SERVO_TYPES.some(([o]) => o === mount)) mtSel.append(el("option", { value: mount }, mount));
     mtSel.value = mount;
     const num = (name, isFloat, step) => {
@@ -1115,12 +1491,12 @@ function servoTable() {
     if (state.arrays[names.cw]) {
       const cb = el("input", { type: "checkbox", onchange: (e) => setArr(names.cw, i, e.target.checked ? "-1" : "1") });
       cb.checked = state.arrayVals[names.cw][i] === "-1";
-      cw = el("label", { class: "switch", title: "ONで逆転 (-1)" }, cb, el("span"));
+      cw = el("label", { class: "switch", title: tr("ONで逆転 (-1)") }, cb, el("span"));
     }
-    const warn = slotWarning(side, mount);
+    const warn = tr(slotWarning(side, mount));
     return el("tr", { class: mount === "0" ? "off" : "" },
       el("td", { class: "idx" }, String(i).padStart(2, "0")),
-      el("td", {}, it.label || "-"),
+      el("td", {}, trPart(it.label) || "-"),
       el("td", { class: "mt" + (mount !== it.value ? " changed-cell" : "") }, mtSel,
         warn ? el("span", { class: "warn", title: warn }, " ⚠ " + warn) : null),
       cell(names.id, i, num(names.id, false, 1)),
@@ -1129,7 +1505,7 @@ function servoTable() {
   });
   return el("div", { class: "table-wrap" },
     el("table", {},
-      el("thead", {}, el("tr", {}, ["#", "部位", "サーボの種類", "ID", "逆転", "トリム (deg)"].map((h) => el("th", {}, h)))),
+      el("thead", {}, el("tr", {}, ["#", "部位", "サーボの種類", "ID", "逆転", "トリム (deg)"].map((h) => el("th", {}, tr(h))))),
       el("tbody", {}, rows)));
 }
 
@@ -1140,22 +1516,44 @@ function render() {
   form.innerHTML = "";
   SCHEMA.forEach((sec) => form.append(card(sec)));
   if (val("MODE_ESP32_STANDALONE") === "1") {
-    $("#servoCard").prepend(el("div", { class: "note" }, "ボード単体動作がONのため, サーボ通信は行われません"));
+    $("#servoCard").prepend(el("div", { class: "note" }, tr("ボード単体動作がONのため, サーボ通信は行われません")));
   }
   const tabs = el("div", { class: "tabs" }, ["L", "R"].map((s) =>
-    el("button", { class: state.servoTab === s ? "on" : "", onclick: () => { state.servoTab = s; render(); } }, s + "系統")));
+    el("button", { class: state.servoTab === s ? "on" : "", onclick: () => { state.servoTab = s; render(); } }, tr("{0}系統", s))));
   form.append(el("section", { class: "card" },
-    el("h2", {}, "サーボ表", el("span", { class: "sub" }, "マウント・ID・回転方向・トリム")),
+    el("h2", {}, tr("サーボ表"), el("span", { class: "sub" }, tr("マウント・ID・回転方向・トリム"))),
     tabs, servoTable()));
-  const adv = el("details", { class: "card" }, el("summary", {}, "詳細設定"),
+  const adv = el("details", { class: "card" }, el("summary", {}, tr("詳細設定")),
     ADVANCED.map((sec) => el("div", {},
-      el("div", { class: "note", style: "padding-top:10px;font-weight:bold" }, sec.title),
+      el("div", { class: "note", style: "padding-top:10px;font-weight:bold" }, tr(sec.title)),
       el("div", { class: "rows" }, sec.items.map((it) => row(it)).flat().filter(Boolean)))));
   adv.open = openAdv;
   form.append(adv);
   updateSaveButton();
   window.scrollTo(0, scrollY);
 }
+
+// ---- 表示言語 ----
+const LANG_KEY = "meridian-config-lang";
+function setLang(lang) {
+  LANG = lang === "en" ? "en" : "ja";
+  document.documentElement.lang = LANG;
+  for (const b of document.querySelectorAll("[data-set-lang]")) {
+    const on = b.dataset.setLang === LANG;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-selected", on);
+  }
+  for (const e of document.querySelectorAll("[data-tr]")) e.textContent = tr(e.dataset.tr);
+  for (const e of document.querySelectorAll("[data-tr-title]")) e.title = tr(e.dataset.trTitle);
+  showVersion($("#version").textContent || null);
+  showStatus();
+  if (state.files.config) render();
+  else updateSaveButton();
+}
+for (const b of document.querySelectorAll("[data-set-lang]")) {
+  b.addEventListener("click", () => { lsSet(LANG_KEY, b.dataset.setLang); setLang(b.dataset.setLang); });
+}
+setLang(lsGet(LANG_KEY, /^ja\b/i.test(navigator.language || "ja") ? "ja" : "en"));
 
 // ---- 起動 ----
 for (const [id, f] of Object.entries(FILES)) {
@@ -1164,18 +1562,18 @@ for (const [id, f] of Object.entries(FILES)) {
   input.addEventListener("change", () => {
     lsSet(f.lsKey, input.value.trim());
     if (state.root) {
-      if (changeCount() && !confirm("保存していない変更を破棄して読み直しますか？")) return;
+      if (changeCount() && !confirm(tr("保存していない変更を破棄して読み直しますか？"))) return;
       load();
     }
   });
 }
 if (BASE_DIR) {
   $("#baseDir").textContent = `./ (${BASE_DIR})`;
-  $("#baseName").textContent = BASE_DIR;
+  for (const e of document.querySelectorAll(".baseName")) e.textContent = BASE_DIR;
 }
 $("#btnFolder").addEventListener("click", pickFolder);
 $("#btnReload").addEventListener("click", () => {
-  if (changeCount() && !confirm("保存していない変更を破棄して読み直しますか？")) return;
+  if (changeCount() && !confirm(tr("保存していない変更を破棄して読み直しますか？"))) return;
   load();
 });
 $("#btnSave").addEventListener("click", save);
@@ -1185,9 +1583,10 @@ window.addEventListener("beforeunload", (e) => {
 
 (async () => {
   if (!fsSupported) {
-    $("#btnFolder").textContent = "config.h を開く";
+    $("#btnFolder").dataset.tr = "config.h を開く";
+    $("#btnFolder").textContent = tr("config.h を開く");
     $("#pathKeys").disabled = true;
-    setStatus("このブラウザは直接保存に対応していません (Chrome / Edge 推奨)。保存はダウンロードになり, keys.h は編集できません。");
+    setStatus(() => tr("このブラウザは直接保存に対応していません (Chrome / Edge 推奨)。保存はダウンロードになり, keys.h は編集できません。"));
     return;
   }
   const saved = await idbGet("root");
@@ -1196,9 +1595,8 @@ window.addEventListener("beforeunload", (e) => {
   if ((await saved.queryPermission({ mode: "readwrite" })) === "granted") {
     await load();
   } else {
-    setStatus(`前回のフォルダ「${saved.name}」があります。`);
-    const b = el("button", { class: "primary", onclick: async () => { b.remove(); await load(); } }, `「${saved.name}」に再接続`);
-    $("#status").append(" ", b);
+    setStatus(() => tr("前回のフォルダ「{0}」があります。", saved.name), "", () =>
+      el("button", { class: "primary", onclick: async (e) => { e.target.remove(); await load(); } }, tr("「{0}」に再接続", saved.name)));
   }
 })();
 </script>
