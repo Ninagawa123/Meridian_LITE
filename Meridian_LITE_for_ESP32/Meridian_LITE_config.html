@@ -59,6 +59,7 @@
   .paths { display: flex; flex-wrap: wrap; gap: 6px 12px; flex: 1 1 360px; min-width: 0; }
   .path { display: flex; align-items: center; gap: 6px; flex: 1 1 200px; min-width: 0; }
   .path label { color: var(--muted); white-space: nowrap; }
+  .path.base { flex: 0 1 auto; }
   .path input { flex: 1; min-width: 0; font-family: ui-monospace, Menlo, monospace; }
   .status { max-width: 980px; margin: 6px auto 0; color: var(--muted); font-size: 12px; min-height: 18px; }
   .status.err { color: var(--danger); }
@@ -167,7 +168,9 @@
   input.text { width: 240px; max-width: 100%; font-family: ui-monospace, Menlo, monospace; }
   input.invalid { border-color: var(--danger); }
   .err-hint { color: var(--danger); font-size: 12px; }
+  .warn { color: var(--changed); font-size: 12px; }
   .ctrl.wrap { flex-wrap: wrap; justify-content: flex-end; }
+  .bit { font-size: 13px; white-space: nowrap; margin-left: 10px; }
 </style>
 </head>
 <body>
@@ -175,6 +178,10 @@
   <div class="bar">
     <h1>Meridian LITE Config <span id="version" class="version" title="main.cpp の VERSION"></span></h1>
     <div class="paths">
+      <div class="path base" title="このページのあるフォルダ. パスはここからの相対パス">
+        <label>基準フォルダ</label>
+        <span id="baseDir" class="readonly">./</span>
+      </div>
       <div class="path">
         <label for="path">config.h</label>
         <input id="path" type="text" value="src/config.h" spellcheck="false">
@@ -184,7 +191,7 @@
         <input id="pathKeys" type="text" value="src/keys.h" spellcheck="false">
       </div>
     </div>
-    <button id="btnFolder" title="Meridian_LITE_for_ESP32 フォルダを選択">フォルダを選択</button>
+    <button id="btnFolder" title="このページのあるフォルダ (Meridian_LITE_for_ESP32) を選択">フォルダを選択</button>
     <button id="btnReload" disabled>再読み込み</button>
     <button id="btnSave" class="primary" disabled>保存</button>
   </div>
@@ -193,8 +200,9 @@
 
 <main id="main">
   <div class="empty" id="empty">
-    「フォルダを選択」で <b>Meridian_LITE_for_ESP32</b> フォルダを選ぶと、<br>
-    上のパス (既定: <code>src/config.h</code>, <code>src/keys.h</code>) のファイルを読み込みます。<br>
+    「フォルダを選択」で、このページのあるフォルダ <b id="baseName">Meridian_LITE_for_ESP32</b> (<code>./</code>) を選ぶと、<br>
+    そこからの相対パス (既定: <code>src/config.h</code>, <code>src/keys.h</code>) のファイルを読み込みます。<br>
+    その親フォルダを選んだ場合は、中の <b>Meridian_LITE_for_ESP32</b> を自動で使います。<br>
     初回だけブラウザが読み書きの許可を求めます。<br><br>
     <span style="font-size:12px">Chrome / Edge で開いてください。その他のブラウザでは、ファイルを開いてダウンロード保存する方式になります。</span>
   </div>
@@ -230,7 +238,8 @@ function parseDefines(text) {
       defs[name].dup = true;
       return;
     }
-    defs[name] = { value, line: i, dup: false, single: !!str || /^\S+$/.test(value), string: !!str };
+    // 括弧で囲んだ式 (例: (MRD_BOARD_SERVO_IF == 1)) も1つの値として扱う
+    defs[name] = { value, line: i, dup: false, single: !!str || /^\S+$/.test(value) || /^\(.*\)$/.test(value), string: !!str };
   });
   return defs;
 }
@@ -354,44 +363,85 @@ if (typeof module !== "undefined") {
      画面の定義 (親子構造). show(親の値) が true のとき子を表示する
      =================================================================== -->
 <script>
+// スロット(IXL_MT/IXR_MT)で選べるサーボの種類
 const SERVO_TYPES = [
   ["0", "なし (NOSERVO)"],
-  ["1", "PWM_S1 (Single PWM) [WIP]"],
-  ["11", "PCA9685 (I2C→PWM) [WIP]"],
-  ["21", "FTBRSX (FUTABA RSxTTL) [WIP]"],
-  ["31", "DXL1 (DYNAMIXEL 1.0) [WIP]"],
+  ["1", "PWM_S (本体ピンPWM)"],
+  ["11", "PCA9685 (I2C→PWM)"],
+  ["21", "FTBRSX (FUTABA RS30x)"],
+  ["31", "DXL1 (DYNAMIXEL 1.0, AX/RX/MX)"],
   ["32", "DXL2 (DYNAMIXEL 2.0, Xシリーズ)"],
   ["43", "KOICS3 (KONDO ICS 3.5/3.6)"],
-  ["44", "KOPMX (KONDO PMX) [WIP]"],
-  ["51", "JRXBUS (JR PROPO XBUS) [WIP]"],
-  ["61", "FTCSTS (FEETECH STS) [WIP]"],
-  ["62", "FTCSCS (FEETECH SCS) [WIP]"],
+  ["44", "KOPMX (KONDO PMX, RS-485変換経由)"],
+  ["51", "JRXBUS (JR PROPO XBUS)"],
+  ["61", "FTCSTS (FEETECH STS)"],
+  ["62", "FTCSCS (FEETECH SCS)"],
+  ["71", "HTCHSR (Hitec HSR-8498HB)"],
 ];
+// 系統(MOUNT_SERVO_TYPE_x)で選べる種類. PWM(1/11)はスロット単位で使うため系統には選ばない
+const LINE_TYPES = SERVO_TYPES.filter(([t]) => t !== "1" && t !== "11");
+// 1系統に混在できる種類(チェックサム付き, 8N1). FEETECHの61/62は同じ1種類として数える
+const MIXABLE = ["21", "31", "32", "61", "62"];
+const family = (t) => (t === "62" ? "61" : t);
 const ON = (v) => v === "1";
 const NOT = (x) => (v) => v !== x;
 
+// 種類ごとの通信速度の選択肢(サーボ側の設定値の一覧)
+const BAUDS = {
+  "21": { hint: "サーボ側も同じ速度に設定してください (出荷時115200, 460800推奨)",
+    options: [["9600", "9600"], ["14400", "14400"], ["19200", "19200"], ["28800", "28800"], ["38400", "38400"], ["57600", "57600"],
+      ["76800", "76800"], ["115200", "115200 (出荷時)"], ["153600", "153600"], ["230400", "230400"], ["460800", "460800 (推奨)"], ["691200", "691200"]] },
+  "32": { hint: "サーボ側も DYNAMIXEL Wizard などで同じ速度に設定してください",
+    options: [["9600", "9600"], ["57600", "57600 (出荷時)"], ["115200", "115200"], ["1000000", "1000000"], ["2000000", "2000000"],
+      ["3000000", "3000000 (推奨)"], ["4000000", "4000000"], ["4500000", "4500000"]] },
+  "31": { hint: "サーボ側も同じ速度に設定してください (AXは出荷時1M, MX/RXは57600)",
+    options: [["9600", "9600"], ["19200", "19200"], ["57600", "57600 (MX/RX出荷時)"], ["115200", "115200"], ["200000", "200000"],
+      ["250000", "250000"], ["400000", "400000"], ["500000", "500000"], ["1000000", "1000000 (AX出荷時)"], ["2250000", "2250000 (MX)"],
+      ["2500000", "2500000 (MX)"], ["3000000", "3000000 (MX)"]] },
+  "43": { options: [["115200", "115200"], ["625000", "625000"], ["1250000", "1250000 (推奨)"]] },
+  "44": { hint: "サーボ側も PMX Servo Manager で同じ速度に設定してください",
+    options: [["57600", "57600"], ["115200", "115200 (出荷時)"], ["625000", "625000"], ["1000000", "1000000"], ["1250000", "1250000"],
+      ["1500000", "1500000"], ["2000000", "2000000"], ["3000000", "3000000 (推奨)"]] },
+  "51": { options: [["250000", "250000 (固定)"]] },
+  "61": { options: [["38400", "38400"], ["57600", "57600"], ["76800", "76800"], ["115200", "115200"], ["128000", "128000"],
+      ["250000", "250000"], ["500000", "500000"], ["1000000", "1000000 (出荷時・推奨)"]] },
+  "71": { options: [["19200", "19200 (固定)"]] },
+};
+BAUDS["62"] = BAUDS["61"];
+const baudRows = (key) => Object.entries(BAUDS).map(([t, b]) =>
+  ({ key, type: "select", label: "通信速度", unit: "bps", show: (v) => v === t, options: b.options, hint: b.hint }));
+
+// 系統の設定. 2種類目(混在)は1種類目が混在できる種類のときだけ選べる
 const servoLine = (s, name) => ({
-  key: "MOUNT_SERVO_TYPE_" + s, type: "select", label: name + "のサーボ", options: SERVO_TYPES,
+  key: "MOUNT_SERVO_TYPE_" + s, type: "select", label: name + "のサーボ", options: LINE_TYPES,
   children: [
-    // 通信速度の選択肢はサーボの種類で切り替える (同じ設定値を種類ごとの行で表示)
-    { key: "SERVO_BAUDRATE_" + s, type: "select", label: "通信速度", unit: "bps", show: (v) => v === "43",
-      options: [["115200", "115200"], ["625000", "625000"], ["1250000", "1250000"]] },
-    { key: "SERVO_BAUDRATE_" + s, type: "select", label: "通信速度", unit: "bps", show: (v) => v === "32",
-      hint: "サーボ側も DYNAMIXEL Wizard などで同じ速度に設定してください",
-      options: [["57600", "57600 (出荷時)"], ["115200", "115200"], ["1000000", "1000000"], ["2000000", "2000000"],
-        ["3000000", "3000000 (推奨)"], ["4000000", "4000000"]] },
+    ...baudRows("SERVO_BAUDRATE_" + s),
     { key: "SERVO_BAUDRATE_" + s, type: "number", label: "通信速度", unit: "bps", min: 1,
-      show: (v) => v !== "0" && v !== "43" && v !== "32" },
-    { key: "SERVO_TIMEOUT_" + s, type: "number", label: "応答待ちタイムアウト", unit: "ms", min: 1, show: (v) => v === "43" },
+      show: (v) => v !== "0" && !BAUDS[v] },
+    { key: "MOUNT_SERVO_TYPE_" + s + "2", type: "select", label: "2種類目のサーボ (混在)",
+      hint: "21/31/32/61/62 の異なる2種類だけ混在できます. 目標位置は毎フレーム両方に送り, 現在位置は種類ごとに交互に読みます",
+      show: (v) => MIXABLE.includes(v),
+      options: () => [["0", "なし (混在しない)"],
+        ...LINE_TYPES.filter(([t]) => MIXABLE.includes(t) && family(t) !== family(val("MOUNT_SERVO_TYPE_" + s)))],
+      children: [...baudRows("SERVO_BAUDRATE_" + s + "2")] },
+    { type: "info", label: "2種類目のサーボ (混在)", text: () => "この種類は混在できません (21/31/32/61/62 のみ)",
+      show: (v) => v !== "0" && !MIXABLE.includes(v) && val("MOUNT_SERVO_TYPE_" + s + "2") !== "0" },
+    { key: "SERVO_TIMEOUT_" + s, type: "number", label: "応答待ちタイムアウト", unit: "ms", min: 1, show: NOT("0"),
+      hint: "応答しないサーボで待つ時間. 短いほどフレームへの影響が小さい" },
     { key: "SERVO_ECHO_" + s, type: "select", label: "送信エコー処理", show: NOT("0"),
-      options: [["2", "起動時に自動判定 (推奨)"], ["1", "あり (SN74LXC1T45版)"], ["0", "なし (3ステート版)"]] },
+      options: [["(MRD_BOARD_SERVO_IF == 1)", "基板の設定に従う (既定)"], ["2", "起動時に自動判定"],
+        ["1", "あり (SN74LXC1T45版)"], ["0", "なし (3ステート版)"]] },
   ],
 });
+// いずれかの系統(2種類目を含む)で使っている種類か
+const usesType = (...ts) => ["L", "R", "L2", "R2"].some((s) => ts.includes(val("MOUNT_SERVO_TYPE_" + s)));
+// スロットの種類で使っているか(PWMはスロット単位)
+const usesSlotType = (...ts) => Object.values(SERVO_ARRAYS).some((a) => (state.arrayVals[a.mt] || []).some((t) => ts.includes(t)));
 
 const SCHEMA = [
   { title: "ボード", items: [
     { key: "MRD_BOARD_SERVO_IF", type: "select", label: "サーボIF回路",
-      hint: "R系統のTX/RXピンと, 受信中のTX出力OFFがこれに連動します",
+      hint: "R系統のTX/RXピン, 送信エコー処理(既定), 受信中のTX出力OFFがこれに連動します",
       options: [["0", "3ステートバッファ版 (Ver L1.43より前・無印)"], ["1", "SN74LXC1T45版 (Ver L1.43以上)"]],
       children: [
         { type: "info", label: "R系統 TX / RX", text: (v) => (v === "1" ? "GPIO14 / GPIO13" : "GPIO17 / GPIO16") },
@@ -400,10 +450,15 @@ const SCHEMA = [
   ] },
   { title: "動作モード", items: [
     { key: "MODE_ESP32_STANDALONE", type: "switch", label: "ボード単体動作", hint: "ONにするとサーボ通信を行いません (ESP32単体での動作確認用)" },
-    { key: "MODE_UDP_RECEIVE", type: "switch", label: "PCからのUDP受信", children: [
+    { key: "MODE_UDP_RECEIVE", type: "switch", label: "PCからのUDP受信",
+      hint: "OFFにするとPCから受信せず, 起動の約0.5秒後に全サーボをトルクONにしてボード内の計算で動かします", children: [
       { key: "UDP_TIMEOUT_US", type: "number", label: "受信待ちタイムアウト", unit: "µs", min: 0, step: 100 },
       { key: "UDP_POLL_US", type: "number", label: "受信確認の間隔", unit: "µs", min: 1, step: 10 },
+      { key: "UDP_FAILSAFE_MS", type: "number", label: "受信が途絶えたら脱力するまでの時間", unit: "ms", min: 0, step: 100,
+        hint: "PCからの正しい受信がこの時間ないと全サーボを脱力します (0で脱力しない)" },
     ] },
+    { key: "UDP_SELF_SPEED", type: "number", label: "受信しないときのサーボの速さ", unit: "deg/s", min: 0, step: 10, float: true,
+      show: () => !ON(val("MODE_UDP_RECEIVE")), hint: "PCから受信しないとき, トルクON後にサーボを目標へ動かす速さの上限です" },
     { key: "MODE_UDP_SEND", type: "switch", label: "PCへのUDP送信" },
   ] },
   { title: "ネットワーク", sub: "通信方式は config.h, アドレス類は keys.h に保存", items: [
@@ -441,20 +496,37 @@ const SCHEMA = [
           options: [["100000", "100kHz"], ["400000", "400kHz (推奨)"]] },
       ] },
     { key: "MOUNT_PAD", type: "select", label: "ジョイパッド",
-      options: [["PC", "PC (コンソールから入力)"], ["MERIMOTE", "MERIMOTE (未導入)"], ["BLUERETRO", "BLUERETRO (未導入)"],
-        ["SBDBT", "SBDBT (未導入)"], ["KRR5FH", "KRR-5FH (KRC-5FH)"], ["WIIMOTE", "WIIMOTE"], ["WIIMOTE_C", "WIIMOTE + Classic"]],
+      options: [["PC", "PC (コンソールから入力)"], ["MERIMOTE", "MERIMOTE (未導入)"], ["BLUERETRO", "BlueRetro (Wii extension, I2C1)"],
+        ["SBDBT", "SBDBT (RCB3形式)"], ["KRR5FH", "KRR-5FH (KRC-5FH)"], ["WIIMOTE", "WIIMOTE"], ["WIIMOTE_C", "WIIMOTE + クラシックコントローラ"]],
       children: [
+        { type: "info", label: "KRR-5FH の接続", text: () => (val("MOUNT_SERVO_TYPE_R") === "43" ? "R系統 (ICS) から読みます" :
+          "R系統がICS(43)ではないため読みません"), show: (v) => v === "KRR5FH" },
         { key: "PAD_INIT_TIMEOUT", type: "number", label: "接続待ちタイムアウト", unit: "ms", min: 0, step: 1000,
           show: (v) => v.startsWith("WIIMOTE") },
-        { key: "PAD_INTERVAL", type: "number", label: "読み取り間隔", unit: "フレーム", min: 1, hint: "KRC-5FHは4推奨", show: NOT("PC") },
+        { key: "PAD_INTERVAL", type: "number", label: "読み取り間隔", unit: "ms", min: 1, hint: "KRC-5FHは4推奨", show: NOT("PC") },
         { key: "PAD_BUTTON_MARGE", type: "select", label: "Meridimのボタン値との合成", show: NOT("PC"),
-          options: [["1", "論理和 (OR)"], ["0", "論理積 (AND)"]] },
+          options: [["1", "論理和 (OR)"], ["0", "上書き"]] },
         { key: "PAD_GENERALIZE", type: "switch", label: "ボタン配置をPS系に一般化", show: NOT("PC") },
+        { key: "PAD_SBDBT_BPS", type: "select", label: "SBDBT の通信速度", unit: "bps", show: (v) => v === "SBDBT",
+          hint: "SBDBT の PS3 用ファームウェア (RCB3形式) の BAUDRATE1 と合わせてください (既定 2400)",
+          options: [["2400", "2400"], ["4800", "4800"], ["9600", "9600"], ["19200", "19200"], ["38400", "38400"]] },
+        { key: "PAD_SBDBT_TIMEOUT", type: "number", label: "SBDBT の電文が途絶えたら0にする時間", unit: "ms", min: 0, step: 100,
+          show: (v) => v === "SBDBT", hint: "0 なら最後の値を保ちます. SBDBT が毎回送る設定 (SEND_ON_DIFFERENT_DATA 0) のときに使ってください" },
+        { key: "PAD_BLUERETRO_I2C", type: "select", label: "BlueRetro をつなぐI2C", show: (v) => v === "BLUERETRO",
+          options: [["0", "I2C0 (GPIO22/21. IMU と同じバス)"], ["1", "I2C1 (PIN_I2C1_SDA/SCL)"]] },
+        { type: "info", label: "BlueRetro の接続", text: () => val("PAD_BLUERETRO_I2C") === "0" ?
+          "BlueRetro の SCL(GPIO25) を GPIO" + (val("PIN_I2C0_SCL") || "21") + ", SDA(GPIO26) を GPIO" + (val("PIN_I2C0_SDA") || "22") + " (I2C0) へ" :
+          "BlueRetro の SCL(GPIO25) を GPIO" + (val("PIN_I2C1_SCL") || "26") + ", SDA(GPIO26) を GPIO" + (val("PIN_I2C1_SDA") || "25") +
+          " (I2C1) へ. LED のピンと重なると LED はなくなります", show: (v) => v === "BLUERETRO" },
+        { type: "info", label: "SBDBT の接続", text: () => "SBDBT の TX を GPIO" + (val("PIN_PAD_RX") || "34") + " (PIN_PAD_RX) へ. 3.3V, GND 共通",
+          show: (v) => v === "SBDBT" },
       ] },
   ] },
   { title: "EEPROM", items: [
-    { key: "EEPROM_SET", type: "switch", label: "起動時に config.h の値を書き込む" },
-    { key: "EEPROM_LOAD", type: "switch", label: "起動時にサーボ設定を読み込む" },
+    { key: "EEPROM_LOAD", type: "bits", label: "EEPROM の値を使うページ",
+      hint: "チェックしたページは, 起動時に EEPROM の値を使います (空・壊れたページは config.h の値). 他は config.h の値",
+      bits: [[1, "P0 システム"], [2, "P1 サーボのスロット"], [4, "P2 スロットの拡張"], [8, "P3 サーボの系統"], [16, "P4 PWM"], [32, "P5 ネットワーク"]] },
+    { key: "EEPROM_SET", type: "switch", label: "起動時に config.h の値を書き込む", hint: "EEPROM の値を使わないページを, config.h の値で EEPROM に書きます" },
     { key: "EEPROM_PROTECT", type: "switch", label: "書き込み禁止 (保護)" },
     { key: "EEPROM_DUMP", type: "switch", label: "起動時に内容を表示", children: [
       { key: "EEPROM_STYLE", type: "select", label: "表示形式", options: [["Dec", "10進数"], ["Hex", "16進数"], ["Bin", "2進数"]] },
@@ -462,13 +534,15 @@ const SCHEMA = [
     { key: "CHECK_EEPROM_RW", type: "switch", label: "起動時に読み書きチェック", unused: true },
   ] },
   { title: "シリアルモニタ", items: [
-    { key: "SERIAL_PC_BPS", type: "select", label: "通信速度", unit: "bps",
+    { key: "SERIAL_PC_BPS", type: "select", label: "通信速度", unit: "bps", hint: "platformio.ini の monitor_speed と合わせてください",
       options: [["115200", "115200"], ["230400", "230400"], ["460800", "460800"], ["921600", "921600"]] },
-    { key: "SERIAL_PC_TIMEOUT", type: "number", label: "接続待ちタイムアウト", unit: "ms", min: 0, step: 100 },
+    { key: "SERIAL_PC_TIMEOUT", type: "number", label: "接続待ちタイムアウト", unit: "ms", min: 0, step: 100, unused: true },
     { key: "MONITOR_FLOW", type: "switch", label: "処理フローを表示" },
     { key: "MONITOR_SEQ", type: "switch", label: "シーケンス番号を表示" },
     { key: "MONITOR_ERR_ALL", type: "switch", label: "全経路の受信エラーを表示" },
-    { key: "MONITOR_FRAME_DELAY", type: "switch", label: "フレーム遅延を表示", unused: true },
+    { key: "MONITOR_FRAME_DELAY", type: "switch", label: "フレーム処理時間とサーボ通信の失敗を表示",
+      hint: "100フレームごとに平均/最大の処理時間, 系統ごとの応答待ち, 失敗したスロットを表示" },
+    { key: "MONITOR_UDP_TIMEOUT", type: "switch", label: "UDP受信のタイムアウトを表示" },
     { key: "MONITOR_ERR_SERVO", type: "switch", label: "サーボエラーを表示", unused: true },
     { key: "MONITOR_PAD", type: "switch", label: "リモコンのデータを表示", unused: true },
     { key: "MONITOR_SUPPRESS_DURATION", type: "number", label: "起動直後のタイムアウト表示を抑制", unit: "ms", min: 0, step: 1000 },
@@ -476,13 +550,59 @@ const SCHEMA = [
   { title: "サーボ", id: "servoCard", items: [
     servoLine("L", "L系統"),
     servoLine("R", "R系統"),
-    { key: "SERVO_DXL_TIMEOUT_US", type: "number", label: "DYNAMIXELの応答待ちタイムアウト", unit: "µs", min: 50, step: 50,
-      hint: "応答しない軸で待つ時間. 短いほどフレームへの影響が小さい",
-      show: () => val("MOUNT_SERVO_TYPE_L") === "32" || val("MOUNT_SERVO_TYPE_R") === "32" },
     { key: "SERVO_LOST_ERR_WAIT", type: "number", label: "通信異常と判定する連続失敗数", unit: "フレーム", min: 1 },
     { key: "SERVO_STEP_MAX", type: "number", label: "1フレームあたりの最大移動量", unit: "deg", min: 0, step: 0.1, float: true },
+    { key: "SERVO_MOTION_FRAMES_MAX", type: "number", label: "移動フレーム数(Meridim[19])の上限", unit: "フレーム", min: 0,
+      hint: "目標が変わったら Meridim[19] のフレーム数かけて直線で補間する. 0にすると補間しない(即時)" },
+    { key: "SERVO_UNMOUNT_REPLY", type: "select", label: "マウントしていないスロットへの返信",
+      hint: "種類が0のスロット, 起動時の検査で外したスロット, サーボなしの系統が対象",
+      options: [["0", "コマンド・角度とも0を返す"], ["1", "受信した値をそのまま返す"]] },
+  ] },
+  { title: "サーボの種類ごとの設定", sub: "使っている種類の項目だけ表示", items: [
+    { type: "info", label: "該当なし", text: () => "設定項目のある種類 (21/32/51/61/62/71/PWM) を使っていません",
+      show: () => !usesType("21", "31", "32", "51", "61", "62", "71") && !usesSlotType("1", "11") },
+    { key: "SERVO_FTB_READ_PER_FRAME", type: "number", label: "FUTABA: 1フレームに現在位置を読む台数", unit: "台", min: 1,
+      hint: "超える分は次のフレームで順に読む. 460.8kbpsで8台なら100Hzに収まる目安", show: () => usesType("21") },
+    { key: "SERVO_DXL_FIX_RETURN_DELAY", type: "switch", label: "DYNAMIXEL: 起動時に応答遅延時間を0にする",
+      hint: "出荷時は500us. 0でないと1台あたり最大0.5ms遅れる (1.0/2.0共通)", show: () => usesType("31", "32") },
+    { key: "SERVO_FTC_FIX_RETURN_DELAY", type: "switch", label: "FEETECH: 起動時に応答遅延時間を0にする", show: () => usesType("61", "62") },
+    { key: "SERVO_FTC_STS_RANGE", type: "number", label: "FEETECH STS: 位置値0-4095の角度範囲", unit: "deg", min: 1, step: 0.1, float: true,
+      show: () => usesType("61") || usesSlotTypeFtc("61") },
+    { key: "SERVO_FTC_SCS_RANGE", type: "number", label: "FEETECH SCS: 位置値0-1023の角度範囲", unit: "deg", min: 1, step: 0.1, float: true,
+      hint: "SCS0009等は300deg. 機種により異なる", show: () => usesType("62") || usesSlotTypeFtc("62") },
+    { key: "SERVO_FTC_SCS_SPEED", type: "number", label: "FEETECH SCS: 目標速度", unit: "位置値/秒", min: 1,
+      hint: "SCSは0だと駆動しない. 1500で約440deg/s (300deg機種)", show: () => usesType("62") || usesSlotTypeFtc("62") },
+    { key: "SERVO_XBUS_ANGLE180", type: "select", label: "JR XBUS: 角度範囲", show: () => usesType("51"),
+      options: [["0", "通常 ±60deg (900-2100us)"], ["1", "180度モード ±90deg"]] },
+    { key: "SERVO_HTC_PER_FRAME", type: "number", label: "Hitec: 1フレームに送る/読むサーボ数", unit: "台", min: 1,
+      hint: "1台約4.2ms. 各サーボ50Hzまで", show: () => usesType("71") },
+    { key: "SERVO_HTC_US_PER_DEG", type: "number", label: "Hitec: 1degあたりのパルス幅", unit: "us", min: 0.1, step: 0.1, float: true,
+      show: () => usesType("71") },
+    { key: "SERVO_HTC_SPEED", type: "text", label: "Hitec: 読み出し時に設定される速度", hint: "1-255. 0xFFはEEPROMの初期値",
+      show: () => usesType("71") },
+  ] },
+  { title: "PWMサーボ", sub: "サーボ表で種類 1 (本体ピン) / 11 (PCA9685) にしたスロット", items: [
+    { key: "PWM_PIN_MODE", type: "select", label: "ピン25/26の用途",
+      hint: "1/2 にするとエラーLEDとBluetooth LEDは使えません",
+      options: [["0", "LED (従来)"], ["1", "本体PWMサーボ 2ch"], ["2", "PCA9685用I2C (SDA=25, SCL=26)"]],
+      children: [
+        { type: "info", label: "スロットの割り当て", text: () => "config.h の PWM_PIN_SLOT を直接編集してください", show: (v) => v === "1" },
+        { type: "info", label: "スロットの割り当て", text: () => "config.h の PCA9685_SLOT を直接編集してください", show: (v) => v === "2" },
+        { key: "PCA9685_NUM", type: "select", label: "PCA9685の枚数", show: (v) => v === "2",
+          options: [["0", "0"], ["1", "1枚"], ["2", "2枚 (偶数/奇数フレームで交互に更新)"]] },
+        { key: "I2C1_SPEED", type: "select", label: "I2C速度", unit: "Hz", show: (v) => v === "2",
+          options: [["100000", "100kHz"], ["400000", "400kHz (推奨)"]] },
+        { key: "PCA9685_OSC_HZ", type: "number", label: "PCA9685の内蔵発振器の周波数", unit: "Hz", min: 1, step: 100000,
+          hint: "個体差でパルス幅がずれる場合に実測値に合わせる", show: (v) => v === "2" },
+      ] },
+    { key: "PWM_PULSE_CENTER", type: "number", label: "0degのパルス幅", unit: "us", min: 0, step: 1, float: true },
+    { key: "PWM_PULSE_MIN", type: "number", label: "パルス幅の下限", unit: "us", min: 0, step: 1, float: true },
+    { key: "PWM_PULSE_MAX", type: "number", label: "パルス幅の上限", unit: "us", min: 0, step: 1, float: true },
+    { key: "PWM_US_PER_DEG", type: "number", label: "1degあたりのパルス幅", unit: "us" },
   ] },
 ];
+// FEETECHのSTS/SCSはスロットの種類で選ぶため, 系統が61でもスロットが62の場合がある
+const usesSlotTypeFtc = (t) => usesType("61", "62") && usesSlotType(t);
 
 const ADVANCED = [
   { title: "Meridim / タイミング", items: [
@@ -492,7 +612,8 @@ const ADVANCED = [
     { key: "MRD_L_ORIGIDX", type: "number", label: "L系統の先頭インデックス", min: 0 },
     { key: "MRD_R_ORIGIDX", type: "number", label: "R系統の先頭インデックス", min: 0 },
     { key: "MRD_SERVO_SLOTS", type: "number", label: "1系統あたりの最大サーボ数", min: 1 },
-    { key: "EEPROM_SIZE", type: "number", label: "EEPROMのサイズ", unit: "byte", min: 1 },
+    { key: "EEPROM_SIZE", type: "number", label: "EEPROMのサイズ", unit: "byte", min: 1080, step: 180,
+      hint: "1ページ180byteの倍数. 既定 2880 (16ページ). P0〜P5 を使うため 1080 以上" },
     { key: "SPI0_SPEED", type: "number", label: "SPI速度", unit: "Hz", min: 1, step: 1000000 },
   ] },
   { title: "ピンアサイン", items: [
@@ -502,13 +623,22 @@ const ADVANCED = [
     { key: "PIN_EN_R", type: "number", label: "R系統 EN (DIR)", min: 0 },
     { type: "info", label: "R系統 TX / RX", text: () => (val("MRD_BOARD_SERVO_IF") === "1" ? "GPIO14 / GPIO13" : "GPIO17 / GPIO16"),
       hint: "「ボード」のサーボIF回路で切り替わります" },
-    { key: "PIN_ERR_LED", type: "number", label: "エラーLED", min: 0 },
-    { key: "PIN_LED_BT", type: "number", label: "Bluetooth LED", min: 0 },
+    { key: "PIN_ERR_LED", type: "number", label: "エラーLED", min: -1, hint: "-1 でなし. 本体PWM・I2C1 (PCA9685, BlueRetro)・SBDBT の受信と同じピンなら使いません" },
+    { key: "PIN_LED_BT", type: "number", label: "Bluetooth LED", min: -1, hint: "-1 でなし. 同上" },
+    { key: "PIN_PWM_0", type: "number", label: "本体PWMサーボ0", min: 0 },
+    { key: "PIN_PWM_1", type: "number", label: "本体PWMサーボ1", min: 0 },
     { key: "PIN_I2C0_SDA", type: "number", label: "I2C SDA", min: 0 },
     { key: "PIN_I2C0_SCL", type: "number", label: "I2C SCL", min: 0 },
+    { key: "PIN_I2C1_SDA", type: "number", label: "I2C1 SDA (PCA9685, BlueRetro)", min: 0 },
+    { key: "PIN_I2C1_SCL", type: "number", label: "I2C1 SCL (PCA9685, BlueRetro)", min: 0 },
+    { key: "PIN_PAD_RX", type: "number", label: "SBDBT の受信ピン", min: 0, hint: "SBDBT の TX をつなぐ. 入力専用ピン (34, 35, 36, 39) を推奨. 12 は起動時の制約があるため不可" },
     { key: "PIN_CHIPSELECT_SD", type: "number", label: "SDカード CS", min: 0 },
     { key: "PIN_CHIPSELECT_LAN", type: "number", label: "有線LAN CS", min: 0 },
     { key: "PIN_RESET_LAN", type: "number", label: "W5500 リセット", min: 0, unused: true },
+  ] },
+  { title: "PCA9685のI2Cアドレス", items: [
+    { key: "PCA9685_ADDR_0", type: "text", label: "1枚目" },
+    { key: "PCA9685_ADDR_1", type: "text", label: "2枚目", hint: "A0をHIGHに" },
   ] },
 ];
 
@@ -600,16 +730,39 @@ async function writeText(fileHandle, text) {
   await w.close();
 }
 
+// このページのあるフォルダの名前 (ページの場所 "./" から求める. 取得できなければ null)
+// ブラウザはパスを指定してフォルダを開けないため, 選んだフォルダがこれと同じかを確かめる基準に使う
+const BASE_DIR = (() => {
+  try {
+    const parts = decodeURIComponent(new URL("./", location.href).pathname).split("/").filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : null;
+  } catch { return null; }
+})();
+
+// 選んだフォルダを基準フォルダ(このページのあるフォルダ)に合わせる.
+// 名前が違い, 中に同じ名前のフォルダがあればそれを使う(親フォルダを選んだ場合). なければ選んだフォルダのまま
+async function toBaseDir(dir) {
+  if (!BASE_DIR || dir.name === BASE_DIR) return { dir, note: "", warn: false };
+  try {
+    return { dir: await dir.getDirectoryHandle(BASE_DIR), note: `「${dir.name}」の中の ${BASE_DIR} を使います`, warn: false };
+  } catch {
+    return { dir, note: `基準フォルダ (${BASE_DIR}) と違う「${dir.name}」を選んでいます`, warn: true };
+  }
+}
+
 async function pickFolder() {
   if (!fsSupported) return openFallback();
+  let picked;
   try {
-    state.root = await window.showDirectoryPicker({ id: "meridian-lite", mode: "readwrite" });
+    picked = await window.showDirectoryPicker({ id: "meridian-lite", mode: "readwrite" });
   } catch (e) {
     if (e.name !== "AbortError") setStatus("フォルダを開けませんでした: " + e.message, "err");
     return;
   }
+  const { dir, note, warn } = await toBaseDir(picked);
+  state.root = dir;
   await idbSet("root", state.root);
-  await load();
+  await load(note, warn);
 }
 
 async function ensurePermission() {
@@ -619,7 +772,7 @@ async function ensurePermission() {
   return (await state.root.requestPermission(opt)) === "granted";
 }
 
-async function load() {
+async function load(note = "", warn = false) {
   if (!state.root) return;
   if (!(await ensurePermission())) {
     setStatus("フォルダへのアクセスが許可されませんでした", "err");
@@ -636,14 +789,15 @@ async function load() {
     } catch (e) {
       if (FILES[id].required) {
         showForm(false);
-        setStatus(`${state.root.name}/${path} を読み込めません: ${e.message}`, "err");
+        const hint = BASE_DIR && state.root.name !== BASE_DIR ? ` — このページのあるフォルダ (${BASE_DIR}) を選んでください` : "";
+        setStatus(`${state.root.name}/${path} を読み込めません: ${e.message}${hint}`, "err");
         return;
       }
       notes.push(`${path} は見つかりません (この項目は編集できません)`);
     }
   }
   loadTexts(texts);
-  setStatus(`${state.root.name}: ${notes.join(" / ")} を読み込みました`, "ok");
+  setStatus(`${state.root.name}: ${notes.join(" / ")} を読み込みました` + (note ? ` (${note})` : ""), warn ? "err" : "ok");
   await loadVersion();
 }
 
@@ -843,7 +997,7 @@ function control(item) {
     return el("label", { class: "switch", title: item.key }, cb, el("span"));
   }
   if (item.type === "select") {
-    const opts = [...item.options];
+    const opts = [...(typeof item.options === "function" ? item.options() : item.options)];
     if (!opts.some(([o]) => o === v)) opts.push([v, `${v} (現在の値)`]);
     const s = el("select", { onchange: (e) => set(e.target.value) },
       opts.map(([o, l]) => el("option", { value: o }, l)));
@@ -863,7 +1017,17 @@ function control(item) {
     const err = formatError(item);
     return el("span", { class: "ctrl wrap" }, inp, toggle, err ? el("span", { class: "err-hint" }, err) : null);
   }
+  if (item.type === "bits") { // ビットの和(EEPROM_LOAD): ビットごとのチェックボックス
+    if (!/^\d+$/.test(v)) return el("span", { class: "readonly", title: "式のため config.h を直接編集してください" }, v);
+    const n = Number(v);
+    return el("span", { class: "ctrl wrap" }, item.bits.map(([b, l]) => {
+      const cb = el("input", { type: "checkbox", onchange: (e) => set(String(e.target.checked ? (n | b) : (n & ~b))) });
+      cb.checked = (n & b) !== 0;
+      return el("label", { class: "bit" }, cb, " " + l);
+    }));
+  }
   if (item.type === "number") {
+    if (isNaN(Number(v))) return el("span", { class: "readonly", title: "式のため config.h を直接編集してください" }, v);
     const err = formatError(item);
     const inp = el("input", { type: "number", min: item.min, max: item.fmt === "port" ? 65535 : undefined,
       step: item.step || 1, value: v, class: err ? "invalid" : "",
@@ -911,6 +1075,16 @@ function card(sec) {
     el("div", { class: "rows" }, sec.items.map((it) => row(it)).flat().filter(Boolean)));
 }
 
+// スロットの種類が系統で駆動できない場合の注意 (起動時にファームが警告してマウントを外す/別プロトコルで送る組み合わせ)
+function slotWarning(side, t) {
+  if (t === "0" || t === "1" || t === "11") return "";
+  const t1 = val("MOUNT_SERVO_TYPE_" + side), t2 = val("MOUNT_SERVO_TYPE_" + side + "2");
+  if (t1 === "0") return "この系統はサーボなし";
+  const mix = t2 && t2 !== "0" && MIXABLE.includes(t1) && MIXABLE.includes(t2) && family(t1) !== family(t2);
+  if (family(t) === family(t1) || (mix && family(t) === family(t2))) return "";
+  return "系統の種類と違う";
+}
+
 function servoTable() {
   const side = state.servoTab;
   const names = SERVO_ARRAYS[side];
@@ -943,10 +1117,12 @@ function servoTable() {
       cb.checked = state.arrayVals[names.cw][i] === "-1";
       cw = el("label", { class: "switch", title: "ONで逆転 (-1)" }, cb, el("span"));
     }
+    const warn = slotWarning(side, mount);
     return el("tr", { class: mount === "0" ? "off" : "" },
       el("td", { class: "idx" }, String(i).padStart(2, "0")),
       el("td", {}, it.label || "-"),
-      el("td", { class: "mt" + (mount !== it.value ? " changed-cell" : "") }, mtSel),
+      el("td", { class: "mt" + (mount !== it.value ? " changed-cell" : "") }, mtSel,
+        warn ? el("span", { class: "warn", title: warn }, " ⚠ " + warn) : null),
       cell(names.id, i, num(names.id, false, 1)),
       cell(names.cw, i, cw),
       cell(names.trim, i, num(names.trim, true, 0.01)));
@@ -992,6 +1168,10 @@ for (const [id, f] of Object.entries(FILES)) {
       load();
     }
   });
+}
+if (BASE_DIR) {
+  $("#baseDir").textContent = `./ (${BASE_DIR})`;
+  $("#baseName").textContent = BASE_DIR;
 }
 $("#btnFolder").addEventListener("click", pickFolder);
 $("#btnReload").addEventListener("click", () => {

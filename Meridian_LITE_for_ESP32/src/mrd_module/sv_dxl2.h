@@ -1,554 +1,825 @@
-#ifndef __MERIDIAN_SERVO_DYNAMIXEL_H__
-#define __MERIDIAN_SERVO_DYNAMIXEL_H__
+#ifndef __MERIDIAN_SERVO_DYNAMIXEL2_H__
+#define __MERIDIAN_SERVO_DYNAMIXEL2_H__
 
 #include "config.h"
 #include "main.h"
-#include "mrd_servo.h" // 半二重UARTバス(MrdHalfDuplexUart). 本ファイルは mrd_servo.h から読み込まれる
+#include "mrd_servo.h" // 半二重UARTバスと共通処理. 本ファイルは mrd_servo.h から読み込まれる
+#include "sv_util.h"   // 各プロトコル層の共通部品
 
 //==================================================================================================
-//  DYNAMIXEL Protocol 2.0 (Xシリーズ: XL330, XC330, XL430, XC430, 2XL430, XM, XH, XW など)
+//  DYNAMIXEL Protocol 2.0 プロトコル層 (半二重UARTバス上で動作)
 //==================================================================================================
 //
-// MOUNT_SERVO_TYPE_L / R を 32 にすると, その系統をこのファイルの処理で駆動する.
-// 1系統あたり最大15軸. 1フレーム(10ms)の中で以下を行う.
-//   1. 目標位置を Sync Write でまとめて書き込む (トルクONの軸のみ, 応答なし)
-//   2. トルクのON/OFFが変わった軸だけ, Sync Write でまとめて切り替える
-//   3. 現在位置を1軸ずつ Read で読み出す (応答待ちは SERVO_DXL_TIMEOUT_US)
-// L/R系統がどちらもDYNAMIXELの場合は, 分割API(begin_send/end_send/receive)でL/Rの通信を重ねる.
-// 実測: XL430 2軸・3Mbpsでサーボ処理 約0.6〜0.8ms (1軸あたり約0.2ms).
+// 対象: Xシリーズ(XL330, XL430, XC430, XM430, XH430, XM540等)およびProtocol 2.0のMXシリーズ.
+//       制御テーブルが異なる機種(XL-320, PRO/Pシリーズ)には対応しない.
 //
-// サーボ側の事前設定 (DYNAMIXEL Wizard など):
-//   - IDを IXL_ID / IXR_ID と一致させる
-//   - 通信速度を SERVO_BAUDRATE_L / R と一致させる (3Mbps推奨)
-//   - Protocol 2.0, 位置制御モード (Operating Mode = 3)
-// Return Delay Time は, 起動後の最初のフレームで0以外なら自動で0に書き換える (値が違うときだけEEPROMに書き込む).
+// 1フレームの処理 (1系統15台を100Hzで動かすための構成):
+//   [1] 目標位置: SyncWrite(0x83, アドレス116, 4バイト). トルクONのサーボのみ.
+//   [2] トルク: ON/OFFが変わったサーボだけSyncWrite(アドレス64, 1バイト).
+//       サーボの保護機能等でトルクが切れても復帰できるよう, MRD_SERVO_TORQUE_REFRESH_FRAMES ごとに全サーボへ送り直す.
+//       ※ハードウェアエラー(過負荷等)でトルクが切れた場合は, サーボの再起動(電源の入れ直し)まで復帰しない.
+//   [3] 現在位置: SyncRead(0x82, アドレス132, 4バイト)で全サーボを1回の要求で読む. 各サーボがID順に続けて応答する.
+//   [4] 前のフレームで読めなかったサーボは[3]から外し, 1フレームに1台ずつ個別のREADで確認する.
+//       (SyncReadで途中のサーボが応答しない場合に後続のサーボがどうなるかは仕様に記載がないため,
+//        応答しないサーボを含めたまま毎フレームSyncReadすることを避ける)
+//   L/R系統は mrd_servo_lines_run で並行して進める(もう一方の系統が他のプロトコルでもよい).
+//   1Mbps, 15台の試算: [1] 89byte=0.89ms + [3] 要求29byte+応答15x15byte=2.54ms → 約3.5ms/フレーム.
+//   ※サーボの応答遅延時間(アドレス9, 初期値250=500us)が0でないとSyncReadが1台あたり最大500us遅れるため,
+//     起動時に0にする(SERVO_DXL_FIX_RETURN_DELAY). 初期値の通信速度は57600bpsなので, 事前に
+//     DYNAMIXEL Wizard等で1Mbps以上(ESP32は4.5Mbpsまで設定可)に変更しておくこと.
+//
+// 位置値は0-4095が360deg, 中央2048を0degとする.
 
-// ---- dxl2 packet begin (Arduino非依存. PC上の単体テストでも使う) ----
-namespace dxl2 {
+// パケット
+#define DXL2_ID_BROADCAST    0xFE // ブロードキャストID
+#define DXL2_INST_PING       0x01 // 応答確認(モデル番号を返す)
+#define DXL2_INST_READ       0x02 // 読み出し
+#define DXL2_INST_WRITE      0x03 // 書き込み
+#define DXL2_INST_SYNC_READ  0x82 // 一斉読み出し(各サーボがID順に応答)
+#define DXL2_INST_SYNC_WRITE 0x83 // 一斉書き込み(応答なし)
+#define DXL2_INST_STATUS     0x55 // 応答パケットの命令欄
 
-// インストラクション
-constexpr uint8_t INST_PING = 0x01;
-constexpr uint8_t INST_READ = 0x02;
-constexpr uint8_t INST_WRITE = 0x03;
-constexpr uint8_t INST_STATUS = 0x55;
-constexpr uint8_t INST_SYNC_WRITE = 0x83;
-constexpr uint8_t ID_BROADCAST = 0xFE;
+// レジスタアドレス (Xシリーズ制御テーブル)
+#define DXL2_REG_RETURN_DELAY     9   // 応答遅延時間(単位2us, EEPROM. トルクOFF時のみ書き込める)
+#define DXL2_REG_OPERATING_MODE   11  // 動作モード(3:位置制御, 4:拡張位置制御, 5:電流制限付き位置制御)
+#define DXL2_REG_TORQUE_ENABLE    64  // トルクON/OFF
+#define DXL2_REG_HW_ERROR         70  // ハードウェアエラーの内容(応答のエラー欄のアラートビットが立っている場合)
+#define DXL2_REG_PROFILE_ACC      108 // 加速度プロファイル(4バイト, 0:制限なし)
+#define DXL2_REG_PROFILE_VEL      112 // 速度プロファイル(4バイト, 0:制限なし)
+#define DXL2_REG_GOAL_VELOCITY    104 // 目標速度(4バイト, 0.229rpm. 速度制御モード)
+#define DXL2_REG_PRESENT_VELOCITY 128 // 現在速度(4バイト, 0.229rpm)
+#define DXL2_REG_GOAL_POSITION    116 // 目標位置(4バイト)
+#define DXL2_REG_PRESENT_POSITION 132 // 現在位置(4バイト)
 
-// Xシリーズ共通のコントロールテーブル
-constexpr uint16_t ADDR_RETURN_DELAY = 9;       // EEPROM, 1byte (単位2us)
-constexpr uint16_t ADDR_TORQUE_ENABLE = 64;     // RAM, 1byte
-constexpr uint16_t ADDR_HW_ERROR = 70;          // RAM, 1byte (Hardware Error Status)
-constexpr uint16_t ADDR_GOAL_POSITION = 116;    // RAM, 4byte
-constexpr uint16_t ADDR_PRESENT_POSITION = 132; // RAM, 4byte
+#define DXL2_TX_MAX     MRD_HDUART_TX_MAX // 1パケットの最大長
+#define DXL2_STATUS_MIN 11                // データなしの応答パケット長
+#define DXL2_POS_REPLY  15                // 現在位置(4バイト)の応答パケット長
+#define DXL2_POS_RES    4096.0f
+#define DXL2_POS_RANGE  360.0f
 
-// 位置の換算 (1回転4096, 中心2048)
-constexpr int POS_CENTER = 2048;
-constexpr int POS_MIN = 0;
-constexpr int POS_MAX = 4095;
-constexpr float POS_PER_DEG = 4096.0f / 360.0f;
+//------------------------------------------------------------------------------------
+//  パケットの生成と検証
+//------------------------------------------------------------------------------------
+//
+// 命令パケット: FF FF FD 00 ID LEN_L LEN_H INST [PARAM...] CRC_L CRC_H   (LEN = PARAM数 + 3)
+// 応答パケット: FF FF FD 00 ID LEN_L LEN_H 0x55 ERR [DATA...] CRC_L CRC_H (LEN = DATA数 + 4)
+// INST以降に FF FF FD が現れた場合は直後に FD を挿入する(バイトスタッフィング). CRCは挿入後のパケットで計算する.
+// CRC: CRC-16(多項式0x8005, 初期値0, 反転なし). 先頭からCRCの手前まで.
 
-constexpr size_t PACKET_MAX = 128; // パケットの最大長 (バス層のエコー照合バッファと同じ)
+/// @brief CRCを計算する.
+/// @param a_pkt パケット.
+/// @param a_len CRCの手前までのバイト数.
+inline uint16_t mrd_dxl2_crc(const uint8_t *a_pkt, size_t a_len) { return mrd_servo_crc16(a_pkt, a_len, 0x8005); }
 
-/// @brief Protocol 2.0 の CRC-16 (多項式 0x8005, 初期値0). 表は初回呼び出し時に作る.
-/// @param a_data 対象データ.
-/// @param a_len 対象データ数.
-/// @return CRC値.
-inline uint16_t crc16(const uint8_t *a_data, size_t a_len) {
-  static uint16_t table_tmp[256];
-  static bool ready_tmp = false;
-  if (!ready_tmp) {
-    for (int i = 0; i < 256; i++) {
-      uint16_t c_tmp = (uint16_t)(i << 8);
-      for (int b = 0; b < 8; b++) {
-        c_tmp = (c_tmp & 0x8000) ? (uint16_t)((c_tmp << 1) ^ 0x8005) : (uint16_t)(c_tmp << 1);
-      }
-      table_tmp[i] = c_tmp;
+/// @brief 命令パケットを組み立てる.
+///        使い方: start(ID, 命令) → put8/put16/put32で引数を追加 → finish().
+struct Dxl2Packet {
+  uint8_t buf[DXL2_TX_MAX]; // 完成したパケット
+  size_t len = 0;           // finish()後のパケット長(0:組み立て失敗)
+
+  void start(uint8_t a_id, uint8_t a_inst) {
+    m_id = a_id;
+    m_raw[0] = a_inst;
+    m_raw_len = 1;
+    m_over = false;
+    len = 0;
+  }
+
+  void put8(uint8_t a_val) {
+    if (m_raw_len >= sizeof(m_raw)) {
+      m_over = true;
+      return;
     }
-    ready_tmp = true;
+    m_raw[m_raw_len++] = a_val;
   }
-  uint16_t crc_tmp = 0;
-  for (size_t i = 0; i < a_len; i++) {
-    crc_tmp = (uint16_t)((crc_tmp << 8) ^ table_tmp[((crc_tmp >> 8) ^ a_data[i]) & 0xFF]);
+  void put16(uint16_t a_val) {
+    put8(a_val & 0xFF);
+    put8(a_val >> 8);
   }
-  return crc_tmp;
-}
+  void put32(uint32_t a_val) {
+    put16(a_val & 0xFFFF);
+    put16(a_val >> 16);
+  }
 
-/// @brief インストラクションパケットを作る. パラメータ中の FF FF FD にはバイトスタッフィング(FD追加)を行う.
-/// @param a_out 出力先.
-/// @param a_cap 出力先のサイズ.
-/// @param a_id サーボID.
-/// @param a_inst インストラクション.
-/// @param a_params パラメータ.
-/// @param a_nparams パラメータ数.
-/// @return パケット長. バッファ不足なら0.
-inline size_t make_packet(uint8_t *a_out, size_t a_cap, uint8_t a_id, uint8_t a_inst, const uint8_t *a_params,
-                          size_t a_nparams) {
-  if (a_cap < 10) {
-    return 0;
-  }
-  a_out[0] = 0xFF; // ヘッダ
-  a_out[1] = 0xFF;
-  a_out[2] = 0xFD;
-  a_out[3] = 0x00; // 予約
-  a_out[4] = a_id;
-  a_out[7] = a_inst;
-  size_t pos_tmp = 8;
-  for (size_t i = 0; i < a_nparams; i++) {
-    if (pos_tmp + 3 > a_cap) {
+  /// @brief バイトスタッフィング, LEN, CRCを確定する.
+  /// @return パケット長. バッファに入りきらなければ0.
+  size_t finish() {
+    len = 0;
+    if (m_over) {
       return 0;
     }
-    a_out[pos_tmp++] = a_params[i];
-    if (pos_tmp >= 11 && a_out[pos_tmp - 3] == 0xFF && a_out[pos_tmp - 2] == 0xFF && a_out[pos_tmp - 1] == 0xFD) {
-      a_out[pos_tmp++] = 0xFD; // バイトスタッフィング
+    buf[0] = 0xFF;
+    buf[1] = 0xFF;
+    buf[2] = 0xFD;
+    buf[3] = 0x00;
+    buf[4] = m_id;
+    size_t pos_tmp = 7;
+    for (size_t i = 0; i < m_raw_len; i++) {
+      if (pos_tmp + 2 + 2 > sizeof(buf)) { // 挿入1バイトとCRC2バイトの余裕
+        return 0;
+      }
+      buf[pos_tmp++] = m_raw[i];
+      if (pos_tmp - 7 >= 3 && buf[pos_tmp - 3] == 0xFF && buf[pos_tmp - 2] == 0xFF && buf[pos_tmp - 1] == 0xFD) {
+        buf[pos_tmp++] = 0xFD;
+      }
     }
-  }
-  if (pos_tmp + 2 > a_cap) {
-    return 0;
-  }
-  const uint16_t len_tmp = (uint16_t)(pos_tmp - 7 + 2); // 長さ = インストラクション + パラメータ + CRC
-  a_out[5] = (uint8_t)(len_tmp & 0xFF);
-  a_out[6] = (uint8_t)(len_tmp >> 8);
-  const uint16_t crc_tmp = crc16(a_out, pos_tmp);
-  a_out[pos_tmp++] = (uint8_t)(crc_tmp & 0xFF);
-  a_out[pos_tmp++] = (uint8_t)(crc_tmp >> 8);
-  return pos_tmp;
-}
-
-/// @brief パラメータ長 a_nparams のステータスパケット(全長 11 + a_nparams)を検査する.
-///        データ部にスタッフィングが入った場合は長さが合わないため失敗とする(位置制御モードでは起きない).
-/// @param a_rx 受信したステータスパケット.
-/// @param a_id 期待するサーボID.
-/// @param a_nparams パラメータ数.
-/// @param a_err エラーバイトの格納先 (bit7: ハードウェアエラーあり).
-/// @return 正常ならtrue (bit7以外のエラーがあれば失敗).
-inline bool check_status(const uint8_t *a_rx, uint8_t a_id, size_t a_nparams, uint8_t &a_err) {
-  const size_t total_tmp = 11 + a_nparams;
-  if (a_rx[0] != 0xFF || a_rx[1] != 0xFF || a_rx[2] != 0xFD || a_rx[3] != 0x00) {
-    return false;
-  }
-  if (a_rx[4] != a_id || a_rx[7] != INST_STATUS) {
-    return false;
-  }
-  const uint16_t len_tmp = (uint16_t)(a_rx[5] | (a_rx[6] << 8));
-  if (len_tmp != 4 + a_nparams) {
-    return false;
-  }
-  const uint16_t crc_tmp = (uint16_t)(a_rx[total_tmp - 2] | (a_rx[total_tmp - 1] << 8));
-  if (crc_tmp != crc16(a_rx, total_tmp - 2)) {
-    return false;
-  }
-  a_err = a_rx[8];
-  return (a_err & 0x7F) == 0;
-}
-
-/// @brief Sync Write のパケットを作る.
-/// @param a_out 出力先.
-/// @param a_cap 出力先のサイズ.
-/// @param a_addr 書き込み先アドレス.
-/// @param a_len 1軸あたりのデータ長.
-/// @param a_ids 対象ID (a_count個).
-/// @param a_data 各IDのデータ (a_count * a_len バイト, ID順).
-/// @param a_count 対象の軸数.
-/// @return パケット長. バッファ不足なら0.
-inline size_t make_sync_write(uint8_t *a_out, size_t a_cap, uint16_t a_addr, uint16_t a_len, const uint8_t *a_ids,
-                              const uint8_t *a_data, size_t a_count) {
-  uint8_t params_tmp[PACKET_MAX];
-  size_t n_tmp = 0;
-  if (4 + a_count * (1 + a_len) > sizeof(params_tmp)) {
-    return 0;
-  }
-  params_tmp[n_tmp++] = (uint8_t)(a_addr & 0xFF);
-  params_tmp[n_tmp++] = (uint8_t)(a_addr >> 8);
-  params_tmp[n_tmp++] = (uint8_t)(a_len & 0xFF);
-  params_tmp[n_tmp++] = (uint8_t)(a_len >> 8);
-  for (size_t i = 0; i < a_count; i++) {
-    params_tmp[n_tmp++] = a_ids[i];
-    for (uint16_t b = 0; b < a_len; b++) {
-      params_tmp[n_tmp++] = a_data[i * a_len + b];
-    }
-  }
-  return make_packet(a_out, a_cap, ID_BROADCAST, INST_SYNC_WRITE, params_tmp, n_tmp);
-}
-
-/// @brief Read のパケットを作る.
-/// @param a_out 出力先.
-/// @param a_cap 出力先のサイズ.
-/// @param a_id サーボID.
-/// @param a_addr 読み出し元アドレス.
-/// @param a_len 読み出すデータ長.
-/// @return パケット長. バッファ不足なら0.
-inline size_t make_read(uint8_t *a_out, size_t a_cap, uint8_t a_id, uint16_t a_addr, uint16_t a_len) {
-  const uint8_t params_tmp[4] = {(uint8_t)(a_addr & 0xFF), (uint8_t)(a_addr >> 8), (uint8_t)(a_len & 0xFF),
-                                 (uint8_t)(a_len >> 8)};
-  return make_packet(a_out, a_cap, a_id, INST_READ, params_tmp, 4);
-}
-
-/// @brief 角度(degree)をサーボの位置の値に換算する (KRSの Deg2Krs と同じ考え方).
-/// @param a_deg 角度(degree).
-/// @param a_trim トリム値(degree).
-/// @param a_cw 回転方向(1:そのまま, -1:逆転).
-/// @return 位置の値 (POS_MIN〜POS_MAX に制限).
-inline int deg_to_pos(float a_deg, float a_trim, int a_cw) {
-  const float x_tmp = POS_CENTER + (a_trim + a_deg * a_cw) * POS_PER_DEG;
-  const int v_tmp = (int)(x_tmp >= 0 ? x_tmp + 0.5f : x_tmp - 0.5f);
-  return v_tmp < POS_MIN ? POS_MIN : (v_tmp > POS_MAX ? POS_MAX : v_tmp);
-}
-
-/// @brief サーボの位置の値を角度(degree)に換算する (KRSの Krs2Deg と同じ考え方).
-/// @param a_pos 位置の値.
-/// @param a_trim トリム値(degree).
-/// @param a_cw 回転方向(1:そのまま, -1:逆転).
-/// @return 角度(degree).
-inline float pos_to_deg(int32_t a_pos, float a_trim, int a_cw) {
-  return ((a_pos - POS_CENTER) / POS_PER_DEG - a_trim) * a_cw;
-}
-
-} // namespace dxl2
-// ---- dxl2 packet end ----
-
-//==================================================================================================
-//  DYNAMIXEL Protocol 2.0 の通信クラス (半二重UARTバス上で動作)
-//==================================================================================================
-
-/// @brief MrdHalfDuplexUart 上で DYNAMIXEL Protocol 2.0 のパケットを送受信するクラス.
-class Dxl2HalfDuplexClass {
-public:
-  /// @brief コンストラクタ.
-  /// @param a_bus 使用する半二重UARTバス.
-  /// @param a_baud 通信速度bps.
-  /// @param a_timeout_us 応答待ちのタイムアウト(us).
-  Dxl2HalfDuplexClass(MrdHalfDuplexUart &a_bus, unsigned long a_baud, unsigned long a_timeout_us)
-      : m_bus(a_bus), m_baud(a_baud), m_timeout_us(a_timeout_us) {}
-
-  /// @brief DYNAMIXEL用のフレーム形式(8N1)でバスを開始する.
-  bool begin() { return m_bus.begin(m_baud, SERIAL_8N1); }
-
-  //------------------------------------------------------------------------------------
-  //  分割API: L/R系統を並行して送受信する場合に使用する
-  //------------------------------------------------------------------------------------
-
-  /// @brief Read の送信を開始する. 送信完了は待たない.
-  /// @return 送信を開始できればtrue.
-  bool send_read(uint8_t a_id, uint16_t a_addr, uint16_t a_len) {
-    uint8_t pkt_tmp[16];
-    const size_t n_tmp = dxl2::make_read(pkt_tmp, sizeof(pkt_tmp), a_id, a_addr, a_len);
-    return n_tmp && m_bus.begin_send(pkt_tmp, n_tmp);
-  }
-
-  /// @brief Sync Write の送信を開始する (応答なし). 送信完了は待たない.
-  /// @return 送信を開始できればtrue.
-  bool send_sync_write(uint16_t a_addr, uint16_t a_len, const uint8_t *a_ids, const uint8_t *a_data,
-                       size_t a_count) {
-    uint8_t pkt_tmp[dxl2::PACKET_MAX];
-    const size_t n_tmp = dxl2::make_sync_write(pkt_tmp, sizeof(pkt_tmp), a_addr, a_len, a_ids, a_data, a_count);
-    return n_tmp && m_bus.begin_send(pkt_tmp, n_tmp);
-  }
-
-  /// @brief 送信完了を待ち, 受信に切り替える.
-  void end_send() { m_bus.end_send(); }
-
-  /// @brief Read の応答を受信する.
-  /// @param a_id 期待するサーボID.
-  /// @param a_data 読み出したデータの格納先 (a_len バイト, 最大8).
-  /// @param a_len 読み出すデータ長.
-  /// @param a_timeout_us 応答待ちのタイムアウト(us). 0なら既定値.
-  /// @return 正常な応答を受信できればtrue.
-  bool receive_read(uint8_t a_id, uint8_t *a_data, uint16_t a_len, unsigned long a_timeout_us = 0) {
-    uint8_t rx_tmp[11 + 8];
-    if (a_len > 8 || !m_bus.receive_us(rx_tmp, 11 + a_len, a_timeout_us ? a_timeout_us : m_timeout_us)) {
-      return false;
-    }
-    if (!dxl2::check_status(rx_tmp, a_id, a_len, m_last_err)) {
-      return false;
-    }
-    memcpy(a_data, rx_tmp + 9, a_len);
-    return true;
-  }
-
-  /// @brief 応答の無いパケット(Sync Write)の送信エコーを照合する.
-  /// @return エコーが一致すればtrue (エコーなしの構成では常にtrue).
-  bool receive_none() { return m_bus.receive_us(nullptr, 0, m_timeout_us); }
-
-  /// @brief 直前に受信したステータスのエラーバイト (bit7: ハードウェアエラーあり).
-  uint8_t last_error() const { return m_last_err; }
-
-  //------------------------------------------------------------------------------------
-  //  1回で完結する送受信 (起動時の設定などに使用)
-  //------------------------------------------------------------------------------------
-
-  /// @brief コントロールテーブルを読み出す.
-  /// @param a_timeout_us 応答待ちのタイムアウト(us). 0なら既定値.
-  /// @return 正常な応答を受信できればtrue.
-  bool read(uint8_t a_id, uint16_t a_addr, uint16_t a_len, uint8_t *a_data, unsigned long a_timeout_us = 0) {
-    if (!send_read(a_id, a_addr, a_len)) {
-      return false;
-    }
-    end_send();
-    return receive_read(a_id, a_data, a_len, a_timeout_us);
-  }
-
-  /// @brief コントロールテーブルに書き込み, 応答を確認する.
-  /// @param a_timeout_us 応答待ちのタイムアウト(us). 0なら既定値.
-  /// @return 正常な応答を受信できればtrue.
-  bool write(uint8_t a_id, uint16_t a_addr, const uint8_t *a_data, uint16_t a_len, unsigned long a_timeout_us = 0) {
-    uint8_t params_tmp[2 + 8];
-    if (a_len > 8) {
-      return false;
-    }
-    params_tmp[0] = (uint8_t)(a_addr & 0xFF);
-    params_tmp[1] = (uint8_t)(a_addr >> 8);
-    memcpy(params_tmp + 2, a_data, a_len);
-    uint8_t pkt_tmp[24];
-    const size_t n_tmp = dxl2::make_packet(pkt_tmp, sizeof(pkt_tmp), a_id, dxl2::INST_WRITE, params_tmp, 2 + a_len);
-    if (!n_tmp || !m_bus.begin_send(pkt_tmp, n_tmp)) {
-      return false;
-    }
-    end_send();
-    uint8_t rx_tmp[11];
-    return m_bus.receive_us(rx_tmp, sizeof(rx_tmp), a_timeout_us ? a_timeout_us : m_timeout_us) &&
-           dxl2::check_status(rx_tmp, a_id, 0, m_last_err);
+    const uint16_t pkt_len_tmp = pos_tmp - 7 + 2;
+    buf[5] = pkt_len_tmp & 0xFF;
+    buf[6] = pkt_len_tmp >> 8;
+    const uint16_t crc_tmp = mrd_dxl2_crc(buf, pos_tmp);
+    buf[pos_tmp++] = crc_tmp & 0xFF;
+    buf[pos_tmp++] = crc_tmp >> 8;
+    len = pos_tmp;
+    return len;
   }
 
 private:
-  MrdHalfDuplexUart &m_bus;   // 使用する半二重UARTバス
-  unsigned long m_baud;       // 通信速度(bps)
-  unsigned long m_timeout_us; // 応答待ちのタイムアウト(us)
-  uint8_t m_last_err = 0;     // 直前に受信したステータスのエラーバイト
+  uint8_t m_raw[DXL2_TX_MAX]; // INSTとPARAM(スタッフィング前)
+  size_t m_raw_len = 0;
+  uint8_t m_id = 0;
+  bool m_over = false;
+};
+
+/// @brief 応答パケットのヘッダ, ID, 長さ, 命令欄, CRCを検証し, エラー番号(bit7のアラートを除く)を取り出す.
+///        エラー番号が0でなくても, 形式が正しければtrueを返す(書き込みの拒否などを区別するため).
+/// @param a_rx 受信データ.
+/// @param a_rx_len 受信データ数(11 + データ数).
+/// @param a_id 期待するID.
+/// @param a_err エラー番号の格納先.
+inline bool mrd_dxl2_status_check_err(const uint8_t *a_rx, size_t a_rx_len, uint8_t a_id, uint8_t &a_err) {
+  if (a_rx_len < DXL2_STATUS_MIN) {
+    return false;
+  }
+  const size_t len_tmp = a_rx[5] | (a_rx[6] << 8);
+  const uint16_t crc_tmp = a_rx[a_rx_len - 2] | (a_rx[a_rx_len - 1] << 8);
+  a_err = a_rx[8] & 0x7F;
+  return a_rx[0] == 0xFF && a_rx[1] == 0xFF && a_rx[2] == 0xFD && a_rx[3] == 0x00 && a_rx[4] == a_id &&
+         len_tmp == a_rx_len - 7 && a_rx[7] == DXL2_INST_STATUS && crc_tmp == mrd_dxl2_crc(a_rx, a_rx_len - 2);
+}
+
+/// @brief 応答パケットを検証する(形式が正しく, エラー番号が0). bit7(アラート: ハードウェアエラー発生中)は
+///        データが有効なため許容する.
+inline bool mrd_dxl2_status_check(const uint8_t *a_rx, size_t a_rx_len, uint8_t a_id) {
+  uint8_t err_tmp = 0;
+  return mrd_dxl2_status_check_err(a_rx, a_rx_len, a_id, err_tmp) && err_tmp == 0;
+}
+
+/// @brief 4バイト値(LE, 符号付き)を読み取る.
+inline int32_t mrd_dxl2_i32_get(const uint8_t *a_buf) { return int32_t(mrd_pc_le_get(a_buf, 4)); }
+
+/// @brief 位置値の尺度: 0-4095が360deg, 中央2048が0deg.
+static const MrdPosScale DXL2_POS_SCALE = {DXL2_POS_RES / DXL2_POS_RANGE, DXL2_POS_RES * 0.5f, 0.0f, DXL2_POS_RES - 1.0f};
+
+/// @brief 角度(degree)をDYNAMIXELの位置値(0-4095)に変換する.
+inline int mrd_dxl2_deg2pos(float a_degree, float a_trim, int a_cw) {
+  return mrd_servo_scale_deg2pos(a_degree, a_trim, a_cw, DXL2_POS_SCALE);
+}
+
+/// @brief DYNAMIXELの位置値を角度(degree)に変換する.
+inline float mrd_dxl2_pos2deg(int32_t a_pos, float a_trim, int a_cw) {
+  return mrd_servo_scale_pos2deg(a_pos, a_trim, a_cw, DXL2_POS_SCALE);
+}
+
+//------------------------------------------------------------------------------------
+//  DYNAMIXELサーボ1系統分のクラス
+//------------------------------------------------------------------------------------
+
+class Dynamixel2HalfDuplexClass {
+public:
+  /// @brief コンストラクタ.
+  /// @param a_bus 使用する半二重UARTバス.
+  /// @param a_baud 通信速度bps(サーボの設定に合わせる. Xシリーズの初期値は57600).
+  Dynamixel2HalfDuplexClass(MrdHalfDuplexUart &a_bus, unsigned long a_baud) : m_bus(a_bus), m_baud(a_baud) {}
+
+  /// @brief 通信速度を設定し直す(起動時に EEPROM の設定を反映するため). begin() の前に呼ぶ.
+  void set_baud(unsigned long a_baud) { m_baud = a_baud; }
+
+  /// @brief バスを開始(8N1)し, 接続されたサーボの確認と初期設定を行う.
+  /// @param a_line_name 表示用の系統名("L"など).
+  /// @param a_mount 各サーボのマウント有無.
+  /// @param a_id 各サーボのID.
+  /// @param a_num サーボ数.
+  /// @return バスを開始できればtrue.
+  bool begin(const char *a_line_name, const int *a_mount, const int *a_id, int a_num) {
+    m_state.reset();
+    memset(m_model, 0, sizeof(m_model));
+    if (!m_bus.begin(m_baud, SERIAL_8N1)) {
+      return false;
+    }
+    const unsigned long bauds_tmp[] = {9600, 57600, 115200, 1000000, 2000000, 3000000, 4000000, 4500000};
+    mrd_servo_baud_check(a_line_name, "DXL2", m_baud, bauds_tmp, sizeof(bauds_tmp) / sizeof(bauds_tmp[0]),
+                         " bps is not a DYNAMIXEL X baud rate. Check SERVO_BAUDRATE_x.");
+
+    // 加速度・速度プロファイルを0(制限なし)にする. 15台分を1パケットにすると最大長を超えるため2つに分ける
+    Dxl2Packet acc_tmp;
+    Dxl2Packet vel_tmp;
+    acc_tmp.start(DXL2_ID_BROADCAST, DXL2_INST_SYNC_WRITE);
+    acc_tmp.put16(DXL2_REG_PROFILE_ACC);
+    acc_tmp.put16(4);
+    vel_tmp.start(DXL2_ID_BROADCAST, DXL2_INST_SYNC_WRITE);
+    vel_tmp.put16(DXL2_REG_PROFILE_VEL);
+    vel_tmp.put16(4);
+    int profile_num_tmp = 0;
+
+    for (int i = 0; i < a_num && i < MRD_SERVO_SLOTS; i++) {
+      if (!a_mount[i]) {
+        continue;
+      }
+      const uint8_t id_tmp = a_id[i];
+      mrd_servo_slot_print(a_line_name, "DXL2", i, id_tmp);
+
+      uint16_t model_tmp = 0;
+      bool found_tmp = false;
+      for (int k = 0; k < MRD_SERVO_BOOT_RETRY && !found_tmp; k++) {
+        found_tmp = ping(id_tmp, model_tmp);
+      }
+      if (!found_tmp) {
+        Serial.println("no response");
+        continue;
+      }
+      Serial.print("model ");
+      Serial.print(model_tmp);
+      m_model[i] = model_tmp;
+
+      // 応答遅延時間が0でなければ0にする(SyncReadで1台あたり最大500usの待ちを防ぐ)
+      uint8_t delay_tmp = 0;
+      bool delay_read_tmp = false;
+      for (int k = 0; k < MRD_SERVO_BOOT_RETRY && !delay_read_tmp; k++) {
+        delay_read_tmp = read(id_tmp, DXL2_REG_RETURN_DELAY, &delay_tmp, 1);
+      }
+      Serial.print(" return delay ");
+      if (!delay_read_tmp) {
+        Serial.print("read failed");
+      } else {
+        Serial.print(delay_tmp * 2);
+        Serial.print("us");
+        if (delay_tmp != 0 && cfg.servo_dxl_fix_return_delay) {
+          Serial.print(fix_return_delay(id_tmp) ? " -> 0us" : " -> fix failed");
+        }
+      }
+
+      // 位置制御系のモードでなければ目標位置で動かないため知らせる
+      uint8_t mode_tmp = 0;
+      if (read(id_tmp, DXL2_REG_OPERATING_MODE, &mode_tmp, 1) && mode_tmp != 3 && mode_tmp != 5) {
+        Serial.print(" (operating mode ");
+        Serial.print(mode_tmp);
+        // 4(拡張位置制御)は動くが, 目標は1回転(0〜4095)の範囲に限られる
+        Serial.print(mode_tmp == 4 ? ": goals are limited to one turn)" : " is not position control)");
+      }
+
+      // ハードウェアエラー(過負荷, 電圧, 過熱など)を表示する. トルクが切れ, 解除にはサーボの電源の入れ直しが必要
+      if (m_alert) {
+        uint8_t hw_tmp = 0;
+        if (read(id_tmp, DXL2_REG_HW_ERROR, &hw_tmp, 1)) {
+          Serial.print(" [HW ERROR 0x");
+          Serial.print(hw_tmp, HEX);
+          Serial.print(":");
+          Serial.print((hw_tmp & 0x01) ? " voltage" : "");
+          Serial.print((hw_tmp & 0x04) ? " overheat" : "");
+          Serial.print((hw_tmp & 0x08) ? " encoder" : "");
+          Serial.print((hw_tmp & 0x10) ? " shock" : "");
+          Serial.print((hw_tmp & 0x20) ? " overload" : "");
+          Serial.print("]");
+        } else {
+          Serial.print(" [HW ERROR]");
+        }
+      }
+      Serial.println();
+
+      acc_tmp.put8(id_tmp);
+      acc_tmp.put32(0);
+      vel_tmp.put8(id_tmp);
+      vel_tmp.put32(0);
+      profile_num_tmp++;
+    }
+
+    if (profile_num_tmp > 0 && acc_tmp.finish() > 0 && vel_tmp.finish() > 0) {
+      m_bus.transfer(acc_tmp.buf, acc_tmp.len, nullptr, 0);
+      m_bus.transfer(vel_tmp.buf, vel_tmp.len, nullptr, 0);
+    }
+    return true;
+  }
+
+  /// @brief PINGでサーボの応答を確認する.
+  /// @param a_id ID.
+  /// @param a_model モデル番号の格納先.
+  /// @return 正しい応答を受信できればtrue.
+  bool ping(uint8_t a_id, uint16_t &a_model) {
+    Dxl2Packet pkt_tmp;
+    pkt_tmp.start(a_id, DXL2_INST_PING);
+    uint8_t rx_tmp[DXL2_STATUS_MIN + 3];
+    if (pkt_tmp.finish() == 0 || !m_bus.transfer(pkt_tmp.buf, pkt_tmp.len, rx_tmp, sizeof(rx_tmp)) ||
+        !mrd_dxl2_status_check(rx_tmp, sizeof(rx_tmp), a_id)) {
+      return false;
+    }
+    a_model = rx_tmp[9] | (rx_tmp[10] << 8);
+    m_alert = (rx_tmp[8] & 0x80) != 0;
+    return true;
+  }
+
+  /// @brief レジスタを読み出す(1回の送受信).
+  /// @return 正しい応答を受信できればtrue.
+  bool read(uint8_t a_id, uint16_t a_addr, uint8_t *a_data, uint8_t a_len) {
+    Dxl2Packet pkt_tmp;
+    pkt_tmp.start(a_id, DXL2_INST_READ);
+    pkt_tmp.put16(a_addr);
+    pkt_tmp.put16(a_len);
+    uint8_t rx_tmp[DXL2_STATUS_MIN + 16];
+    const size_t rx_len_tmp = DXL2_STATUS_MIN + a_len;
+    if (rx_len_tmp > sizeof(rx_tmp) || pkt_tmp.finish() == 0 ||
+        !m_bus.transfer(pkt_tmp.buf, pkt_tmp.len, rx_tmp, rx_len_tmp) ||
+        !mrd_dxl2_status_check(rx_tmp, rx_len_tmp, a_id)) {
+      return false;
+    }
+    memcpy(a_data, &rx_tmp[9], a_len);
+    return true;
+  }
+
+  /// @brief レジスタに書き込み, 応答を確認する(1回の送受信).
+  /// @return 正しい応答(エラーなし)を受信できればtrue.
+  bool write(uint8_t a_id, uint16_t a_addr, const uint8_t *a_data, uint8_t a_len) {
+    Dxl2Packet pkt_tmp;
+    pkt_tmp.start(a_id, DXL2_INST_WRITE);
+    pkt_tmp.put16(a_addr);
+    for (int i = 0; i < a_len; i++) {
+      pkt_tmp.put8(a_data[i]);
+    }
+    uint8_t rx_tmp[DXL2_STATUS_MIN];
+    return pkt_tmp.finish() > 0 && m_bus.transfer(pkt_tmp.buf, pkt_tmp.len, rx_tmp, sizeof(rx_tmp)) &&
+           mrd_dxl2_status_check(rx_tmp, sizeof(rx_tmp), a_id);
+  }
+
+  /// @brief 半二重UARTバス(並行送受信用).
+  MrdHalfDuplexUart &bus() { return m_bus; }
+
+  /// @brief 通信速度bps(SyncReadの受信待ち時間の計算用).
+  unsigned long baud() const { return m_baud; }
+
+  /// @brief フレームをまたいで保持する状態(トルク状態の記憶等).
+  MrdServoLineState m_state;
+
+  /// @brief 起動時に確認した各スロットのモデル番号(0:応答なし). 機種で単位が違う項目(電流)の判定に使う.
+  uint16_t m_model[MRD_SERVO_SLOTS] = {0};
+
+private:
+  /// @brief 応答遅延時間(EEPROM)を0にする. EEPROMはトルクOFFでないと書き込めないため先にトルクOFFにする
+  ///        (起動直後はトルクOFFなので通常は影響なし. トルクは駆動処理が指示に合わせて送り直す).
+  bool fix_return_delay(uint8_t a_id) {
+    const uint8_t off_tmp = 0;
+    const uint8_t delay_tmp = 0;
+    bool ok_tmp = write(a_id, DXL2_REG_TORQUE_ENABLE, &off_tmp, 1);
+    ok_tmp = ok_tmp && write(a_id, DXL2_REG_RETURN_DELAY, &delay_tmp, 1);
+    uint8_t check_tmp = 0xFF;
+    return ok_tmp && read(a_id, DXL2_REG_RETURN_DELAY, &check_tmp, 1) && check_tmp == 0;
+  }
+
+  MrdHalfDuplexUart &m_bus;
+  unsigned long m_baud;
+  bool m_alert = false; // 直前のPINGの応答でハードウェアエラーのアラートが立っていたか
 };
 
 //==================================================================================================
 //  DYNAMIXELサーボの駆動処理
 //==================================================================================================
 
-constexpr int MRD_DXL_SLOTS = (IXL_MAX > IXR_MAX) ? IXL_MAX : IXR_MAX; // 1系統あたりの最大軸数
+/// @brief 系統のDYNAMIXELサーボクラス.
+inline Dynamixel2HalfDuplexClass &mrd_dxl2_line(int a_line) { return (a_line == L) ? dxl2_l : dxl2_r; }
 
-/// @brief 準備中の応答待ちタイムアウト(us). 出荷時の Return Delay Time は500us(設定値250 x 2us)なので長めに待つ.
-constexpr unsigned long MRD_DXL_SETUP_TIMEOUT_US = 5000;
-
-/// @brief 1系統ぶんのサーボパラメータへの参照をまとめたもの (L/Rを同じ処理で扱うため).
-struct MrdDxlLine {
-  Dxl2HalfDuplexClass *dxl; // 通信クラス
-  int *mount;               // マウント状態 (0:なし)
-  int *id;                  // サーボID
-  int *cw;                  // 回転方向
-  float *trim;              // トリム値(degree)
-  float *tgt;               // 目標値 → 現在位置(degree)
-  float *tgt_past;          // 前回の現在位置(degree)
-  int *err;                 // 連続エラー回数
-  uint16_t *stat;           // 通信異常の状態 (1:異常)
-  int cmd_base;             // Meridim配列のコマンドの先頭インデックス(L:20, R:50)
-  int8_t *torque;           // 最後に送ったトルク状態(-1:未送信, 0:OFF, 1:ON)
-  bool *prepared;           // 最初のフレームの準備(Return Delay Timeの確認)を済ませたか
-  const char *name;         // 系統名 (表示用)
-};
-
-/// @brief トルクを切り替える軸のリスト
-struct MrdDxlTorqueJob {
-  uint8_t ids[MRD_DXL_SLOTS];  // 対象ID
-  uint8_t vals[MRD_DXL_SLOTS]; // トルク状態 (0:OFF, 1:ON)
-  size_t count = 0;            // 対象の軸数
-};
-
-// 系統ごとの状態 (最後に送ったトルク状態と準備済みフラグ)
-static int8_t mrd_dxl_torque_L[IXL_MAX];
-static int8_t mrd_dxl_torque_R[IXR_MAX];
-static bool mrd_dxl_prepared_L = false;
-static bool mrd_dxl_prepared_R = false;
-
-/// @brief 指定した系統の MrdDxlLine を作る.
-/// @param a_line 系統(L, R).
-/// @param a_sv サーボパラメータの構造体.
-/// @return その系統の MrdDxlLine.
-inline MrdDxlLine mrd_dxl_line(UartLine a_line, ServoParam &a_sv) {
-  if (a_line == L) {
-    return {&dxl_L, a_sv.ixl_mount, a_sv.ixl_id, a_sv.ixl_cw, a_sv.ixl_trim, a_sv.ixl_tgt, a_sv.ixl_tgt_past,
-            a_sv.ixl_err, a_sv.ixl_stat, MRD_L_ORIGIDX, mrd_dxl_torque_L, &mrd_dxl_prepared_L, "L"};
-  }
-  return {&dxl_R, a_sv.ixr_mount, a_sv.ixr_id, a_sv.ixr_cw, a_sv.ixr_trim, a_sv.ixr_tgt, a_sv.ixr_tgt_past,
-          a_sv.ixr_err, a_sv.ixr_stat, MRD_R_ORIGIDX, mrd_dxl_torque_R, &mrd_dxl_prepared_R, "R"};
+/// @brief 系統の参照を作る.
+/// @param a_line 系統(L or R).
+/// @param a_meridim Meridimデータの参照.
+/// @param a_sv サーボパラメータ.
+MrdServoLineRef mrd_dxl2_line_ref(UartLine a_line, Meridim90Union &a_meridim, ServoParam &a_sv) {
+  return mrd_servo_line_ref(a_line, DXL2, mrd_dxl2_line(a_line).bus(), mrd_dxl2_line(a_line).m_state, a_meridim, a_sv);
 }
 
-/// @brief 最初のフレームで1度だけ行う準備. 各軸の応答を確認し, Return Delay Time を0にする.
-///        (EEPROMからのサーボ設定の読み込みが setup() の後半にあるため, 最初のフレームで行う)
-///        ハードウェアエラーがある軸は, その内容を起動ログに表示する.
-/// @param a_ln 対象の系統.
-/// @param a_num 処理する軸数.
-inline void mrd_dxl_prepare(MrdDxlLine &a_ln, int a_num) {
-  const unsigned long to_tmp = MRD_DXL_SETUP_TIMEOUT_US;
-  for (int i = 0; i < a_num; i++) {
-    a_ln.torque[i] = -1;
-    if (!a_ln.mount[i]) {
-      continue;
+//------------------------------------------------------------------------------------
+//  パラメータ系コマンド (番号と値の形式は tasks/servo_param_plan.md)
+//------------------------------------------------------------------------------------
+
+#define DXL2_MODEL_XL430_W250 1060 // 電流の制御テーブルがない(126番地は負荷)
+#define DXL2_MODEL_XL330_M288 1200 // 電流の単位が1mA
+#define DXL2_MODEL_XL330_M077 1190
+
+/// @brief パラメータ系コマンドの対応表. EEPROM領域(64番地未満)はトルクOFFでないと書けない(サーボがエラーを返す).
+/// @param a_cmd コマンド.
+/// @param a_model モデル番号(0:不明).
+/// @return レジスタの定義(len=0:未対応).
+MrdParamReg mrd_dxl2_param_reg(uint8_t a_cmd, uint16_t a_model) {
+  const bool xl330_tmp = (a_model == DXL2_MODEL_XL330_M288 || a_model == DXL2_MODEL_XL330_M077);
+  const bool no_current_tmp = (a_model == DXL2_MODEL_XL430_W250);
+  const float cur_k_tmp = xl330_tmp ? 1.0f : 2.69f; // 電流の単位(mA)
+  const float vel_k_tmp = 0.229f * 6.0f;            // 0.229rpm → deg/s
+  switch (a_cmd) {
+  case 4:
+  case 5:
+    return mrd_pc_reg(DXL2_REG_GOAL_POSITION, 4, a_cmd == 4, PC_POS, 1.0f, PC_SIGNED);
+  case 6:
+    return mrd_pc_reg(DXL2_REG_PRESENT_POSITION, 4, false, PC_POS, 1.0f, PC_SIGNED);
+  case 7:
+    return mrd_pc_reg(144, 2, false, PC_SCALE, 10.0f); // 0.1V → V x100
+  case 8:
+  case 9:
+    return mrd_pc_reg(20, 4, a_cmd == 9, PC_SCALE, 36000.0f / DXL2_POS_RES, PC_SIGNED); // ホーミングオフセット
+  case 12:
+  case 13:
+    return mrd_pc_reg(52, 4, a_cmd == 13, PC_POS_NATIVE, 1.0f, PC_SIGNED); // 最小位置(CW側)
+  case 14:
+  case 15:
+    return mrd_pc_reg(48, 4, a_cmd == 15, PC_POS_NATIVE, 1.0f, PC_SIGNED); // 最大位置(CCW側)
+  case 16:
+  case 17:
+    return mrd_pc_reg(84, 2, a_cmd == 17);
+  case 18:
+  case 19:
+    return mrd_pc_reg(82, 2, a_cmd == 19);
+  case 20:
+  case 21:
+    return mrd_pc_reg(80, 2, a_cmd == 21);
+  case 22:
+  case 23:
+    return mrd_pc_reg(31, 1, a_cmd == 23);
+  case 24:
+  case 25:
+    return no_current_tmp ? MrdParamReg() : mrd_pc_reg(38, 2, a_cmd == 25, PC_SCALE, cur_k_tmp);
+  case 26:
+    return mrd_pc_reg(DXL2_REG_PRESENT_VELOCITY, 4, false, PC_SCALE, vel_k_tmp, PC_SIGNED); // 現在速度
+  case 27:
+    return mrd_pc_reg(DXL2_REG_PROFILE_VEL, 4, true, PC_SCALE, vel_k_tmp); // 速度プロファイル(速度ベース時)
+  case 28:
+  case 29:
+    return mrd_pc_reg(DXL2_REG_PROFILE_ACC, 4, a_cmd == 29); // 加速度プロファイル(時間ベース時はms)
+  case 30:
+  case 31:
+    return mrd_pc_reg(36, 2, a_cmd == 31, PC_SCALE, 0.113f); // PWM制限(0.113%)
+  case 32:
+  case 33:
+    return mrd_pc_reg(DXL2_REG_PROFILE_VEL, 4, a_cmd == 33); // 速度プロファイル(時間ベース時は到達時間ms)
+  case 36:
+    return mrd_pc_reg(146, 1, false);
+  case 37:
+    return no_current_tmp ? MrdParamReg() : mrd_pc_reg(126, 2, false, PC_SCALE, cur_k_tmp, PC_SIGNED);
+  case 38:
+    return mrd_pc_reg(DXL2_REG_TORQUE_ENABLE, 1, false, PC_BOOL);
+  case 70:
+  case 71:
+    return mrd_pc_reg(DXL2_REG_RETURN_DELAY, 1, a_cmd == 71);
+  default:
+    return MrdParamReg();
+  }
+}
+
+/// @brief DYNAMIXELのパラメータ系コマンド1件分の処理(1回の送受信).
+///        3:PING, 35:ROM保存(EEPROMは書いた時点で保存されるため成功を返す), それ以外は対応表のREAD/WRITE.
+///        書き込みの結果は受け取ったVAL(サーボがエラーを返した場合はエラー値).
+class Dxl2ParamOp : public MrdParamOpBase {
+public:
+  void begin(const MrdServoLineRef &a_line, int a_ix, uint8_t a_cmd, int16_t a_val) {
+    target(a_line, a_ix, a_val);
+    m_scale = DXL2_POS_SCALE;
+    if (a_cmd == 3) {
+      m_step = PING;
+      return;
     }
-    const uint8_t id_tmp = (uint8_t)a_ln.id[i];
-    uint8_t rdt_tmp = 0;
-    Serial.printf("DXL %s[%02d] id:%3d ", a_ln.name, i, id_tmp);
-    if (!a_ln.dxl->read(id_tmp, dxl2::ADDR_RETURN_DELAY, 1, &rdt_tmp, to_tmp)) {
-      Serial.println("no response");
-      continue;
+    if (a_cmd == 35) {
+      finish(1);
+      return;
     }
-    const bool alert_tmp = a_ln.dxl->last_error() & 0x80;
-    if (rdt_tmp != 0) { // EEPROM領域の書き込みにはトルクOFFが必要
-      const uint8_t off_tmp = 0, zero_tmp = 0;
-      const bool ok_tmp = a_ln.dxl->write(id_tmp, dxl2::ADDR_TORQUE_ENABLE, &off_tmp, 1, to_tmp) &&
-                          a_ln.dxl->write(id_tmp, dxl2::ADDR_RETURN_DELAY, &zero_tmp, 1, to_tmp);
-      Serial.printf("ok (Return Delay Time %uus -> 0 %s)", rdt_tmp * 2, ok_tmp ? "done" : "FAILED");
-    } else {
-      Serial.print("ok");
+    m_reg = mrd_dxl2_param_reg(a_cmd, mrd_dxl2_line(a_line.line).m_model[a_ix]);
+    if (m_reg.len == 0) {
+      finish(MRD_PCMD_NA);
+      return;
     }
-    if (alert_tmp) { // ハードウェアエラー(過負荷, 電圧, 過熱など). 解除にはサーボの電源の入れ直しが必要
-      uint8_t hw_tmp = 0;
-      if (a_ln.dxl->read(id_tmp, dxl2::ADDR_HW_ERROR, 1, &hw_tmp, to_tmp)) {
-        Serial.printf(" [HW ERROR 0x%02X:%s%s%s%s%s]", hw_tmp, (hw_tmp & 0x01) ? " voltage" : "",
-                      (hw_tmp & 0x04) ? " overheat" : "", (hw_tmp & 0x08) ? " encoder" : "",
-                      (hw_tmp & 0x10) ? " shock" : "", (hw_tmp & 0x20) ? " overload" : "");
+    if (!write_value_ok()) { // レジスタに収まらない値は送らない
+      finish(MRD_PCMD_NA);
+      return;
+    }
+    m_step = m_reg.write ? WRITE : READ;
+  }
+
+  /// @brief 車輪(速度制御モードを事前に設定したサーボ): トルクON(必要なときだけ) → 目標速度(104) → 現在速度(128).
+  ///        速度は0.01rpm(回転方向補正を適用). 結果は現在速度.
+  void begin_wheel(const MrdServoLineRef &a_line, int a_ix, int16_t a_speed) {
+    target(a_line, a_ix, a_speed);
+    m_step = wheel_needs_torque() ? W_TORQUE : W_GOAL;
+  }
+
+  bool next(MrdHduartXfer &a_x) {
+    size_t rx_len_tmp = DXL2_STATUS_MIN;
+    switch (m_step) {
+    case PING:
+      m_pkt.start(id(), DXL2_INST_PING);
+      rx_len_tmp += 3;
+      break;
+    case READ:
+      m_pkt.start(id(), DXL2_INST_READ);
+      m_pkt.put16(m_reg.addr);
+      m_pkt.put16(m_reg.len);
+      rx_len_tmp += m_reg.len;
+      break;
+    case WRITE: {
+      m_pkt.start(id(), DXL2_INST_WRITE);
+      m_pkt.put16(m_reg.addr);
+      uint8_t data_tmp[4];
+      mrd_pc_le_put(data_tmp, mrd_pc_encode(to_raw(), m_reg.sign), m_reg.len);
+      for (int i = 0; i < m_reg.len; i++) {
+        m_pkt.put8(data_tmp[i]);
+      }
+      break;
+    }
+    case W_TORQUE:
+      m_pkt.start(id(), DXL2_INST_WRITE);
+      m_pkt.put16(DXL2_REG_TORQUE_ENABLE);
+      m_pkt.put8(1);
+      break;
+    case W_GOAL:
+      m_pkt.start(id(), DXL2_INST_WRITE);
+      m_pkt.put16(DXL2_REG_GOAL_VELOCITY);
+      m_pkt.put32(uint32_t(int32_t(lroundf(mrd_wheel_rpm(m_val) * m_ln->cw[m_ix] / DXL2_VEL_RPM))));
+      break;
+    case W_READ:
+      m_pkt.start(id(), DXL2_INST_READ);
+      m_pkt.put16(DXL2_REG_PRESENT_VELOCITY);
+      m_pkt.put16(4);
+      rx_len_tmp += 4;
+      break;
+    default:
+      return false;
+    }
+    if (m_pkt.finish() == 0) {
+      finish(MRD_PCMD_NA);
+      return false;
+    }
+    mrd_servo_xfer(a_x, m_ln->bus, m_pkt.buf, m_pkt.len, m_rx, rx_len_tmp);
+    return true;
+  }
+
+  void complete(const MrdHduartXfer &a_x) {
+    uint8_t err_tmp = 0;
+    const bool ok_tmp = a_x.ok && mrd_dxl2_status_check_err(m_rx, a_x.rx_len, id(), err_tmp);
+    if (!ok_tmp || err_tmp != 0) {
+      if (m_step >= W_TORQUE) {
+        m_ln->st->torque[m_ix] = -1;
+      }
+      finish(!ok_tmp ? MRD_PCMD_NO_REPLY : MRD_PCMD_SERVO_ERR);
+      return;
+    }
+    switch (m_step) {
+    case PING:
+      finish(1);
+      break;
+    case READ:
+      finish(to_val(mrd_pc_decode(mrd_pc_le_get(&m_rx[9], m_reg.len), m_reg.len, m_reg.sign)));
+      break;
+    case WRITE:
+      finish(m_val);
+      break;
+    case W_TORQUE:
+      m_ln->st->torque[m_ix] = 1;
+      m_step = W_GOAL;
+      break;
+    case W_GOAL:
+      m_step = W_READ;
+      break;
+    case W_READ:
+      finish(mrd_wheel_val(mrd_dxl2_i32_get(&m_rx[9]) * DXL2_VEL_RPM * m_ln->cw[m_ix]));
+      break;
+    default:
+      break;
+    }
+  }
+
+private:
+  enum Step : uint8_t { PING = 1,
+                        READ,
+                        WRITE,
+                        W_TORQUE,
+                        W_GOAL,
+                        W_READ };
+  static constexpr float DXL2_VEL_RPM = 0.229f; // 速度の単位(rpm)
+
+  Dxl2Packet m_pkt;
+  uint8_t m_rx[DXL2_STATUS_MIN + 4];
+};
+
+/// @brief DYNAMIXELサーボ1系統分の1フレームの処理を, 1回ずつの送受信に分けて進める.
+///        コマンド1のサーボは目標位置へ動かし, それ以外は脱力する. いずれも現在位置を読み取ってtgtに格納する.
+///        [1] 目標位置 → [2] トルク → [3] SyncReadで現在位置 → [4] 前フレームで読めなかったサーボを1台だけ個別READ.
+class Dxl2LineStepper : public MrdParamLineStepper<Dxl2ParamOp> {
+public:
+  /// @param a_line 系統の参照.
+  /// @param a_all_mount パラメータ系コマンドのスロットを除かないマウント状態(パラメータ系コマンドの実行用).
+  /// @param a_num 処理するサーボ数.
+  /// @param a_baud 通信速度bps(SyncReadの受信待ち時間の計算用).
+  Dxl2LineStepper(const MrdServoLineRef &a_line, const int *a_all_mount, int a_num, unsigned long a_baud)
+      : MrdParamLineStepper<Dxl2ParamOp>(a_line, a_all_mount, a_num),
+        m_baud(max(a_baud, 9600UL)) {}
+
+  void skip_reads() override { m_skip_reads = true; }
+
+protected:
+  bool next_main(MrdHduartXfer &a_x) override {
+    while (m_phase != DONE) {
+      size_t len_tmp = 0;
+      size_t rx_len_tmp = 0;
+      unsigned long timeout_tmp = 0;
+      const Phase cur_tmp = m_phase;
+      switch (m_phase) {
+      case GOAL:
+        len_tmp = build_goal();
+        m_phase = TORQUE;
+        break;
+      case TORQUE:
+        len_tmp = build_torque();
+        m_phase = SYNC_READ;
+        break;
+      case SYNC_READ:
+        if (m_skip_reads) { // このフレームは現在位置を読まない(全サーボ前回の値. 目標位置を送った後に行う)
+          mrd_servo_past_keep_all(m_ln, m_num);
+          m_phase = DONE;
+          break;
+        }
+        len_tmp = build_sync_read();
+        rx_len_tmp = m_sync_num * DXL2_POS_REPLY;
+        timeout_tmp = sync_timeout_ms(rx_len_tmp);
+        m_phase = RETRY;
+        break;
+      case RETRY:
+        len_tmp = build_retry();
+        rx_len_tmp = DXL2_POS_REPLY;
+        m_phase = DONE;
+        break;
+      default:
+        break;
+      }
+      if (len_tmp > 0) {
+        m_sent_phase = cur_tmp;
+        mrd_servo_xfer(a_x, m_ln.bus, m_pkt.buf, len_tmp, m_rx, rx_len_tmp, timeout_tmp);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void complete_main(const MrdHduartXfer &a_x) override {
+    if (m_sent_phase == SYNC_READ) {
+      complete_sync_read(a_x.rx_got);
+    } else if (m_sent_phase == RETRY) {
+      complete_one(m_retry_ix, a_x.ok && mrd_dxl2_status_check(m_rx, DXL2_POS_REPLY, m_ln.id[m_retry_ix]), m_rx);
+    }
+  }
+
+private:
+  enum Phase : uint8_t { GOAL,
+                         TORQUE,
+                         SYNC_READ,
+                         RETRY,
+                         DONE };
+
+  /// @brief 目標位置のSyncWriteを作る(トルクONのサーボのみ).
+  size_t build_goal() {
+    m_pkt.start(DXL2_ID_BROADCAST, DXL2_INST_SYNC_WRITE);
+    m_pkt.put16(DXL2_REG_GOAL_POSITION);
+    m_pkt.put16(4);
+    int count_tmp = 0;
+    for (int i = 0; i < m_num; i++) {
+      if (!m_ln.mount[i] || !m_ln.on(i)) {
+        continue;
+      }
+      m_pkt.put8(m_ln.id[i]);
+      m_pkt.put32(mrd_dxl2_deg2pos(m_ln.tgt[i], m_ln.trim[i], m_ln.cw[i]));
+      count_tmp++;
+    }
+    return count_tmp > 0 ? m_pkt.finish() : 0;
+  }
+
+  /// @brief トルクのSyncWriteを作る. ON/OFFが変わったサーボと, 定期的な送り直しのフレームでは全サーボ.
+  ///        ONは目標位置を送った後に行い, 古い目標位置へ動くのを防ぐ.
+  size_t build_torque() {
+    m_pkt.start(DXL2_ID_BROADCAST, DXL2_INST_SYNC_WRITE);
+    m_pkt.put16(DXL2_REG_TORQUE_ENABLE);
+    m_pkt.put16(1);
+    const int count_tmp = mrd_servo_torque_each(m_ln, m_num, [this](int a_ix, int8_t a_want) {
+      m_pkt.put8(m_ln.id[a_ix]);
+      m_pkt.put8(a_want);
+      return true;
+    });
+    return count_tmp > 0 ? m_pkt.finish() : 0;
+  }
+
+  /// @brief 前フレームで読めたサーボ(err==0)のSyncReadを作る.
+  ///        読めなかったサーボはこのフレームの値を前回の値にしておく([4]で読めたものは上書きされる).
+  size_t build_sync_read() {
+    m_pkt.start(DXL2_ID_BROADCAST, DXL2_INST_SYNC_READ);
+    m_pkt.put16(DXL2_REG_PRESENT_POSITION);
+    m_pkt.put16(4);
+    m_sync_num = 0;
+    for (int i = 0; i < m_num; i++) {
+      m_excluded[i] = false;
+      if (!m_ln.mount[i]) {
+        continue;
+      }
+      m_excluded[i] = (m_ln.err[i] != 0);
+      if (m_excluded[i]) {
+        mrd_servo_past_keep(m_ln, i);
+        continue;
+      }
+      m_pkt.put8(m_ln.id[i]);
+      m_sync_ix[m_sync_num++] = i;
+    }
+    return m_sync_num > 0 ? m_pkt.finish() : 0;
+  }
+
+  /// @brief SyncReadの応答を待つ時間(ms). 全応答の転送時間にバスの既定のタイムアウトを加える.
+  unsigned long sync_timeout_ms(size_t a_rx_len) const {
+    return (a_rx_len * 10UL * 1000UL + m_baud - 1) / m_baud + m_ln.bus->timeout_ms();
+  }
+
+  /// @brief SyncReadの応答を解析する. 応答はID順に続くが, 応答しないサーボがあっても対応を誤らないよう,
+  ///        ヘッダとCRCが正しいパケットをIDで照合する.
+  ///        見つからなかったサーボのうち, 最後に受信できたサーボより前のものは失敗とする.
+  ///        それより後ろは先頭の1台だけを失敗とし, 残りは前回の値のまま次のフレームで読み直す
+  ///        (先頭の1台が応答しないために後続が応答できなかった可能性があるため. 先頭の1台は次のフレームで
+  ///         SyncReadから外れるので, 後続は次のフレームで読める).
+  /// @param a_got 受信できたバイト数.
+  void complete_sync_read(size_t a_got) {
+    bool done_tmp[MRD_SERVO_SLOTS] = {false};
+    size_t pos_tmp = 0;
+    while (pos_tmp + DXL2_POS_REPLY <= a_got) {
+      const uint8_t *p_tmp = &m_rx[pos_tmp];
+      const int k_tmp = find_sync(p_tmp[4]);
+      if (k_tmp < 0 || done_tmp[k_tmp] || !mrd_dxl2_status_check(p_tmp, DXL2_POS_REPLY, p_tmp[4])) {
+        pos_tmp++; // 同期が外れている場合は1バイトずつずらしてヘッダを探す
+        continue;
+      }
+      complete_one(m_sync_ix[k_tmp], true, p_tmp);
+      done_tmp[k_tmp] = true;
+      pos_tmp += DXL2_POS_REPLY;
+    }
+    int last_done_tmp = -1;
+    for (int k = 0; k < m_sync_num; k++) {
+      if (done_tmp[k]) {
+        last_done_tmp = k;
+      }
+    }
+    bool blamed_tmp = false; // 最後に受信できたサーボより後ろで, 失敗とした1台
+    for (int k = 0; k < m_sync_num; k++) {
+      if (done_tmp[k]) {
+        continue;
+      }
+      if (k < last_done_tmp || !blamed_tmp) {
+        complete_one(m_sync_ix[k], false, nullptr);
+        blamed_tmp = blamed_tmp || (k > last_done_tmp);
       } else {
-        Serial.print(" [HW ERROR]");
-      }
-    }
-    Serial.println();
-  }
-  *a_ln.prepared = true;
-}
-
-/// @brief 目標位置の Sync Write の送信を開始し, トルクを切り替える軸を a_job に集める.
-/// @param a_ln 対象の系統.
-/// @param a_meridim Meridim配列 (各軸のコマンドを参照する).
-/// @param a_num 処理する軸数.
-/// @param a_job トルクを切り替える軸の格納先.
-/// @return 目標位置を送信した場合はtrue (トルクONの軸が無ければ送信しない).
-inline bool mrd_dxl_begin_goal(MrdDxlLine &a_ln, Meridim90Union &a_meridim, int a_num, MrdDxlTorqueJob &a_job) {
-  uint8_t ids_tmp[MRD_DXL_SLOTS];
-  uint8_t data_tmp[MRD_DXL_SLOTS * 4];
-  size_t n_tmp = 0;
-  a_job.count = 0;
-  for (int i = 0; i < a_num; i++) {
-    if (!a_ln.mount[i]) {
-      continue;
-    }
-    // コマンドが1ならトルクON. トルクONの軸だけ目標位置を送る
-    const int8_t want_tmp = (a_meridim.sval[a_ln.cmd_base + i * 2] == 1) ? 1 : 0;
-    if (want_tmp) {
-      const int32_t pos_tmp = dxl2::deg_to_pos(a_ln.tgt[i], a_ln.trim[i], a_ln.cw[i]);
-      ids_tmp[n_tmp] = (uint8_t)a_ln.id[i];
-      data_tmp[n_tmp * 4 + 0] = (uint8_t)(pos_tmp & 0xFF);
-      data_tmp[n_tmp * 4 + 1] = (uint8_t)((pos_tmp >> 8) & 0xFF);
-      data_tmp[n_tmp * 4 + 2] = (uint8_t)((pos_tmp >> 16) & 0xFF);
-      data_tmp[n_tmp * 4 + 3] = (uint8_t)((pos_tmp >> 24) & 0xFF);
-      n_tmp++;
-    }
-    if (a_ln.torque[i] != want_tmp) {
-      a_job.ids[a_job.count] = (uint8_t)a_ln.id[i];
-      a_job.vals[a_job.count] = (uint8_t)want_tmp;
-      a_job.count++;
-      a_ln.torque[i] = want_tmp;
-    }
-  }
-  return n_tmp && a_ln.dxl->send_sync_write(dxl2::ADDR_GOAL_POSITION, 4, ids_tmp, data_tmp, n_tmp);
-}
-
-/// @brief 現在位置の応答を処理し, サーボ配列の角度とエラー状態を更新する.
-/// @param a_ln 対象の系統.
-/// @param a_i 軸のインデックス.
-/// @param a_sent 読み出しを送信できたか.
-inline void mrd_dxl_finish_read(MrdDxlLine &a_ln, int a_i, bool a_sent) {
-  uint8_t d_tmp[4];
-  if (a_sent && a_ln.dxl->receive_read((uint8_t)a_ln.id[a_i], d_tmp, 4)) {
-    const int32_t pos_tmp = (int32_t)((uint32_t)d_tmp[0] | ((uint32_t)d_tmp[1] << 8) | ((uint32_t)d_tmp[2] << 16) |
-                                      ((uint32_t)d_tmp[3] << 24));
-    a_ln.tgt[a_i] = dxl2::pos_to_deg(pos_tmp, a_ln.trim[a_i], a_ln.cw[a_i]);
-    a_ln.err[a_i] = 0;
-    a_ln.stat[a_i] = 0;
-  } else { // 応答が無い場合は前回の値を使い, 連続した失敗で通信不能とみなす (KRSと同じ)
-    a_ln.tgt[a_i] = a_ln.tgt_past[a_i];
-    a_ln.err[a_i]++;
-    if (a_ln.err[a_i] >= SERVO_LOST_ERR_WAIT) {
-      a_ln.err[a_i] = SERVO_LOST_ERR_WAIT;
-      a_ln.stat[a_i] = 1;
-    }
-  }
-}
-
-/// @brief DYNAMIXEL を1系統または2系統(L/R並行)で駆動する.
-///        2系統の場合は, 各手順で両系統の送信を開始してから送信完了と受信を待つことで, L/Rの通信を重ねる.
-/// @param a_lines 駆動する系統 (1または2個).
-/// @param a_count 系統数.
-/// @param a_meridim Meridim配列.
-/// @param a_num 処理する軸数 (num_max).
-inline void mrd_dxl_drive(MrdDxlLine *a_lines, int a_count, Meridim90Union &a_meridim, int a_num) {
-  for (int k = 0; k < a_count; k++) {
-    if (!*a_lines[k].prepared) {
-      mrd_dxl_prepare(a_lines[k], a_num);
-    }
-  }
-
-  // 1. 目標位置の Sync Write. 先に目標位置を送ってからトルクONにし, 古い目標位置へ動かないようにする
-  MrdDxlTorqueJob jobs_tmp[2];
-  bool sent_tmp[2] = {false, false};
-  for (int k = 0; k < a_count; k++) {
-    sent_tmp[k] = mrd_dxl_begin_goal(a_lines[k], a_meridim, a_num, jobs_tmp[k]);
-  }
-  for (int k = 0; k < a_count; k++) {
-    if (sent_tmp[k]) {
-      a_lines[k].dxl->end_send();
-    }
-  }
-  for (int k = 0; k < a_count; k++) {
-    if (sent_tmp[k]) {
-      a_lines[k].dxl->receive_none();
-    }
-  }
-
-  // 2. トルクを切り替える軸がある系統だけ Sync Write
-  for (int k = 0; k < a_count; k++) {
-    sent_tmp[k] = jobs_tmp[k].count && a_lines[k].dxl->send_sync_write(dxl2::ADDR_TORQUE_ENABLE, 1, jobs_tmp[k].ids,
-                                                                       jobs_tmp[k].vals, jobs_tmp[k].count);
-  }
-  for (int k = 0; k < a_count; k++) {
-    if (sent_tmp[k]) {
-      a_lines[k].dxl->end_send();
-    }
-  }
-  for (int k = 0; k < a_count; k++) {
-    if (sent_tmp[k]) {
-      a_lines[k].dxl->receive_none();
-    }
-  }
-
-  // 3. 現在位置を1軸ずつ読み出す (同じインデックスのL/Rを並行)
-  for (int i = 0; i < a_num; i++) {
-    for (int k = 0; k < a_count; k++) {
-      sent_tmp[k] = a_lines[k].mount[i] &&
-                    a_lines[k].dxl->send_read((uint8_t)a_lines[k].id[i], dxl2::ADDR_PRESENT_POSITION, 4);
-    }
-    for (int k = 0; k < a_count; k++) {
-      if (sent_tmp[k]) {
-        a_lines[k].dxl->end_send();
-      }
-    }
-    for (int k = 0; k < a_count; k++) {
-      if (a_lines[k].mount[i]) {
-        mrd_dxl_finish_read(a_lines[k], i, sent_tmp[k]);
+        mrd_servo_past_keep(m_ln, m_sync_ix[k]);
       }
     }
   }
-}
 
-/// @brief DYNAMIXELを1系統で駆動する.
-/// @param a_meridim Meridim配列.
-/// @param a_sv サーボパラメータの構造体.
-/// @param a_line 駆動する系統(L, R).
-inline void mrd_sv_drive_dxl2_line(Meridim90Union &a_meridim, ServoParam &a_sv, UartLine a_line) {
-  MrdDxlLine ln_tmp[1] = {mrd_dxl_line(a_line, a_sv)};
-  mrd_dxl_drive(ln_tmp, 1, a_meridim, a_sv.num_max);
-}
+  /// @brief SyncReadの対象からIDを探す.
+  /// @return 対象内の番号. 見つからなければ-1.
+  int find_sync(uint8_t a_id) const {
+    for (int k = 0; k < m_sync_num; k++) {
+      if (m_ln.id[m_sync_ix[k]] == a_id) {
+        return k;
+      }
+    }
+    return -1;
+  }
 
-/// @brief DYNAMIXELをL/R系統で並行して駆動する.
-/// @param a_meridim Meridim配列.
-/// @param a_sv サーボパラメータの構造体.
-inline void mrd_sv_drive_dxl2_double(Meridim90Union &a_meridim, ServoParam &a_sv) {
-  MrdDxlLine ln_tmp[2] = {mrd_dxl_line(L, a_sv), mrd_dxl_line(R, a_sv)};
-  mrd_dxl_drive(ln_tmp, 2, a_meridim, a_sv.num_max);
-}
+  /// @brief SyncReadから外したサーボを1台だけ個別のREADで確認する(順番に1フレーム1台).
+  ///        このフレームのSyncReadで失敗したサーボは対象にしない(同じフレームで二重に数えないため).
+  size_t build_retry() {
+    for (int n = 0; n < m_num; n++) {
+      const int ix_tmp = (m_ln.st->read_cursor + n) % m_num;
+      if (m_excluded[ix_tmp]) {
+        m_ln.st->read_cursor = (ix_tmp + 1) % m_num;
+        m_retry_ix = ix_tmp;
+        m_pkt.start(m_ln.id[ix_tmp], DXL2_INST_READ);
+        m_pkt.put16(DXL2_REG_PRESENT_POSITION);
+        m_pkt.put16(4);
+        return m_pkt.finish();
+      }
+    }
+    return 0;
+  }
 
-#endif // __MERIDIAN_SERVO_DYNAMIXEL_H__
+  /// @brief 1台分の現在位置の応答を反映する.
+  void complete_one(int a_ix, bool a_ok, const uint8_t *a_reply) {
+    mrd_servo_read_apply(m_ln, a_ix, a_ok,
+                         a_ok ? mrd_dxl2_pos2deg(mrd_dxl2_i32_get(&a_reply[9]), m_ln.trim[a_ix], m_ln.cw[a_ix]) : 0.0f);
+  }
+
+  unsigned long m_baud;
+  Phase m_phase = GOAL;
+  bool m_skip_reads = false;                      // このフレームは現在位置を読まないか(1系統に2種類のサーボを混在させた場合)
+  Phase m_sent_phase = GOAL;                      // 直前に送った処理
+  int m_sync_ix[MRD_SERVO_SLOTS];                 // SyncReadの対象のサーボのインデックス(ID順に応答が並ぶ)
+  int m_sync_num = 0;                             // SyncReadの対象数
+  bool m_excluded[MRD_SERVO_SLOTS] = {false};     // 前フレームで読めずSyncReadから外したサーボ
+  int m_retry_ix = -1;                            // 個別READの対象のサーボのインデックス
+  Dxl2Packet m_pkt;                               // 送信パケット
+  uint8_t m_rx[MRD_SERVO_SLOTS * DXL2_POS_REPLY]; // 応答(SyncReadは全サーボ分が続けて届く)
+};
+
+#endif // __MERIDIAN_SERVO_DYNAMIXEL2_H__

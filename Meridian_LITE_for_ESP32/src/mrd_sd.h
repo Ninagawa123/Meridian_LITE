@@ -25,19 +25,15 @@
 bool mrd_sd_init(bool a_sd_mount, int a_sd_chipselect_pin) {
   if (a_sd_mount) {
     Serial.print("Initializing SD card... ");
-    // delay(100);
     if (!SD.begin(a_sd_chipselect_pin)) {
       Serial.println("Card failed, or not present.");
-      // delay(100);
       return false;
     } else {
       Serial.println("OK.");
-      // delay(100);
       return true;
     }
   }
   Serial.println("SD not mounted.");
-  // delay(100);
   return false;
 }
 
@@ -53,11 +49,11 @@ bool mrd_sd_init(bool a_sd_mount, int a_sd_chipselect_pin) {
 /// @return SDカードの読み書きが成功した場合はtrueを, 失敗した場合はfalseを返す.
 bool mrd_sd_check(bool a_sd_mount, int a_sd_chipselect_pin, bool a_sd_check_rw) {
   if (a_sd_mount && a_sd_check_rw) {
-    File sd_file; // SDカード用
-    sd_file = SD.open("/test.txt", FILE_WRITE);
+    File sd_file_tmp; // SDカード用
+    sd_file_tmp = SD.open("/test.txt", FILE_WRITE);
     delay(1); // SPI安定化検証用
 
-    if (sd_file) {
+    if (sd_file_tmp) {
       Serial.print("Checking SD card r/w... ");
       // SD書き込みテスト用のランダムな4桁の数字を生成
       randomSeed(long(analogRead(A0))); // 未接続ピンのノイズを利用
@@ -66,22 +62,24 @@ bool mrd_sd_check(bool a_sd_mount, int a_sd_chipselect_pin, bool a_sd_check_rw) 
       Serial.print("write code ");
       Serial.print(rand_number_tmp);
       // ファイルへの書き込みを実行
-      sd_file.println(rand_number_tmp);
+      sd_file_tmp.println(rand_number_tmp);
       delayMicroseconds(1); // SPI安定化検証用
-      sd_file.close();
+      sd_file_tmp.close();
       delayMicroseconds(10); // SPI安定化検証用
-      // ファイルからの読み込みを実行
-      sd_file = SD.open("/test.txt");
-      if (sd_file) {
-        Serial.print(" and read code ");
-        while (sd_file.available()) {
-          Serial.write(sd_file.read());
-        }
-        sd_file.close();
+      // ファイルからの読み込みを実行し, 書いた値と比べる
+      long read_tmp = -1;
+      sd_file_tmp = SD.open("/test.txt");
+      if (sd_file_tmp) {
+        read_tmp = sd_file_tmp.parseInt();
+        sd_file_tmp.close();
       }
+      Serial.print(" and read code ");
+      Serial.print(read_tmp);
+      const bool ok_tmp = (read_tmp == rand_number_tmp);
+      Serial.println(ok_tmp ? " OK." : " mismatch. SD card r/w failed.");
       SD.remove("/test.txt");
       delay(10);
-      return true;
+      return ok_tmp;
     } else {
       Serial.println("Could not open SD test.txt file.");
       return false;
