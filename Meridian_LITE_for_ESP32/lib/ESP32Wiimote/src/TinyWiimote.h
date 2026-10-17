@@ -35,6 +35,8 @@ TinyWiimoteData TinyWiimoteRead(void);
 
 void TinyWiimoteResetDevice(void);
 bool TinyWiimoteDeviceIsInited(void);
+bool TinyWiimoteIsConnected(void); // Meridian: true while a Wiimote is connected
+bool TinyWiimoteClassicConnected(void); // Meridian: true while a Classic Controller is the extension
 
 void TinyWiimoteReqAccelerometer(bool use);
 

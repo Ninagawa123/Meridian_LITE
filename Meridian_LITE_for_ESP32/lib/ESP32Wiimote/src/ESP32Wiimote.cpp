@@ -176,6 +176,24 @@ void ESP32Wiimote::task(void)
   handleRxQueue();
 }
 
+// Meridian: true while a Wiimote is connected
+bool ESP32Wiimote::connected(void)
+{
+    return TinyWiimoteIsConnected();
+}
+
+// Meridian: true while a Classic Controller is the extension
+bool ESP32Wiimote::classicConnected(void)
+{
+    return TinyWiimoteClassicConnected();
+}
+
+// Meridian: the last 6 extension bytes (Classic Controller data format 1)
+void ESP32Wiimote::getExtensionData(uint8_t a_data[6])
+{
+    memcpy(a_data, _extData, 6);
+}
+
 int ESP32Wiimote::available(void)
 {
     int offs = 0;
@@ -200,6 +218,7 @@ int ESP32Wiimote::available(void)
     _oldButtonState  = _buttonState;
     _oldAccelState   = _accelState;
     _oldNunchukState = _nunchukState;
+    memcpy(_oldExtData, _extData, 6); // Meridian
 
     if ((rd.data[1] >= 0x30) && (rd.data[1] <= 0x37)) // data report with button data
         offs = 2;
@@ -246,6 +265,7 @@ int ESP32Wiimote::available(void)
 
     if (offs) // update nunchuk state
     {
+        memcpy(_extData, &rd.data[offs], 6); // Meridian: raw extension bytes
         _nunchukState.xStick = rd.data[offs + 0];
         _nunchukState.yStick = rd.data[offs + 1];
         _nunchukState.xAxis  = rd.data[offs + 2];
@@ -266,7 +286,9 @@ int ESP32Wiimote::available(void)
     }
     
 
-    // add nunchuk buttons
+    // add nunchuk buttons (Meridian: not for a Classic Controller, whose byte 5 is its own buttons)
+    if (TinyWiimoteClassicConnected())
+        cBtn = zBtn = 0;
     if (cBtn)
         _buttonState = (ButtonState)((int)_buttonState | BUTTON_C);
     if (zBtn)
@@ -313,8 +335,12 @@ int ESP32Wiimote::available(void)
         }
     }
 
+    // Meridian: Classic Controller data changed
+    const int extIsChanged = TinyWiimoteClassicConnected() && memcmp(_extData, _oldExtData, 6) != 0;
+
     return
         ( buttonIsChanged
+        | extIsChanged
         | nunchukStickIsChanged
 //      | nunchukButtonIsChanged
         | accelIsChanged

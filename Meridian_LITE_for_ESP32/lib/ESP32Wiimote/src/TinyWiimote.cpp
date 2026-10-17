@@ -123,6 +123,7 @@ enum {
 static bool deviceInited = false;
 static bool wiimoteConnected = false;
 static bool nunchukConnected = false;
+static bool classicConnected = false; // Meridian: Classic Controller (/Pro) as the extension
 static bool useAccelerometer = true;
 
 /**
@@ -583,6 +584,7 @@ static void handleDisconnectionCompleteEvent(uint8_t len, uint8_t* data) {
     UNVERBOSE_PRINT("Wiimote lost\n");
     wiimoteConnected = false;
     nunchukConnected = false;
+    classicConnected = false; // Meridian
     resetDevice();
 }
 
@@ -898,6 +900,7 @@ static void handleExtensionControllerReports(uint16_t ch, uint16_t channelID, ui
       }else{ // extension controller is NOT connected
           UNVERBOSE_PRINT("Extension controller NOT connected\n");
           nunchukConnected = false;
+          classicConnected = false; // Meridian
           if (useAccelerometer)
             setDataReportingMode(ch, 0x31, false); // Core Buttons and Accelerometer: 31 BB BB AA AA AA
           else
@@ -944,6 +947,16 @@ static void handleExtensionControllerReports(uint16_t ch, uint16_t channelID, ui
             setDataReportingMode(ch, 0x35, false); // Core Buttons and Accelerometer with 16 Extension bytes: 35 BB BB AA AA AA EE EE ...
           else
             setDataReportingMode(ch, 0x32, false); // Core Buttons with 8 Extension bytes : 32 BB BB EE EE EE EE EE EE EE EE
+        }
+        // Meridian: Classic Controller / Classic Controller Pro (ID .. .. A4 20 .. 01). Default data format (6 bytes)
+        else if(data[9] == 0xA4 && data[10] == 0x20 && data[12] == 0x01){
+          UNVERBOSE_PRINT("Classic controller detected\n");
+          nunchukConnected = false;
+          classicConnected = true;
+          if (useAccelerometer)
+            setDataReportingMode(ch, 0x35, false);
+          else
+            setDataReportingMode(ch, 0x32, false);
         }
         controllerReportState = REPORT_STATE_INIT;
       }
@@ -1064,6 +1077,16 @@ void TinyWiimoteResetDevice(void) {
 
 bool TinyWiimoteDeviceIsInited(void) {
   return deviceInited;
+}
+
+// Meridian: true while a Wiimote is connected (cleared on disconnection)
+bool TinyWiimoteIsConnected(void) {
+  return wiimoteConnected;
+}
+
+// Meridian: true while a Classic Controller is the extension
+bool TinyWiimoteClassicConnected(void) {
+  return wiimoteConnected && classicConnected;
 }
 
 int TinyWiimoteAvailable() {

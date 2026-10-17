@@ -74,6 +74,9 @@ public:
   void init(void);
   void task(void);
   int available(void);
+  bool connected(void); // Meridian: true while a Wiimote is connected
+  bool classicConnected(void); // Meridian: true while a Classic Controller is the extension
+  void getExtensionData(uint8_t a_data[6]); // Meridian: the last 6 extension bytes (Classic Controller data format 1)
   ButtonState getButtonState(void);
   AccelState getAccelState(void);
   NunchukState getNunchukState(void);
@@ -94,6 +97,8 @@ private:
 
   NunchukState _nunchukState;
   NunchukState _oldNunchukState;
+  uint8_t _extData[6] = {0};    // Meridian: raw extension bytes
+  uint8_t _oldExtData[6] = {0}; // Meridian
 
   int _nunStickThreshold;
 
