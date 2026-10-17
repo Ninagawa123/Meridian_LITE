@@ -15,7 +15,8 @@ WiFiUDP udp; // wifi設定
 //  Wifi 関連の処理
 //==================================================================================================
 
-/// @brief wifiを初期化する.
+/// @brief wifiに接続し, 省電力を切って, UDPの受信を開始する.
+/// @param a_udp 接続後に受信を開始するWiFiUDPのインスタンス(cfg.udp_recv_port).
 /// @param a_ssid WifiアクセスポイントのSSID.
 /// @param a_pass Wifiアクセスポイントのパスワード.
 /// @param a_serial 出力先シリアルの指定.

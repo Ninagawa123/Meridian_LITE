@@ -155,7 +155,7 @@ public:
   /// @brief フレームをまたいで保持する状態(トルク状態の記憶).
   MrdServoLineState m_state;
 
-  /// @brief 起動時に確認した各スロットのモデル番号(0:応答なし).
+  /// @brief 各スロットのモデル番号(起動時か駆動処理の[3]で読んだもの. 0:まだ応答なし).
   uint16_t m_model[MRD_SERVO_SLOTS] = {0};
 
 private:
@@ -385,8 +385,8 @@ private:
 };
 
 /// @brief DYNAMIXEL Protocol 1.0 サーボ1系統分の1フレームの処理を, 1回ずつの送受信に分けて進める.
-///        コマンド1のサーボは目標位置へ動かし, それ以外は脱力する. 現在位置を1台ずつ読み取ってtgtに格納する.
-///        [1] 目標位置 → [2] トルク → [3] 各サーボの現在位置 の順に送る.
+///        コマンド1のサーボは目標位置へ動かし, それ以外は脱力する(機種が分からないサーボには送らない). 現在位置を1台ずつ読み取ってtgtに格納する.
+///        [1] 目標位置 → [2] トルク → [3] 各サーボの現在位置(機種が分からないサーボは機種番号) の順に送る.
 class Dxl1LineStepper : public MrdParamLineStepper<Dxl1ParamOp> {
 public:
   Dxl1LineStepper(const MrdServoLineRef &a_line, const int *a_all_mount, int a_num)
@@ -461,7 +461,7 @@ private:
                          READ,
                          DONE };
 
-  /// @brief 目標位置のSyncWriteを作る(トルクONのサーボのみ).
+  /// @brief 目標位置のSyncWriteを作る(トルクONで機種が分かっているサーボのみ).
   size_t build_goal() {
     m_pkt.start(DXL1_REG_GOAL_POSITION, 2);
     for (int i = 0; i < m_num; i++) {
@@ -503,7 +503,7 @@ private:
   bool m_reading_model = false; // 直前のREADが機種番号か
   FtcSyncPacket m_pkt;          // SyncWrite(パケット形式はFEETECHと同じ)
   uint8_t m_tx[8];
-  uint8_t m_rx[8]; // READの応答(位置2バイト)
+  uint8_t m_rx[8]; // READの応答(位置または機種番号, 2バイト)
 };
 
 #endif // __MERIDIAN_SERVO_DYNAMIXEL1_H__

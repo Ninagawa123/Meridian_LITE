@@ -9,10 +9,10 @@
 // Utility ごく小規模な汎用関数
 //==================================================================================================
 
-/// @brief 配列の中で0以外が入っている最大のIndexを求める.
+/// @brief 配列の中で0以外が入っている最大のIndexに1を足した数(使っている長さ)を求める.
 /// @param a_arr 配列
 /// @param a_size 配列の長さ
-/// @return 0以外が入っている最大のIndex. すべて0の場合は1を反す.
+/// @return 0以外が入っている最大のIndex + 1. すべて0の場合は1を返す.
 int mrd_index_max_used_get(const int a_arr[], int a_size) {
   int max_index_tmp = 0;
   for (int i = 0; i < a_size; ++i) {

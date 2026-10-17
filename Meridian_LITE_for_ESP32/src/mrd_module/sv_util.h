@@ -410,7 +410,7 @@ public:
   }
 
 protected:
-  /// @brief 対象のサーボを記憶する(各プロトコルの begin() の最初に呼ぶ).
+  /// @brief 対象のサーボを記憶する(各プロトコルの begin()/begin_wheel() の最初に呼ぶ).
   ///        書き込みの成功では値をそのまま返すため, 値もエラー値と重ならない範囲に収める.
   void target(const MrdServoLineRef &a_line, int a_ix, int16_t a_val) {
     m_ln = &a_line;

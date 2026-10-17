@@ -104,7 +104,7 @@ void mrd_servo_setup() {
                    mrd_index_max_used_get(IXR_MT, IXR_MAX)); // サーボ処理回数
   for (int i = 0; i < sv.num_max; i++) {                     // configで設定した値を反映させる
     // UARTの系統で扱うのはPWM専用(種類1/11)以外のスロット. PWM専用スロットは指令値をそのまま返す([9-1])
-    //  EEPROM の P1 でマウントを外したスロットも扱わない(EEPROM で新たにマウントすることはない)
+    //  EEPROM の P1 でマウントを外したスロットも扱わない(P1 で新たにマウントすることはない. 種類は P2 で変わる)
     sv.ixl_mount[i] = (IXL_MT[i] != NOSERVO && !mrd_servo_is_pwm_type(IXL_MT[i]) && !cfg.ixl_unmount[i]);
     sv.ixr_mount[i] = (IXR_MT[i] != NOSERVO && !mrd_servo_is_pwm_type(IXR_MT[i]) && !cfg.ixr_unmount[i]);
     sv.ixl_type[i] = IXL_MT[i];
@@ -438,12 +438,12 @@ void mrd_servo_targets_compute() {
 /// @brief 各スロットの返信値(現在位置, 指令値, パラメータ系コマンドの結果)を送信配列に格納する.
 void mrd_servo_values_reply() {
   // @[9-1] サーボIDごとにの現在位置もしくは計算結果を配列に格納
-  //        PWM専用スロット(種類1/11)と戻り値のないサーボ(PWM, Hitec, XBUS)は指令値を返す.
+  //        PWM専用スロット(種類1/11)と戻り値のないサーボ(PWM, XBUS, 動作中のHitec)は指令値を返す.
   //        マウントしていないスロットは, SERVO_UNMOUNT_REPLY が0ならコマンド・角度とも0を返し,
   //        1なら受信した値をそのまま返す(s_udp_meridimは受信データのコピーなので書き換えない).
   //        マウントしていないスロット: 系統のサーボの種類が0, スロットの種類が0, 起動時の検査でマウントを
   //        外したもの(sv.ixl_mount/ixr_mount が0), num_max以降.
-  //        パラメータ系コマンド(コマンドの下位8bitが3以上)のスロットは, その結果を返す(エラーならbit14).
+  //        パラメータ系コマンド(コマンドの下位8bitが3以上)と車輪(bit13)のスロットは, その結果(車輪は現在速度)を返し(エラーならbit14), スルー(bit15)は受信した値をそのまま返す.
   for (int i = 0; i < MRD_SERVO_SLOTS; i++) {
     mrd_servo_slot_reply(s_udp_meridim, MRD_L_ORIGIDX, i, i < IXL_MAX ? IXL_MT[i] : NOSERVO,
                          cfg.mount_servo_type_l != NOSERVO && i < sv.num_max && i < IXL_MAX && sv.ixl_mount[i],

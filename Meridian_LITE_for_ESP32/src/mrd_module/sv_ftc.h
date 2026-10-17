@@ -367,7 +367,7 @@ public:
   }
 
   /// @brief レジスタに書き込み, 応答を確認する(1回の送受信).
-  /// @return 正しい応答を受信できればtrue.
+  /// @return 正しい応答(エラーなし)を受信できればtrue.
   bool write(uint8_t a_id, uint8_t a_addr, const uint8_t *a_data, uint8_t a_len) {
     uint8_t tx_tmp[FTC_TX_MAX];
     uint8_t rx_tmp[6];
@@ -815,7 +815,7 @@ private:
   }
 
   int m_read_series = 0;     // このフレームで現在位置を読む系列(FTCSTS/FTCSCS. 0:全サーボ, FTC_READ_NONE:読まない)
-  bool m_skip_reads = false; // このフレームは現在位置を読まないか(1系統に2種類のサーボを混在させた場合)
+  bool m_skip_reads = false; // このフレームは現在位置を読まないか(混在時の交互読み出し, マスターコマンド2)
   Phase m_phase = GOAL_STS;
   int m_ix = -1;          // 現在位置を読んでいるサーボのインデックス
   bool m_reading = false; // 直前に準備したのがREADか

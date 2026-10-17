@@ -71,14 +71,14 @@ bool mrd_command_group1_execute(Meridim90Union &a_meridim, bool a_flg_exe, Servo
     return true;
   }
 
-  // コマンド:MCMD_BOARD_TRANSMIT_ACTIVE (10005) UDP受信の通信周期制御をボード側主導に(デフォルト)
+  // コマンド:MCMD_BOARD_TRANSMIT_ACTIVE (10005) UDP受信の通信周期制御をボード側主導に(デフォルト). LITEではフラグとフレームタイマーのリセットのみ
   if (a_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_ACTIVE) {
     flg.udp_board_passive = false; // UDP送信をアクティブモードに
     flg.count_frame_reset = true;  // フレームの管理時計をリセットフラグをセット
     return true;
   }
 
-  // コマンド:MCMD_EEPROM_ENTER_WRITE (10009) EEPROMの書き込みモードスタート
+  // コマンド:MCMD_EEPROM_ENTER_WRITE (10009) EEPROMの書き込みモードスタート. LITEではフラグとフレームタイマーのリセットのみ(書き込みは10300+p)
   if (a_meridim.sval[MRD_MASTER] == MCMD_EEPROM_ENTER_WRITE) {
     flg.eeprom_write_mode = true; // 書き込みモードのフラグをセット
     flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをセット
@@ -192,7 +192,7 @@ bool mrd_command_group2_execute(Meridim90Union &a_meridim, bool a_flg_exe, Servo
     return true;
   }
 
-  // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10006) UDP受信の通信周期制御をPC側主導に(SSH的な動作)
+  // コマンド:MCMD_BOARD_TRANSMIT_PASSIVE (10006) UDP受信の通信周期制御をPC側主導に(SSH的な動作). LITEではフラグとフレームタイマーのリセットのみ
   if (a_meridim.sval[MRD_MASTER] == MCMD_BOARD_TRANSMIT_PASSIVE) {
     flg.udp_board_passive = true; // UDP送信をパッシブモードに
     flg.count_frame_reset = true; // フレームの管理時計をリセットフラグをセット

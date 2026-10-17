@@ -812,7 +812,7 @@ private:
 
   unsigned long m_baud;
   Phase m_phase = GOAL;
-  bool m_skip_reads = false;                      // このフレームは現在位置を読まないか(1系統に2種類のサーボを混在させた場合)
+  bool m_skip_reads = false;                      // このフレームは現在位置を読まないか(混在時の交互読み出し, マスターコマンド2)
   Phase m_sent_phase = GOAL;                      // 直前に送った処理
   int m_sync_ix[MRD_SERVO_SLOTS];                 // SyncReadの対象のサーボのインデックス(ID順に応答が並ぶ)
   int m_sync_num = 0;                             // SyncReadの対象数

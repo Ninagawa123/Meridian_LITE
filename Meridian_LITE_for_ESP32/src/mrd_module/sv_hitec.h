@@ -221,9 +221,9 @@ private:
 class HtcLineStepper : public MrdParamLineStepper<HtcParamOp> {
 public:
   /// @param a_line 系統の参照.
+  /// @param a_all_mount パラメータ系コマンドのスロットを除かないマウント状態(パラメータ系コマンドの実行用).
   /// @param a_num 処理するサーボ数.
   /// @param a_htc この系統のHitecサーボクラス(順番と脱力の状態を保持).
-  /// @param a_all_mount パラメータ系コマンドのスロットを除かないマウント状態(パラメータ系コマンドの実行用).
   HtcLineStepper(const MrdServoLineRef &a_line, const int *a_all_mount, int a_num, HitecHalfDuplexClass &a_htc)
       : MrdParamLineStepper<HtcParamOp>(a_line, a_all_mount, a_num),
         m_htc(a_htc) {}

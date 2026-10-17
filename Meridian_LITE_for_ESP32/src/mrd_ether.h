@@ -218,6 +218,7 @@ IPAddress mrd_ip_address_parse(const char *a_ip_str, HardwareSerial &a_serial) {
 /// @brief Ethernetを初期化する（文字列IP設定対応版）
 /// @param a_udp 使用するEthernetUDPのインスタンス
 /// @param a_cs_pin W5500のCSピン番号
+/// @param a_mac_address 使用するMACアドレス(6byte)
 /// @param a_serial 出力先シリアルの指定.
 /// @return 初期化に成功した場合はtrueを, 失敗した場合はfalseを返す.
 bool mrd_ether_init(EthernetUDP &a_udp, int a_cs_pin, byte *a_mac_address, HardwareSerial &a_serial) {
@@ -244,7 +245,7 @@ bool mrd_ether_init(EthernetUDP &a_udp, int a_cs_pin, byte *a_mac_address, Hardw
       gateway_tmp == IPAddress(0, 0, 0, 0) ||
       subnet_tmp == IPAddress(0, 0, 0, 0) ||
       dns_tmp == IPAddress(0, 0, 0, 0)) {
-    a_serial.println("ERROR: Please check your IP address format in keys.h");
+    a_serial.println("ERROR: Please check your IP address format in keys.h or EEPROM P5");
     return false;
   }
 

@@ -23,10 +23,10 @@
 //   L/R系統は mrd_servo_lines_run で並行して進める(もう一方の系統が他のプロトコルでもよい).
 //
 // 通信時間の制約:
-//   通信速度は最大460.8kbps(初期値115.2kbps), サーボの返信は要求の受信から最短でも100us後.
+//   通信速度は公式には最大460.8kbps(初期値115.2kbps. 公式資料にない691.2kbpsも設定可), サーボの返信は要求の受信から最短でも100us後.
 //   460.8kbps, 15台の試算: [2] 53byte=1.15ms + [3] 1台あたり(要求8byte+応答10byte=0.39ms+100us+α)≒0.52ms.
 //   15台すべてを毎フレーム読むと約9ms となり100Hzに収まらないため, SERVO_FTB_READ_PER_FRAME で台数を絞る
-//   (5台で約3.8ms. 15台なら各サーボの現在位置は3フレームに1回更新される). 目標位置は毎フレーム全台に送る.
+//   (既定の8台で約5.3ms. 15台なら各サーボの現在位置は2フレームに1回更新される). 目標位置は毎フレーム全台に送る.
 //
 // 位置値は0.1deg単位の符号付き値で, 中央が0. 可動範囲は±150deg.
 
@@ -320,7 +320,7 @@ MrdParamReg mrd_ftb_param_reg(uint8_t a_cmd) {
 
 /// @brief FUTABAのパラメータ系コマンド1件分の処理(1回の送受信).
 ///        3:応答確認(アドレス0を読む), 35:ROM保存(返信なし), 読み出しはアドレス指定の返信要求,
-///        書き込みはACKの返信を要求するショートパケット. 書き込みの結果は受け取ったVAL.
+///        書き込みはACKの返信(1byte)を要求するショートパケット. 書き込みの結果はACKなら受け取ったVAL, NACKならサーボのエラー.
 class FtbParamOp : public MrdParamOpBase {
 public:
   void begin(const MrdServoLineRef &a_line, int a_ix, uint8_t a_cmd, int16_t a_val) {
@@ -534,7 +534,7 @@ private:
 
   Phase m_phase = TORQUE;
   int m_ix = -1;                // 現在位置を読んでいるサーボのインデックス
-  bool m_skip_reads = false;    // このフレームは現在位置を読まないか(1系統に2種類のサーボを混在させた場合)
+  bool m_skip_reads = false;    // このフレームは現在位置を読まないか(混在時の交互読み出し, マスターコマンド2)
   bool m_reading = false;       // 直前に準備したのが読み出しか
   bool m_read[MRD_SERVO_SLOTS]; // このフレームで現在位置を読むサーボ
   FtbLongPacket m_pkt;          // ロングパケット

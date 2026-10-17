@@ -172,26 +172,26 @@
 
 // 動作チェックモード
 #define CHECK_SD_RW     1 // 起動時のSDカードリーダーの読み書きチェック
-#define CHECK_EEPROM_RW 0 // 起動時のEEPROMの動作チェック
+#define CHECK_EEPROM_RW 0 // 起動時のEEPROMの動作チェック ※LITEでは未使用
 
 // シリアルモニタリング
 #define MONITOR_FRAME_DELAY       0    // シリアルモニタでフレーム処理時間と遅延を1秒ごとに表示(0:OFF, 1:ON)
 #define MONITOR_FLOW              0    // シリアルモニタでフローを表示(0:OFF, 1:ON)
-#define MONITOR_ERR_SERVO         0    // シリアルモニタでサーボエラーを表示(0:OFF, 1:ON)
-#define MONITOR_ERR_ALL           0    // 全経路の受信エラー率を表示
+#define MONITOR_ERR_SERVO         0    // シリアルモニタでサーボエラーを表示(0:OFF, 1:ON) ※LITEでは未使用
+#define MONITOR_ERR_ALL           0    // シリアルモニタで全経路の受信エラー回数を毎フレーム表示(0:OFF, 1:ON)
 #define MONITOR_SEQ               0    // シリアルモニタでシーケンス番号チェックを表示(0:OFF, 1:ON)
-#define MONITOR_PAD               0    // シリアルモニタでリモコンのデータを表示(0:OFF, 1:ON)
+#define MONITOR_PAD               0    // シリアルモニタでリモコンのデータを表示(0:OFF, 1:ON) ※LITEでは未使用
 #define MONITOR_UDP_TIMEOUT       0    // シリアルモニタでUDP受信のタイムアウトを表示(0:OFF, 1:ON)
 #define MONITOR_SUPPRESS_DURATION 8000 // 起動直後のタイムアウトメッセージ抑制時間(単位ms)
 
 // I2C設定, I2Cセンサ関連設定
 #define I2C0_SPEED       400000 // I2Cの速度(400kHz推奨)
 #define IMUAHRS_INTERVAL 10     // IMU/AHRSのセンサの読み取り間隔(ms)
-#define IMUAHRS_STOCK    4      // MPUで移動平均を取る際の元にする時系列データの個数
+#define IMUAHRS_STOCK    4      // MPUで移動平均を取る際の元にする時系列データの個数 ※LITEでは未使用
 // #define I2C1_MERIMOTE_ADDR 0x58 // MerimoteのI2Cアドレス
 
 // SPI設定
-#define SPI0_SPEED 6000000 // SPI通信の速度(6000000Hz推奨)
+#define SPI0_SPEED 6000000 // SPI通信の速度(6000000Hz推奨) ※LITEでは起動時の表示のみに使う
 
 // PC接続関連設定
 #define SERIAL_PC_BPS     921600 // PCとのシリアル速度(モニタリング表示用. platformio.iniのmonitor_speedと合わせる)
@@ -229,8 +229,8 @@
 #define PIN_LED_BT         26 // Bluetooth接続確認用ピン(点滅はペアリング,点灯でリンク確立). -1:なし. 同上
 #define PIN_PWM_0          25 // 本体PWMサーボ0 (PWM_PIN_MODE 1)
 #define PIN_PWM_1          26 // 本体PWMサーボ1 (PWM_PIN_MODE 1)
-#define PIN_I2C1_SDA       25 // PCA9685用I2C(Wire1)のSDA (PWM_PIN_MODE 2)
-#define PIN_I2C1_SCL       26 // PCA9685用I2C(Wire1)のSCL (PWM_PIN_MODE 2)
+#define PIN_I2C1_SDA       25 // I2C1(Wire1)のSDA (PCA9685 の PWM_PIN_MODE 2, BlueRetro の PAD_BLUERETRO_I2C 1)
+#define PIN_I2C1_SCL       26 // I2C1(Wire1)のSCL (PCA9685 の PWM_PIN_MODE 2, BlueRetro の PAD_BLUERETRO_I2C 1)
 #define PIN_PAD_RX         34 // SBDBT の TX をつなぐピン(MOUNT_PAD SBDBT. ソフトウェアで受信. 入力専用ピン可)
 
 //-------------------------------------------------------------------------
@@ -293,7 +293,7 @@
 #define PWM_US_PER_DEG   (1000.0 / 90.0) // 1degあたりのパルス幅(us). ±90deg = 500-2500us
 #define PWM_PULSE_MIN    500.0           // パルス幅の下限(us)
 #define PWM_PULSE_MAX    2500.0          // パルス幅の上限(us)
-#define I2C1_SPEED       400000          // PCA9685用I2C(Wire1)の速度
+#define I2C1_SPEED       400000          // I2C1(Wire1. PCA9685, BlueRetro)の速度
 #define PCA9685_NUM      2               // PCA9685の枚数(0-2). 1枚目は偶数フレーム, 2枚目は奇数フレームで更新(各50Hz)
 #define PCA9685_ADDR_0   0x40            // 1枚目のI2Cアドレス
 #define PCA9685_ADDR_1   0x41            // 2枚目のI2Cアドレス(A0をHIGHに)
@@ -463,7 +463,7 @@ float IXR_TRIM[IXR_MAX] = {
 };
 
 // PWM出力とMeridimスロットの対応表. SV_L(n)/SV_R(n)でL/R系統のn番スロットの指令に従う. SV_NONEは未使用.
-// スロットのコマンドが1なら角度を出力, それ以外はパルスを止める. トリムと回転方向はスロットの設定を使う.
+// スロットのコマンドが1なら角度を出力, 0/2ならパルスを止める(通常以外のスロットは直前の出力を保持). トリムと回転方向はスロットの設定を使う.
 // UARTのサーボと共有しないスロットは, IXL_MT/IXR_MTの種類を1(本体PWM)/11(PCA9685)にする(指令値をそのまま返す).
 #define SV_L(n) (n)
 #define SV_R(n) (100 + (n))
@@ -485,11 +485,11 @@ int PCA9685_SLOT[2][16] = {               // PCA9685 [枚][ch] (PWM_PIN_MODE 2)
 #define MCMD_SENSOR_YAW_CALIB       10002  // センサの推定ヨー軸を現在値センターとしてリセット
 #define MCMD_SENSOR_ALL_CALIB       10003  // センサの3軸について現在値を原点としてリセット
 #define MCMD_ERR_CLEAR_SERVO_ID     10004  // 通信エラーのサーボのIDをクリア(MRD_ERR_l)
-#define MCMD_BOARD_TRANSMIT_ACTIVE  10005  // ボードが定刻で送信を行うモード(PC側が受信待ち)
-#define MCMD_BOARD_TRANSMIT_PASSIVE 10006  // ボードが受信を待ち返信するモード(PC側が定刻送信)
+#define MCMD_BOARD_TRANSMIT_ACTIVE  10005  // ボードが定刻で送信を行うモード(PC側が受信待ち) ※LITEではフレームタイマーのリセットのみ
+#define MCMD_BOARD_TRANSMIT_PASSIVE 10006  // ボードが受信を待ち返信するモード(PC側が定刻送信) ※LITEではフレームタイマーのリセットのみ
 #define MCMD_FRAMETIMER_RESET       10007  // フレームタイマーを現在時刻にリセット
-#define MCMD_BOARD_STOP_DURING      10008  // ボードの末端処理を[MRD_STOP_FRAMES]ミリ秒止める
-#define MCMD_EEPROM_ENTER_WRITE     10009  // EEPROM書き込みモードのスタート
+#define MCMD_BOARD_STOP_DURING      10008  // ボードの末端処理を[MRD_STOP_FRAMES]ミリ秒止める(最大1000ms)
+#define MCMD_EEPROM_ENTER_WRITE     10009  // EEPROM書き込みモードのスタート ※LITEではフレームタイマーのリセットのみ(書き込みは10300+p)
 #define MCMD_EEPROM_EXIT_WRITE      10010  // EEPROM書き込みモードの終了 ※LITEでは未使用
 #define MCMD_EEPROM_ENTER_READ      10011  // EEPROM読み出しモードのスタート ※LITEでは未使用
 #define MCMD_EEPROM_EXIT_READ       10012  // EEPROM読み出しモードの終了 ※LITEでは未使用
@@ -498,7 +498,7 @@ int PCA9685_SLOT[2][16] = {               // PCA9685 [枚][ch] (PWM_PIN_MODE 2)
 #define MCMD_SDCARD_ENTER_READ      10015  // SDCARD読み出しモードのスタート ※LITEでは未使用
 #define MCMD_SDCARD_EXIT_READ       10016  // SDCARD読み出しモードの終了 ※LITEでは未使用
 #define MCMD_START_TRIM_SETTING     10100  // トリム設定モードに入る(Meridian_console.py連携)
-#define MCMD_EEPROM_SAVE_TRIM       10101  // 現在の姿勢をトリム値としてEEPROMに書き込む
+#define MCMD_EEPROM_SAVE_TRIM       10101  // 受信したスロットの設定ワードとトリムをEEPROMのP1に書き込む
 #define MCMD_EEPROM_LOAD_TRIM       10102  // EEPROMのトリム値をサーボに反映する
 #define MCMD_EEPROM_BOARDTOPC_DATA0 10200  // EEPROMの[0][*]をボードからPCにMeridimで送信する(+p でページp. LITEは0-15)
 #define MCMD_EEPROM_BOARDTOPC_DATA1 10201  // EEPROMの[1][*]をボードからPCにMeridimで送信する
@@ -608,7 +608,7 @@ int PCA9685_SLOT[2][16] = {               // PCA9685 [枚][ch] (PWM_PIN_MODE 2)
 // #define MRD_ERR         88 // エラーコード (MRDM_LEN - 2)
 // #define MRD_CKSM        89 // チェックサム (MRDM_LEN - 1)
 
-// エラービット MRD_ERR_CODEの上位8bit分
+// エラービット MRD_ERR の上位8bit分
 #define ERRBIT_15_ESP_PC       15 // ESP32 → PC のUDP受信エラー (0:エラーなし、1:エラー検出) ※LITEでは未使用
 #define ERRBIT_14_PC_ESP       14 // PC → ESP32 のUDP受信エラー
 #define ERRBIT_13_ESP_TSY      13 // ESP32 → TeensyのSPI受信エラー ※LITEでは未使用

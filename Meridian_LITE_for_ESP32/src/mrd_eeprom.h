@@ -245,7 +245,7 @@ bool mrd_eeprom_page_valid(int a_page, const int16_t *a_w) {
          mrd.cksm_rslt(const_cast<int16_t *>(a_w), MRD_EEP_PAGE_WORDS);
 }
 
-/// @brief 旧形式(版1.2以前. 印なし)のサーボの設定のページか. P1 だけ, 空でなければ旧形式として読む.
+/// @brief 旧形式(v1.1.1以前. 印なし)のサーボの設定のページか. P1 だけ, 空でなければ旧形式として読む.
 bool mrd_eeprom_page_old_servo(int a_page, const int16_t *a_w) {
   return a_page == MRD_EEP_P_SERVO && !mrd_eeprom_page_valid(a_page, a_w) && !mrd_eeprom_page_blank(a_w);
 }

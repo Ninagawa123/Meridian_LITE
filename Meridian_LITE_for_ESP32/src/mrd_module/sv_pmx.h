@@ -18,7 +18,7 @@
 // 起動時の設定(RAMのみ. 電源を切ると戻る):
 //   制御モード(501) = 位置制御, 応答データ(502) = 現在位置. MotorWRITEとMotorREADの返信に現在位置が入る.
 //
-// 1フレームの処理(サーボごとに1〜2回の送受信):
+// 1フレームの処理(サーボごとに1〜2回の送受信. 車輪から戻ったサーボは位置制御に戻すMemWRITEが加わり最大3回):
 //   [1] トルク: ON/OFFが変わったサーボ(返信のトルク状態が指示と違う場合を含む)だけ MotorWRITE(TorqueON/Free).
 //       ※Free中に受けた目標位置はモードエラーで無視されるため, 目標位置より先に送る.
 //   [2] トルクONのサーボは MotorWRITE(目標位置), OFFのサーボは MotorREAD.
@@ -298,9 +298,9 @@ MrdParamReg mrd_pmx_param_reg(uint8_t a_cmd) {
   case 25:
     return mrd_pc_reg(84, 2, a_cmd == 25); // mA
   case 26:
-    return mrd_pc_reg(302, 2, false, PC_SCALE, 0.1f, PC_SIGNED); // 現在速度(0.1deg/s)
+    return mrd_pc_reg(302, 2, false, PC_SCALE, 0.1f, PC_SIGNED); // 現在速度(0.1deg/s → deg/s)
   case 27:
-    return mrd_pc_reg(104, 2, true, PC_SCALE, 0.1f, PC_SIGNED); // 最大速度指令値
+    return mrd_pc_reg(104, 2, true, PC_SCALE, 0.1f, PC_SIGNED); // 最大速度指令値(0.1deg/s → deg/s)
   case 30:
   case 31:
     return mrd_pc_reg(110, 2, a_cmd == 31); // モータ出力制限(%)
@@ -321,8 +321,8 @@ MrdParamReg mrd_pmx_param_reg(uint8_t a_cmd) {
   }
 }
 
-/// @brief PMXのパラメータ系コマンド1件分の処理(1回の送受信).
-///        3:SystemREAD, 4:目標位置(MotorWRITE. Free中はモードエラー), 35:SAVE, それ以外はMemREAD/MemWRITE.
+/// @brief PMXのパラメータ系コマンド1件分の処理(1回の送受信. 車輪は最大3回).
+///        3:SystemREAD, 4:目標位置(MotorWRITE. Free中はモードエラー), 35:SAVE, それ以外はMemREAD/MemWRITE. 車輪は begin_wheel.
 ///        書き込みの結果は受け取ったVAL(ステータスにエラーがあればエラー値).
 class PmxParamOp : public MrdParamOpBase {
 public:
@@ -489,7 +489,7 @@ private:
 
 /// @brief PMXサーボ1系統分の1フレームの処理を, 1回ずつの送受信に分けて進める.
 ///        コマンド1のサーボは目標位置へ動かし, それ以外は脱力する. 全サーボの現在位置を読み取ってtgtに格納する.
-///        サーボごとに [1] トルク(変化時のみ) → [2] 目標位置(ON) または 読み出し(OFF) の順に送る.
+///        サーボごとに [0] 位置制御に戻す(車輪から戻ったときのみ) → [1] トルク(変化時のみ) → [2] 目標位置(ON) または 読み出し(OFF) の順に送る.
 class PmxLineStepper : public MrdParamLineStepper<PmxParamOp> {
 public:
   /// @param a_line 系統の参照.

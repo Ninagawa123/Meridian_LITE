@@ -185,7 +185,7 @@ public:
   }
 
   /// @brief マウント設定したジョイパッドのタイプをシリアルモニタに出力する.
-  /// @param a_mount_pad パッドの定義(PC,MERIMOTE,BLUERETRO,SBDBT,KRR5FH,WIIMOTE)
+  /// @param a_mount_pad パッドの定義(PC,MERIMOTE,BLUERETRO,SBDBT,KRR5FH,WIIMOTE,WIIMOTE_C)
   void mounted_pad(int a_mount_pad) {
     m_serial.print("Pad Receiver mounted : ");
     switch (a_mount_pad) {
@@ -259,7 +259,7 @@ public:
   }
 
   /// @brief フレームの処理時間を集計し, a_frames フレームごとに平均と最大を表示する.
-  ///        例) Frame[us] busy 4321/6789 servo 2100/2300 late 0/100 rxL 150/300 rxR 160/310 err L06 R04
+  ///        例) Frame[us] busy 4321/6789 servo 2100/2300 late 0/100 rxL 150/300 rxR 160/310
   ///        (平均/最大). rxL/rxRは系統ごとの応答待ち時間(1回の送受信あたり, hduart_stat).
   ///        系統ごとの応答の速さを表す.
   ///        通信の失敗があった場合は2行目に内訳を表示する.

@@ -77,7 +77,7 @@ bool mrd_wire0_bno055_init(AhrsValue &a_ahrs) {
 }
 
 /// @brief 指定されたIMU/AHRSタイプに応じて適切なセンサの初期化を行います.
-/// @param a_imuahrs_type 使用するセンサのタイプを示す列挙型です(MPU6050, MPU9250, BNO055).
+/// @param a_imuahrs_type 使用するセンサのタイプを示す列挙型です(MPU6050_IMU, BNO055_AHRS. MPU9250_IMUは未対応).
 /// @param a_i2c0_speed I2C通信のクロック速度です.
 /// @param a_ahrs AHRSの値を保持する構造体.
 /// @param a_pin_sda SDAのピン番号.下記と合わせて省略可.
@@ -267,6 +267,7 @@ void mrd_wire0_mpu6050_task(void *a_args) {
 //------------------------------------------------------------------------------------
 
 /// @brief 指定されたIMU/AHRSタイプに基づいて, 計測したAHRSデータを読み込む.
+/// @param a_meridim 書き込み先のMeridim配列.
 /// @param a_type 使用するセンサのタイプを示す列挙(MPU6050_IMU, BNO055_AHRS. MPU9250は未対応).
 /// @param a_ahrs_result AHRSから読み取った結果を格納した配列.
 /// @return データの書き込みが成功した場合はtrue, それ以外の場合はfalseを返す.

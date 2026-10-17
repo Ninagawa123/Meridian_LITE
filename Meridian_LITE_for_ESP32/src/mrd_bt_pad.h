@@ -451,7 +451,7 @@ uint64_t mrd_blueretro_read(TwoWire &a_wire) {
 
 /// @brief Wiiリモコンからの入力データを受信し, 処理する.
 /// @return 更新されたジョイパッドの状態を64ビット整数で返す. 切断されている間は0.
-/// @note ESP32Wiimoteインスタンス wiimote, 定数PAD_GENERALIZE を関数内で使用.
+/// @note ESP32Wiimoteインスタンス wiimote, cfg.pad_generalize, cfg.mount_pad を関数内で使用.
 uint64_t mrd_bt_wiimote_read() {
   static uint64_t pre_val_tmp = 0; // 前回の値を保持する静的変数
   static int calib_l1x_tmp = 0;
@@ -535,7 +535,7 @@ uint64_t mrd_bt_wiimote_read() {
 //==================================================================================================
 
 /// @brief 指定されたジョイパッドタイプに応じて最新データを読み取り, 64ビット整数で返す.
-/// @param a_pad_type ジョイパッドのタイプを示す列挙型(MERIMOTE, BLUERETRO, SBDBT, KRR5FH).
+/// @param a_pad_type ジョイパッドのタイプを示す列挙型(KRR5FH, SBDBT, WIIMOTE, WIIMOTE_C, BLUERETRO. それ以外は0).
 /// @return 64ビット整数に変換された受信データ
 /// @note WIIMOTEの場合は, スレッド(mrd_bt_wiimote_task)が更新した pad_bt_val を返す.
 uint64_t mrd_pad_read(PadType a_pad_type) {

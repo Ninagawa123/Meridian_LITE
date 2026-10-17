@@ -192,7 +192,7 @@ struct MrdSettings {
   float pwm_us_per_deg = PWM_US_PER_DEG;         // 1degあたりのパルス幅(us)
   float pwm_pulse_min = PWM_PULSE_MIN;           // パルス幅の下限(us)
   float pwm_pulse_max = PWM_PULSE_MAX;           // パルス幅の上限(us)
-  unsigned long i2c1_speed = I2C1_SPEED;         // PCA9685用I2C(Wire1)の速度(Hz)
+  unsigned long i2c1_speed = I2C1_SPEED;         // I2C1(Wire1. PCA9685, BlueRetro)の速度(Hz)
   int pca9685_num = PCA9685_NUM;                 // PCA9685の枚数(0-2)
   int pca9685_addr_0 = PCA9685_ADDR_0;           // 1枚目のI2Cアドレス
   int pca9685_addr_1 = PCA9685_ADDR_1;           // 2枚目のI2Cアドレス
@@ -350,23 +350,23 @@ struct ServoParam {
   // サーボの最大接続 (サーボ送受信のループ処理数)
   int num_max;
 
-  // 各サーボのマウントありなし(config.hで設定)
+  // 各サーボのマウントありなし(config.h または EEPROM の P1/P2 で設定)
   int ixl_mount[IXL_MAX]; // L系統
   int ixr_mount[IXR_MAX]; // R系統
 
-  // 各サーボのコード上のインデックスに対し, 実際に呼び出すハードウェアのID番号(config.hで設定)
+  // 各サーボのコード上のインデックスに対し, 実際に呼び出すハードウェアのID番号(config.h または EEPROM の P1/P2 で設定)
   int ixl_id[IXL_MAX]; // L系統の実サーボ呼び出しID番号
   int ixr_id[IXR_MAX]; // R系統の実サーボ呼び出しID番号
 
-  // 各サーボの正逆方向補正用配列(config.hで設定)
+  // 各サーボの正逆方向補正用配列(config.h または EEPROM の P1 で設定)
   int ixl_cw[IXL_MAX]; // L系統
   int ixr_cw[IXR_MAX]; // R系統
 
-  // 各サーボの直立ポーズトリム値(config.hで設定)
+  // 各サーボの直立ポーズトリム値(config.h または EEPROM の P1 で設定)
   float ixl_trim[IXL_MAX]; // L系統
   float ixr_trim[IXR_MAX]; // R系統
 
-  // 各サーボのベンダーと型番(config.hで設定)
+  // 各サーボの種類(IXL_MT/IXR_MT の番号. config.h または EEPROM の P2 で設定)
   float ixl_type[IXL_MAX]; // L系統
   float ixr_type[IXR_MAX]; // R系統
 

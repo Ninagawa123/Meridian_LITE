@@ -17,7 +17,7 @@
 //==================================================================================================
 //
 // ESP32のTX/RX/DIRの3本で半二重のサーボ線を駆動する共通層.
-// ICS, DYNAMIXEL, FEETECH, FUTABA等の各プロトコル層はこのクラスの transfer() を利用する.
+// 各プロトコル層は駆動時は mrd_hduart_xfer_start/poll で, 起動時の確認・設定は transfer() でこのクラスを利用する.
 // ボーレートとフレーム形式(ICS:8E1, その他:8N1等)はプロトコル層が begin() で指定する.
 //
 // 想定回路 (SN74LXC1T45, VCCA=3.3V / VCCB=サーボ信号電圧):
@@ -309,8 +309,8 @@ public:
   }
 
   //------------------------------------------------------------------------------------
-  //  分割API: 複数系統を並行して送受信する場合に使用する
-  //  例) L.begin_send → R.begin_send → L.end_send → R.end_send → L.receive → R.receive
+  //  分割API: 送信と受信切替・受信を分けて進める場合に使用する(mrd_hduart_xfer_start/poll)
+  //  例) begin_send → (tx_done() を待つ) → end_send → receive_now
   //------------------------------------------------------------------------------------
 
   /// @brief 送信を開始する. 送信完了は待たない.
@@ -340,7 +340,7 @@ public:
 
   //------------------------------------------------------------------------------------
   //  複数系統の同時送信API: 応答のある命令を複数系統で重ねて送る場合に使用する
-  //  例) L.prepare_send → R.prepare_send → send_multi({L, R}) → L.receive → R.receive
+  //  例) prepare_send → send_multi(&bus, 1) → receive_now (mrd_hduart_xfer_start/poll. 2系統を重ねることもできる)
   //------------------------------------------------------------------------------------
 
   /// @brief 送信の準備(前回の残りデータの破棄とエコー照合用の控え)だけを行う. 送信は send_multi() で行う.
@@ -716,8 +716,8 @@ public:
   virtual bool next(MrdHduartXfer &a_x) = 0;
   /// @brief next()で準備した送受信の結果を反映する.
   virtual void complete(const MrdHduartXfer &a_x) = 0;
-  /// @brief このフレームは現在位置を読まない(1系統に2種類のサーボを混在させた場合の交互読み出し).
-  ///        next()より前に呼ぶ. 読まないサーボは前回の値になる. 混在に対応しないプロトコルは何もしない.
+  /// @brief このフレームは現在位置を読まない(混在時の交互読み出し, マスターコマンド2).
+  ///        next()より前に呼ぶ. 読まないサーボは前回の値になる. 対応しないプロトコル(ICS, PMX, Hitec, XBUS)は何もしない.
   virtual void skip_reads() {}
 };
 
@@ -789,7 +789,7 @@ static uint32_t mrd_servo_frame = 0;
 //
 // サーボごとのコマンド(Meridimの[i*2])の下位8bitが3以上なら, そのサーボのパラメータを読み書きする.
 // 上位ビット: bit15 スルー(通信せず受信値をそのまま返す), bit13 車輪(下位8bitが1のとき, VALを速度0.01rpmとして送り
-// 現在速度を返す. 車輪モードはサーボ側で事前に設定しておく), bit14 返信時のサーボエラーフラグ.
+// 現在速度を返す. 車輪モードはサーボ側で事前に設定しておく. PMXは制御モードを自動で切り替える), bit14 返信時のサーボエラーフラグ.
 // 番号と値の形式は tasks/servo_param_plan.md (3〜38: gs2d準拠, 50以降: 各社固有).
 // コマンドかVALが変わったフレームで1回だけ実行し, 結果を保持して返し続ける. その間は, そのサーボの
 // 通常の処理(トルク, 目標位置, 現在位置)を行わない(トルク状態と位置を保持する). 実行は各プロトコルの
@@ -963,7 +963,7 @@ constexpr bool mrd_servo_param_supported(int a_type) {
          a_type == FTBRSX || a_type == KOPMX || a_type == HTCHSR;
 }
 
-/// @brief 車輪(bit13)に対応するサーボタイプか(DYNAMIXEL 1.0/2.0, FEETECH, PMX). 車輪モードはサーボ側で事前に設定する.
+/// @brief 車輪(bit13)に対応するサーボタイプか(DYNAMIXEL 1.0/2.0, FEETECH, PMX). 車輪モードはサーボ側で事前に設定する(PMXは自動で切り替える).
 constexpr bool mrd_servo_wheel_supported(int a_type) {
   return a_type == DXL1 || a_type == DXL2 || mrd_servo_family(a_type) == FTCSTS || a_type == KOPMX;
 }
