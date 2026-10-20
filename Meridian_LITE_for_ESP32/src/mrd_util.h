@@ -9,11 +9,11 @@
 // Utility ごく小規模な汎用関数
 //==================================================================================================
 
-/// @brief 配列の中で0以外が入っている最大のIndexを求める.
+/// @brief 配列の中で0以外が入っている最大のIndexに1を足した数(使っている長さ)を求める.
 /// @param a_arr 配列
 /// @param a_size 配列の長さ
-/// @return 0以外が入っている最大のIndex. すべて0の場合は1を反す.
-int mrd_max_used_index(const int a_arr[], int a_size) {
+/// @return 0以外が入っている最大のIndex + 1. すべて0の場合は1を返す.
+int mrd_index_max_used_get(const int a_arr[], int a_size) {
   int max_index_tmp = 0;
   for (int i = 0; i < a_size; ++i) {
     if (a_arr[i] != 0) {
@@ -27,111 +27,34 @@ int mrd_max_used_index(const int a_arr[], int a_size) {
 /// @param a_byte ビットをセットする16ビットの変数.参照渡し.
 /// @param a_bit_pos セットするビットの位置(0から15).
 /// @return なし.
-inline void mrd_set_bit16(uint16_t &a_byte, uint16_t a_bit_pos) { a_byte |= (1 << a_bit_pos); }
+inline void mrd_bit16_set(uint16_t &a_byte, uint16_t a_bit_pos) { a_byte |= (1 << a_bit_pos); }
 
 /// @brief 指定された位置のビットをクリアする(16ビット変数用).
 /// @param a_byte ビットをクリアする16ビットの変数.参照渡し.
 /// @param a_bit_pos クリアするビットの位置(0から15).
 /// @return なし.
-inline void mrd_clear_bit16(uint16_t &a_byte, uint16_t a_bit_pos) { a_byte &= ~(1 << a_bit_pos); }
-
-/// @brief 指定された位置のビットをセットする(8ビット変数用).
-/// @param value ビットをセットする8ビットの変数.参照渡し.
-/// @param a_bit_pos セットするビットの位置(0から7).
-/// @return なし.
-inline void mrd_set_bit8(uint8_t &value, uint8_t a_bit_pos) { value |= (1 << a_bit_pos); }
-
-/// @brief 指定された位置のビットをクリアする(8ビット変数用).
-/// @param value ビットをクリアする8ビットの変数.参照渡し.
-/// @param a_bit_pos クリアするビットの位置(0から7).
-/// @return なし.
-inline void mrd_clear_bit8(uint8_t &value, uint8_t a_bit_pos) { value &= ~(1 << a_bit_pos); }
-
-/// @brief 任意の整数値から、任意幅のビット列を取り出す汎用関数.
-/// @tparam T 型テンプレート.任意の整数型(符号付き・符号無しどちらでも可)
-/// @param value 抽出元となる値.
-/// @param pos   取り出し開始位置(LSB＝0, 右から数え, 最初は0番)
-/// @param len   取り出すビット幅
-/// @return unsigned 取り出したビット列(0〜 2^len−1 の範囲)
-template <class T> // 型テンプレート
-unsigned mrd_slice_bits(T value, unsigned pos, unsigned len) {
-  return (static_cast<unsigned>(value) >> pos) & ((1u << len) - 1u);
-}
+inline void mrd_bit16_clear(uint16_t &a_byte, uint16_t a_bit_pos) { a_byte &= ~(1 << a_bit_pos); }
 
 //------------------------------------------------------------------------------------
 //  表示用
 //------------------------------------------------------------------------------------
 
 /// @brief 数値をシリアルモニタ表示するときにパディングする.
-/// @param num 表示したい値.
-/// @param total_width 桁数.
-/// @param rac_Width 小数点以下の桁数(0ならば小数点以下非表示).
-/// @param show_plus +記号の有無.
+/// @param a_num 表示したい値.
+/// @param a_total_width 桁数.
+/// @param a_frac_width 小数点以下の桁数(0ならば小数点以下非表示).
+/// @param a_show_plus +記号の有無.
 /// @return 整形されたストリング.
-String mrd_pddstr(float num, int total_width, int frac_width, bool show_plus = true) {
-  char buf[30];
-  char sign = (num < 0) ? '-' : (show_plus ? '+' : '\0');
-  if (num < 0)
-    num = -num;
-
-  // 小数あり/なし
-  if (frac_width) {
-    if (sign)
-      sprintf(buf, "%c%d.%0*d", sign, (int)num, frac_width, (int)((num - (int)num) * pow(10, frac_width) + 0.5));
-    else
-      sprintf(buf, "%d.%0*d", (int)num, frac_width, (int)((num - (int)num) * pow(10, frac_width) + 0.5));
-  } else {
-    if (sign)
-      sprintf(buf, "%c%d", sign, (int)(num + 0.5));
-    else
-      sprintf(buf, "%d", (int)(num + 0.5));
-  }
-
-  // パディング
-  String result = "";
-  int pad = total_width - strlen(buf);
-  for (int i = 0; i < pad; i++)
-    result += ' ';
-  result += buf;
-  return result;
-}
-
-//------------------------------------------------------------------------------------
-//  タイムアウト監視用タイマー
-//------------------------------------------------------------------------------------
-// タイマーの開始状態を保持するための静的変数
-static unsigned long timeout_start = 0;
-static bool flg_timer_started = false; // タイマーが開始されたかどうかのフラグ
-
-/// @brief 指定されたミリ秒のタイムアウトを監視する. mrd_timeout_resetとセットで使う.
-/// @param a_limit タイムアウトまでの時間(ms)
-/// @return タイムアウトでtrueを返す.
-bool mrd_timeout_check(unsigned long a_limit) {
-  // タイマーが開始されていない場合は現在の時間を記録してタイマーを開始
-  if (!flg_timer_started) {
-    timeout_start = millis();
-    flg_timer_started = true; // タイムアウト監視開始フラグをアゲる
-  }
-
-  unsigned long current_time = millis(); // 現在の時間を取得
-
-  if (current_time - timeout_start >= a_limit) { // 指定された時間が経過しているかチェック
-    flg_timer_started = false;                   // タイムアウト監視開始フラグをサゲる
-    return true;                                 // 指定された時間が経過していれば true を返す
-  }
-
-  return false; // まだ時間が経過していなければ false を返す
-}
-
-/// @brief タイムアウト監視開始フラグをリセットする. mrd_timeout_checkとセットで使う.
-void mrd_timeout_reset() {
-  flg_timer_started = false; // タイマーをリセットして次回の呼び出しに備える
+String mrd_pddstr(float a_num, int a_total_width, int a_frac_width, bool a_show_plus = true) {
+  char buf_tmp[32];
+  snprintf(buf_tmp, sizeof(buf_tmp), a_show_plus ? "%+*.*f" : "%*.*f", a_total_width, a_frac_width, double(a_num));
+  return String(buf_tmp);
 }
 
 /// @brief 列挙型(L,R,C)から文字列を取得する関数.
 /// @param a_line 列挙型 enum UartLine
 /// @return 列挙型の内容に応じて文字列"L","R","C"返す.
-const char *mrd_get_line_name(UartLine a_line) {
+const char *mrd_line_name_get(UartLine a_line) {
   switch (a_line) {
   case L:
     return "L";
@@ -145,7 +68,7 @@ const char *mrd_get_line_name(UartLine a_line) {
 }
 
 //------------------------------------------------------------------------------------
-//  meriput / meridimへのデータ書き込み
+//  その他
 //------------------------------------------------------------------------------------
 
 /// @brief エラーメッセージ＆LED点滅と共にシステム停止.
@@ -153,29 +76,22 @@ const char *mrd_get_line_name(UartLine a_line) {
 /// @param a_msg エラーメッセージ.
 /// @param a_serial 出力先シリアルの指定.
 void mrd_error_stop(int a_led, String a_msg, HardwareSerial &a_serial) {
-  Serial.println(a_msg);
+  a_serial.println(a_msg);
   while (1) {
-    digitalWrite(a_led, HIGH);
+    mrd_led_write(a_led, HIGH);
     delay(250);
-    digitalWrite(a_led, LOW);
+    mrd_led_write(a_led, LOW);
     delay(250);
   }
 }
 
-//------------------------------------------------------------------------------------
-//  meriput / meridimへのデータ書き込み
-//------------------------------------------------------------------------------------
-
-/// @brief meridim配列のチェックサムを算出して[len-1]に書き込む.
-/// @param a_meridim Meridim配列の共用体. 参照渡し.
-/// @return 常にtrueを返す.
-bool mrd_meriput90_cksm(Meridim90Union &a_meridim, int len = 90) {
-  int a_cksm = 0;
-  for (int i = 0; i < len - 1; i++) {
-    a_cksm += int(a_meridim.sval[i]);
-  }
-  a_meridim.sval[len - 1] = short(~a_cksm);
-  return true;
+/// @brief 目標値の変化量を基準値から±a_step_maxの範囲に制限する.
+/// @param a_tgt 目標値.
+/// @param a_base 基準値(前回の指令値など).
+/// @param a_step_max 最大変化量.
+/// @return 制限後の目標値.
+float mrd_step_limit(float a_tgt, float a_base, float a_step_max) {
+  return constrain(a_tgt, a_base - a_step_max, a_base + a_step_max);
 }
 
 #endif //__MERIDIAN_UTILITY_H__

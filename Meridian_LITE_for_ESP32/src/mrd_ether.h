@@ -4,6 +4,7 @@
 // ヘッダファイルの読み込み
 #include "config.h"
 #include "keys.h"
+#include "main.h"
 
 // ライブラリ導入 (標準Ethernetライブラリ)
 #include <Ethernet.h>
@@ -17,112 +18,112 @@ EthernetUDP udp_et; // Ethernet設定
 //==================================================================================================
 
 // 16進数文字かどうかをチェックする補助関数
-bool isValidHexChar(char c) {
-  return (c >= '0' && c <= '9') ||
-         (c >= 'A' && c <= 'F') ||
-         (c >= 'a' && c <= 'f');
+bool mrd_ether_hex_char_is_valid(char a_c) {
+  return (a_c >= '0' && a_c <= '9') ||
+         (a_c >= 'A' && a_c <= 'F') ||
+         (a_c >= 'a' && a_c <= 'f');
 }
 
 // 16進数文字を数値に変換する補助関数
-byte hexCharToByte(char c) {
-  if (c >= '0' && c <= '9')
-    return c - '0';
-  if (c >= 'A' && c <= 'F')
-    return c - 'A' + 10;
-  if (c >= 'a' && c <= 'f')
-    return c - 'a' + 10;
+byte mrd_ether_hex_char_to_byte(char a_c) {
+  if (a_c >= '0' && a_c <= '9')
+    return a_c - '0';
+  if (a_c >= 'A' && a_c <= 'F')
+    return a_c - 'A' + 10;
+  if (a_c >= 'a' && a_c <= 'f')
+    return a_c - 'a' + 10;
   return 0; // エラー（通常ここには到達しない）
 }
 
 // 文字列から余分なスペースを除去し、正規化する関数
-String normalizeMacString(const char *macStr) {
-  String normalized = "";
-  for (int i = 0; macStr[i] != '\0'; i++) {
-    if (macStr[i] != ' ' && macStr[i] != '\t') {
-      normalized += macStr[i];
+String mrd_ether_mac_str_normalize(const char *a_mac_str) {
+  String normalized_tmp = "";
+  for (int i = 0; a_mac_str[i] != '\0'; i++) {
+    if (a_mac_str[i] != ' ' && a_mac_str[i] != '\t') {
+      normalized_tmp += a_mac_str[i];
     }
   }
-  return normalized;
+  return normalized_tmp;
 }
 
 // MACアドレス文字列をバイト配列にパースする関数（改良版）
-bool parseMacAddress(const char *macStr, byte *macBytes) {
-  if (!macStr || !macBytes) {
+bool mrd_ether_mac_address_parse(const char *a_mac_str, byte *a_mac_bytes) {
+  if (!a_mac_str || !a_mac_bytes) {
     return false;
   }
 
   // 余分なスペースを除去して正規化
-  String normalizedMac = normalizeMacString(macStr);
-  const char *cleanMac = normalizedMac.c_str();
+  String normalized_mac_tmp = mrd_ether_mac_str_normalize(a_mac_str);
+  const char *clean_mac_tmp = normalized_mac_tmp.c_str();
 
   // 正規化後の長さチェック（17文字必要："XX:XX:XX:XX:XX:XX"）
-  if (normalizedMac.length() != 17) {
+  if (normalized_mac_tmp.length() != 17) {
     return false;
   }
 
   // 各バイトをパース
   for (int i = 0; i < 6; i++) {
     // 16進数文字の位置を計算
-    int pos1 = i * 3;
-    int pos2 = i * 3 + 1;
-    int colonPos = i * 3 + 2;
+    int pos1_tmp = i * 3;
+    int pos2_tmp = i * 3 + 1;
+    int colon_pos_tmp = i * 3 + 2;
 
     // 16進数文字の妥当性チェック
-    if (!isValidHexChar(cleanMac[pos1]) || !isValidHexChar(cleanMac[pos2])) {
+    if (!mrd_ether_hex_char_is_valid(clean_mac_tmp[pos1_tmp]) || !mrd_ether_hex_char_is_valid(clean_mac_tmp[pos2_tmp])) {
       return false;
     }
 
     // コロンのチェック（最後のバイト以外）
-    if (i < 5 && cleanMac[colonPos] != ':') {
+    if (i < 5 && clean_mac_tmp[colon_pos_tmp] != ':') {
       return false;
     }
 
     // 16進数文字をバイトに変換
-    byte highNibble = hexCharToByte(cleanMac[pos1]);
-    byte lowNibble = hexCharToByte(cleanMac[pos2]);
-    macBytes[i] = (highNibble << 4) | lowNibble;
+    byte high_nibble_tmp = mrd_ether_hex_char_to_byte(clean_mac_tmp[pos1_tmp]);
+    byte low_nibble_tmp = mrd_ether_hex_char_to_byte(clean_mac_tmp[pos2_tmp]);
+    a_mac_bytes[i] = (high_nibble_tmp << 4) | low_nibble_tmp;
   }
 
   return true;
 }
 
 /// @brief IPアドレス設定の妥当性をチェックする
-/// @param local_ip ローカルIP
-/// @param gateway ゲートウェイIP
-/// @param subnet サブネットマスク
+/// @param a_local_ip ローカルIP
+/// @param a_gateway ゲートウェイIP
+/// @param a_subnet サブネットマスク
 /// @param a_serial エラー出力用シリアル
 /// @return 妥当性チェック結果 (true: OK, false: NG)
-bool mrd_validate_network_config(IPAddress local_ip, IPAddress gateway, IPAddress subnet, HardwareSerial &a_serial) {
+bool mrd_network_config_validate(IPAddress a_local_ip, IPAddress a_gateway, IPAddress a_subnet, HardwareSerial &a_serial) {
   // ゼロIPアドレスチェック
-  if (local_ip == IPAddress(0, 0, 0, 0)) {
+  if (a_local_ip == IPAddress(0, 0, 0, 0)) {
     a_serial.println("ERROR: Local IP is invalid (0.0.0.0)");
     return false;
   }
 
-  if (gateway == IPAddress(0, 0, 0, 0)) {
+  if (a_gateway == IPAddress(0, 0, 0, 0)) {
     a_serial.println("ERROR: Gateway IP is invalid (0.0.0.0)");
     return false;
   }
 
-  if (subnet == IPAddress(0, 0, 0, 0)) {
+  if (a_subnet == IPAddress(0, 0, 0, 0)) {
     a_serial.println("ERROR: Subnet mask is invalid (0.0.0.0)");
     return false;
   }
 
   // ローカルIPとゲートウェイが同じサブネットにあるかチェック
-  bool same_network = true;
+  bool same_network_tmp = true;
   for (int i = 0; i < 4; i++) {
-    if ((local_ip[i] & subnet[i]) != (gateway[i] & subnet[i])) {
-      same_network = false;
+    if ((a_local_ip[i] & a_subnet[i]) != (a_gateway[i] & a_subnet[i])) {
+      same_network_tmp = false;
       break;
     }
   }
 
-  if (!same_network) {
+  if (!same_network_tmp) {
     a_serial.println("WARNING: Local IP and Gateway are not in the same network");
     a_serial.print("Local IP network: ");
     for (int i = 0; i < 4; i++) {
-      a_serial.print(local_ip[i] & subnet[i]);
+      a_serial.print(a_local_ip[i] & a_subnet[i]);
       if (i < 3)
         a_serial.print(".");
     }
@@ -130,7 +131,7 @@ bool mrd_validate_network_config(IPAddress local_ip, IPAddress gateway, IPAddres
 
     a_serial.print("Gateway network: ");
     for (int i = 0; i < 4; i++) {
-      a_serial.print(gateway[i] & subnet[i]);
+      a_serial.print(a_gateway[i] & a_subnet[i]);
       if (i < 3)
         a_serial.print(".");
     }
@@ -141,91 +142,92 @@ bool mrd_validate_network_config(IPAddress local_ip, IPAddress gateway, IPAddres
 }
 
 /// @brief 文字列形式のIPアドレスをIPAddressオブジェクトに変換する
-/// @param ip_str IPアドレス文字列 (例: "192.168.1.1")
+/// @param a_ip_str IPアドレス文字列 (例: "192.168.1.1")
 /// @param a_serial エラー出力用シリアル
 /// @return 成功時はIPAddressオブジェクト、失敗時は IPAddress(0,0,0,0)
-IPAddress mrd_parse_ip_address(const char *ip_str, HardwareSerial &a_serial) {
-  uint8_t octets[4] = {0, 0, 0, 0};
-  int octet_index = 0;
-  int current_number = 0;
-  bool has_digit = false;
+IPAddress mrd_ip_address_parse(const char *a_ip_str, HardwareSerial &a_serial) {
+  uint8_t octets_tmp[4] = {0, 0, 0, 0};
+  int octet_index_tmp = 0;
+  int current_number_tmp = 0;
+  bool has_digit_tmp = false;
 
-  for (int i = 0; ip_str[i] != '\0'; i++) {
-    char c = ip_str[i];
+  for (int i = 0; a_ip_str[i] != '\0'; i++) {
+    char c_tmp = a_ip_str[i];
 
-    if (c >= '0' && c <= '9') {
+    if (c_tmp >= '0' && c_tmp <= '9') {
       // 数字の場合
-      current_number = current_number * 10 + (c - '0');
-      has_digit = true;
+      current_number_tmp = current_number_tmp * 10 + (c_tmp - '0');
+      has_digit_tmp = true;
 
       // 範囲チェック (0-255)
-      if (current_number > 255) {
+      if (current_number_tmp > 255) {
         a_serial.print("ERROR Parsing IP: ");
-        a_serial.println(ip_str);
+        a_serial.println(a_ip_str);
         a_serial.println("Octet out of range (0-255), Ethernet initialization ABORTED.");
         return IPAddress(0, 0, 0, 0);
       }
-    } else if (c == '.') {
+    } else if (c_tmp == '.') {
       // ドット区切り文字の場合
-      if (!has_digit) {
+      if (!has_digit_tmp) {
         a_serial.print("ERROR Parsing IP: ");
-        a_serial.println(ip_str);
+        a_serial.println(a_ip_str);
         a_serial.println("Invalid IP format, Ethernet initialization ABORTED.");
         return IPAddress(0, 0, 0, 0);
       }
-      if (octet_index >= 4) {
+      if (octet_index_tmp >= 4) {
         a_serial.print("ERROR Parsing IP: ");
-        a_serial.println(ip_str);
+        a_serial.println(a_ip_str);
         a_serial.println("Too many octets(expected 4), Ethernet initialization ABORTED.");
         return IPAddress(0, 0, 0, 0);
       }
 
-      octets[octet_index] = current_number;
-      octet_index++;
-      current_number = 0;
-      has_digit = false;
-    } else if (c == ' ' || c == '\t') {
+      octets_tmp[octet_index_tmp] = current_number_tmp;
+      octet_index_tmp++;
+      current_number_tmp = 0;
+      has_digit_tmp = false;
+    } else if (c_tmp == ' ' || c_tmp == '\t') {
       // スペースやタブは無視（何もしない）
       continue;
     } else {
       // 無効な文字
       a_serial.print("ERROR Parsing IP: ");
-      a_serial.println(ip_str);
+      a_serial.println(a_ip_str);
       a_serial.println("Invalid character, Ethernet initialization ABORTED.");
       return IPAddress(0, 0, 0, 0);
     }
   }
 
   // 最後のオクテットを処理
-  if (!has_digit) {
+  if (!has_digit_tmp) {
     a_serial.print("ERROR Parsing IP: ");
-    a_serial.println(ip_str);
+    a_serial.println(a_ip_str);
     a_serial.println("IP address ends without a digit, Ethernet initialization ABORTED.");
     return IPAddress(0, 0, 0, 0);
   }
-  if (octet_index != 3) {
+  if (octet_index_tmp != 3) {
     a_serial.print("ERROR Parsing IP: ");
-    a_serial.println(ip_str);
+    a_serial.println(a_ip_str);
     a_serial.println("Incorrect number of octets(expected 4), Ethernet initialization ABORTED.");
     return IPAddress(0, 0, 0, 0);
   }
 
-  octets[3] = current_number;
-  return IPAddress(octets[0], octets[1], octets[2], octets[3]);
+  octets_tmp[3] = current_number_tmp;
+  return IPAddress(octets_tmp[0], octets_tmp[1], octets_tmp[2], octets_tmp[3]);
 }
 
 /// @brief Ethernetを初期化する（文字列IP設定対応版）
 /// @param a_udp 使用するEthernetUDPのインスタンス
 /// @param a_cs_pin W5500のCSピン番号
+/// @param a_mac_address 使用するMACアドレス(6byte)
 /// @param a_serial 出力先シリアルの指定.
 /// @return 初期化に成功した場合はtrueを, 失敗した場合はfalseを返す.
-bool mrd_ether_init(EthernetUDP &a_udp, int a_cs_pin, byte *mac_address, HardwareSerial &a_serial) {
+bool mrd_ether_init(EthernetUDP &a_udp, int a_cs_pin, byte *a_mac_address, HardwareSerial &a_serial) {
   // MACアドレス表示
-  a_serial.print("Wierd LAN MAC Address: ");
+  a_serial.print("Wired LAN MAC Address: ");
   for (int i = 0; i < 6; i++) {
-    if (mac_address[i] < 16)
+    if (a_mac_address[i] < 16)
       a_serial.print("0");
-    a_serial.print(mac_address[i], HEX);
+    a_serial.print(a_mac_address[i], HEX);
     if (i < 5)
       a_serial.print(":");
   }
@@ -233,22 +235,22 @@ bool mrd_ether_init(EthernetUDP &a_udp, int a_cs_pin, byte *mac_address, Hardwar
   a_serial.print("Initializing Ethernet... ");
 
   // IPアドレス文字列をパース
-  IPAddress local_ip = mrd_parse_ip_address(ETHER_LOCAL_IP, a_serial);
-  IPAddress gateway = mrd_parse_ip_address(ETHER_GATEWAY, a_serial);
-  IPAddress subnet = mrd_parse_ip_address(ETHER_SUBNET, a_serial);
-  IPAddress dns = mrd_parse_ip_address(ETHER_DNS, a_serial);
+  IPAddress local_ip_tmp = mrd_ip_address_parse(cfg.ether_local_ip, a_serial);
+  IPAddress gateway_tmp = mrd_ip_address_parse(cfg.ether_gateway, a_serial);
+  IPAddress subnet_tmp = mrd_ip_address_parse(cfg.ether_subnet, a_serial);
+  IPAddress dns_tmp = mrd_ip_address_parse(cfg.ether_dns, a_serial);
 
   // パースエラーチェック
-  if (local_ip == IPAddress(0, 0, 0, 0) ||
-      gateway == IPAddress(0, 0, 0, 0) ||
-      subnet == IPAddress(0, 0, 0, 0) ||
-      dns == IPAddress(0, 0, 0, 0)) {
-    a_serial.println("ERROR: Please check your IP address format in keys.h");
+  if (local_ip_tmp == IPAddress(0, 0, 0, 0) ||
+      gateway_tmp == IPAddress(0, 0, 0, 0) ||
+      subnet_tmp == IPAddress(0, 0, 0, 0) ||
+      dns_tmp == IPAddress(0, 0, 0, 0)) {
+    a_serial.println("ERROR: Please check your IP address format in keys.h or EEPROM P0");
     return false;
   }
 
   // ネットワーク設定の妥当性チェック
-  if (!mrd_validate_network_config(local_ip, gateway, subnet, a_serial)) {
+  if (!mrd_network_config_validate(local_ip_tmp, gateway_tmp, subnet_tmp, a_serial)) {
     a_serial.println("CRITICAL ERROR: Network configuration validation failed");
     return false;
   }
@@ -257,10 +259,8 @@ bool mrd_ether_init(EthernetUDP &a_udp, int a_cs_pin, byte *mac_address, Hardwar
   Ethernet.init(a_cs_pin);
 
   // 設定を適用（引数で受け取ったMACアドレスを使用）
-  // Ethernet.begin(mac_address, local_ip, dns, gateway, subnet);
-
-  Ethernet.begin(mac_address, local_ip, dns, gateway, subnet);
-  if (Ethernet.localIP() == local_ip) {
+  Ethernet.begin(a_mac_address, local_ip_tmp, dns_tmp, gateway_tmp, subnet_tmp);
+  if (Ethernet.localIP() == local_ip_tmp) {
     a_serial.println("OK");
   } else {
     a_serial.println("FAILED: IP address mismatch");
@@ -275,13 +275,13 @@ bool mrd_ether_init(EthernetUDP &a_udp, int a_cs_pin, byte *mac_address, Hardwar
   a_serial.println(Ethernet.gatewayIP());
 
   // UDP開始
-  if (!a_udp.begin(UDP_RECV_PORT)) {
+  if (!a_udp.begin(cfg.udp_recv_port)) {
     a_serial.print("ERROR: Failed to start UDP on port ");
-    a_serial.println(UDP_RECV_PORT);
+    a_serial.println(cfg.udp_recv_port);
     return false;
   }
   a_serial.print("UDP receive port: ");
-  a_serial.println(UDP_RECV_PORT);
+  a_serial.println(cfg.udp_recv_port);
   return true;
 }
 
@@ -291,17 +291,15 @@ bool mrd_ether_init(EthernetUDP &a_udp, int a_cs_pin, byte *mac_address, Hardwar
 /// @param a_udp 使用するEthernetUDPのインスタンス
 /// @return 受信した場合はtrueを, 受信しなかった場合はfalseを返す.
 bool mrd_ether_udp_receive(byte *a_meridim_bval, int a_len, EthernetUDP &a_udp) {
-  int packet_size = a_udp.parsePacket();
-  if (packet_size >= a_len) {
-    a_udp.read(a_meridim_bval, a_len);
-
-    // 受信元情報を取得（デバッグ用）
-    IPAddress remote_ip = a_udp.remoteIP();
-    uint16_t remote_port = a_udp.remotePort();
-
-    return true;
+  bool rcvd_tmp = false;
+  int packet_size_tmp;
+  while ((packet_size_tmp = a_udp.parsePacket()) > 0) { // 溜まっているパケットをすべて読み, 最新の1つを使う(WiFiと同じ)
+    if (packet_size_tmp >= a_len) {
+      a_udp.read(a_meridim_bval, a_len); // 読み残しは次のparsePacketで捨てられる
+      rcvd_tmp = true;
+    }
   }
-  return false; // バッファにデータがない
+  return rcvd_tmp;
 }
 
 /// @brief 第一引数のMeridim配列のデータをUDP経由で指定したIPアドレス、ポートに送信する.
@@ -312,18 +310,18 @@ bool mrd_ether_udp_receive(byte *a_meridim_bval, int a_len, EthernetUDP &a_udp) 
 /// @param a_send_port 送信先ポート番号
 /// @return 送信完了時にtrueを返す.
 bool mrd_ether_udp_send(byte *a_meridim_bval, int a_len, EthernetUDP &a_udp, IPAddress a_send_ip, int a_send_port) {
-  int result = a_udp.beginPacket(a_send_ip, a_send_port);
-  if (result == 0) {
+  int result_tmp = a_udp.beginPacket(a_send_ip, a_send_port);
+  if (result_tmp == 0) {
     return false; // パケット開始に失敗
   }
 
-  size_t bytes_written = a_udp.write(a_meridim_bval, a_len);
-  if (bytes_written != a_len) {
+  size_t bytes_written_tmp = a_udp.write(a_meridim_bval, a_len);
+  if (bytes_written_tmp != a_len) {
     return false; // 書き込みサイズが異なる
   }
 
-  result = a_udp.endPacket();
-  return (result == 1); // 成功時は1を返す
+  result_tmp = a_udp.endPacket();
+  return (result_tmp == 1); // 成功時は1を返す
 }
 
 #endif // __MERIDIAN_ETHER_H__

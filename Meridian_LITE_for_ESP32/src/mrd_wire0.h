@@ -18,14 +18,14 @@
 
 /// @brief Wire0 I2C通信を初期化し, 指定されたクロック速度で設定する.
 /// @param a_i2c0_speed I2C通信のクロック速度です.
-/// @param a_pinSDA SDAのピン番号. 下記と合わせて省略可.
-/// @param a_pinSCL SCLのピン番号. 上記と合わせて省略可.
-bool mrd_wire0_init_i2c(int a_i2c0_speed, int a_pinSDA = -1, int a_pinSCL = -1) {
+/// @param a_pin_sda SDAのピン番号. 下記と合わせて省略可.
+/// @param a_pin_scl SCLのピン番号. 上記と合わせて省略可.
+bool mrd_wire0_i2c_init(int a_i2c0_speed, int a_pin_sda = -1, int a_pin_scl = -1) {
   Serial.print("Initializing wire0 I2C... ");
-  if (a_pinSDA == -1 && a_pinSCL == -1) {
+  if (a_pin_sda == -1 && a_pin_scl == -1) {
     Wire.begin();
   } else {
-    Wire.begin(a_pinSDA, a_pinSCL);
+    Wire.begin(a_pin_sda, a_pin_scl);
   }
   Wire.setClock(a_i2c0_speed);
   return true;
@@ -35,9 +35,9 @@ bool mrd_wire0_init_i2c(int a_i2c0_speed, int a_pinSDA = -1, int a_pinSCL = -1) 
 ///        ジャイロスコープと加速度センサーのオフセットを設定する.
 /// @param a_ahrs AHRSの値を保持する構造体.
 /// @return DMPの初期化が成功した場合はtrue, 失敗した場合はfalseを返す.
-bool mrd_wire0_init_mpu6050_dmp(AhrsValue &a_ahrs) {
+bool mrd_wire0_mpu6050_dmp_init(AhrsValue &a_ahrs) {
   a_ahrs.mpu6050.initialize();
-  a_ahrs.devStatus = a_ahrs.mpu6050.dmpInitialize();
+  a_ahrs.dev_status = a_ahrs.mpu6050.dmpInitialize();
 
   // supply your own gyro offsets here, scaled for min sensitivity
   a_ahrs.mpu6050.setXAccelOffset(-1745);
@@ -48,11 +48,11 @@ bool mrd_wire0_init_mpu6050_dmp(AhrsValue &a_ahrs) {
   a_ahrs.mpu6050.setZGyroOffset(-25);
 
   // make sure it worked (returns 0 if so)
-  if (a_ahrs.devStatus == 0) {
+  if (a_ahrs.dev_status == 0) {
     a_ahrs.mpu6050.CalibrateAccel(6);
     a_ahrs.mpu6050.CalibrateGyro(6);
     a_ahrs.mpu6050.setDMPEnabled(true);
-    a_ahrs.packetSize = a_ahrs.mpu6050.dmpGetFIFOPacketSize();
+    a_ahrs.packet_size = a_ahrs.mpu6050.dmpGetFIFOPacketSize();
     Serial.println("MPU6050 OK.");
     return true;
   }
@@ -63,8 +63,7 @@ bool mrd_wire0_init_mpu6050_dmp(AhrsValue &a_ahrs) {
 /// @brief BNO055センサーの初期化を試みます.
 /// @param a_ahrs AHRSの値を保持する構造体.
 /// @return BNO055センサーの初期化が成功した場合はtrue, それ以外の場合はfalseを返す.
-///         現在, この関数は常にfalseを返すように設定されています.
-bool mrd_wire0_init_bno055(AhrsValue &a_ahrs) {
+bool mrd_wire0_bno055_init(AhrsValue &a_ahrs) {
   if (!a_ahrs.bno.begin()) {
     Serial.println("No BNO055 detected ... Check your wiring or I2C ADDR!");
     return false;
@@ -73,39 +72,34 @@ bool mrd_wire0_init_bno055(AhrsValue &a_ahrs) {
     delay(50);
     a_ahrs.bno.setExtCrystalUse(false);
     delay(10);
-    return true;
+    return true; // データの取得はセンサー用スレッドで実行
   }
-  // データの取得はセンサー用スレッドで実行
 }
 
 /// @brief 指定されたIMU/AHRSタイプに応じて適切なセンサの初期化を行います.
-/// @param a_imuahrs_type 使用するセンサのタイプを示す列挙型です(MPU6050, MPU9250, BNO055).
+/// @param a_imuahrs_type 使用するセンサのタイプを示す列挙型です(MPU6050_IMU, BNO055_AHRS. MPU9250_IMUは未対応).
 /// @param a_i2c0_speed I2C通信のクロック速度です.
 /// @param a_ahrs AHRSの値を保持する構造体.
-/// @param a_pinSDA SDAのピン番号.下記と合わせて省略可.
-/// @param a_pinSCL SCLのピン番号.上記と合わせて省略可.
+/// @param a_pin_sda SDAのピン番号.下記と合わせて省略可.
+/// @param a_pin_scl SCLのピン番号.上記と合わせて省略可.
 /// @return センサが正しく初期化された場合はtrueを, そうでない場合はfalseを返す.
 bool mrd_wire0_setup(ImuAhrsType a_imuahrs_type, int a_i2c0_speed, AhrsValue &a_ahrs,
-                     int a_pinSDA = -1, int a_pinSCL = -1) {
+                     int a_pin_sda = -1, int a_pin_scl = -1) {
   if (a_imuahrs_type > 0) // 何らかのセンサを搭載
   {
-    if (a_pinSDA == -1 && a_pinSCL == -1) {
-      mrd_wire0_init_i2c(a_i2c0_speed);
-    } else {
-      mrd_wire0_init_i2c(a_i2c0_speed, a_pinSDA, a_pinSCL);
-    }
+    mrd_wire0_i2c_init(a_i2c0_speed, a_pin_sda, a_pin_scl);
   }
 
   if (a_imuahrs_type == MPU6050_IMU) // MPU6050
   {
-    return mrd_wire0_init_mpu6050_dmp(a_ahrs);
+    return mrd_wire0_mpu6050_dmp_init(a_ahrs);
   } else if (a_imuahrs_type == MPU9250_IMU) // MPU9250の場合
   {
-    // mrd_wire_init_mpu9250_dmp(a_ahrs)
+    Serial.println("MPU9250 is not supported.");
     return false;
   } else if (a_imuahrs_type == BNO055_AHRS) // BNO055の場合
   {
-    return mrd_wire0_init_bno055(a_ahrs);
+    return mrd_wire0_bno055_init(a_ahrs);
   }
 
   Serial.println("No IMU/AHRS sensor mounted.");
@@ -116,123 +110,246 @@ bool mrd_wire0_setup(ImuAhrsType a_imuahrs_type, int a_i2c0_speed, AhrsValue &a_
 //  センサデータの取得処理
 //------------------------------------------------------------------------------------
 
-/// @brief bno055からI2C経由でデータを読み取るスレッド用関数. IMUAHRS_INTERVALの間隔で実行する.
-void mrd_wire0_Core0_bno055_r(void *args) {
-  while (1) {
-    // 加速度センサ値の取得と表示 - VECTOR_ACCELEROMETER - m/s^2
-    imu::Vector<3> accelerometer = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-    ahrs.read[0] = (float)accelerometer.x();
-    ahrs.read[1] = (float)accelerometer.y();
-    ahrs.read[2] = (float)accelerometer.z();
+/// @brief ahrs.read をCore0のセンサスレッドとメインループで受け渡すための排他用スピンロック.
+portMUX_TYPE ahrs_mux = portMUX_INITIALIZER_UNLOCKED;
 
-    // ジャイロセンサ値の取得 - VECTOR_GYROSCOPE - rad/s
-    imu::Vector<3> gyroscope = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
-    ahrs.read[3] = gyroscope.x();
-    ahrs.read[4] = gyroscope.y();
-    ahrs.read[5] = gyroscope.z();
+/// @brief 角度から補正センター値を引き, -180以上180未満に折り返す.
+/// @param a_source センサの角度(degree).
+/// @param a_origin 補正センター値(degree. MCMD_SENSOR_YAW_CALIB / MCMD_SENSOR_ALL_CALIB で設定).
+/// @return 補正後の角度(degree).
+float mrd_wire0_deg_from_origin(float a_source, float a_origin) {
+  float deg_tmp = a_source - a_origin;
+  if (deg_tmp >= 180) {
+    deg_tmp -= 360;
+  } else if (deg_tmp < -180) {
+    deg_tmp += 360;
+  }
+  return deg_tmp;
+}
 
-    // 磁力センサ値の取得と表示  - VECTOR_MAGNETOMETER - uT
-    imu::Vector<3> magnetometer = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_MAGNETOMETER);
-    ahrs.read[6] = magnetometer.x();
-    ahrs.read[7] = magnetometer.y();
-    ahrs.read[8] = magnetometer.z();
-
-    // センサフュージョンによる方向推定値の取得と表示 - VECTOR_EULER - degrees
-    imu::Vector<3> euler = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-    ahrs.read[12] = euler.y();                   // DMP_ROLL推定値
-    ahrs.read[13] = euler.z();                   // DMP_PITCH推定値
-    ahrs.yaw_source = euler.x();                 // ヨー軸のソースデータ保持
-    float yaw_tmp = euler.x() - ahrs.yaw_origin; // DMP_YAW推定値
-    if (yaw_tmp >= 180) {
-      yaw_tmp = yaw_tmp - 360;
-    } else if (yaw_tmp < -180) {
-      yaw_tmp = yaw_tmp + 360;
-    }
-    ahrs.read[14] = yaw_tmp; // DMP_YAW推定値
-    ahrs.ypr[0] = ahrs.read[14];
-    ahrs.ypr[1] = ahrs.read[13];
-    ahrs.ypr[2] = ahrs.read[12];
-
-    // センサフュージョンの方向推定値のクオータニオン
-    // imu::Quaternion quat = bno.getQuat();
-
-    // Serial.print("qW: ");
-    // Serial.print(quat.w(), 4);
-    // Serial.print(" qX: ");
-    // Serial.print(quat.x(), 4);
-    // Serial.print(" qY: ");
-    // Serial.print(quat.y(), 4);
-    // Serial.print(" qZ: ");
-    // Serial.println(quat.z(), 4);
-
-    // キャリブレーションのステータスの取得と表示
-    // uint8_t system, gyro, accel, mag = 0;
-    // bno.getCalibration(&system, &gyro, &accel, &mag);
-    // Serial.print("CALIB Sys:");
-    // Serial.print(system, DEC);
-    // Serial.print(", Gy");
-    // Serial.print(gyro, DEC);
-    // Serial.print(", Ac");
-    // Serial.print(accel, DEC);
-    // Serial.print(", Mg");
-    // Serial.println(mag, DEC);
-
-    delay(IMUAHRS_INTERVAL);
+/// @brief センサの読み取りの成否が変わったときだけ表示する(途絶えたとき, 戻ったとき).
+/// @param a_name センサの名前.
+/// @param a_ok 今回の読み取りが正常か.
+/// @param a_ok_prev 前回の状態(呼び出し側で保持する).
+void mrd_wire0_health_report(const char *a_name, bool a_ok, bool &a_ok_prev) {
+  if (a_ok != a_ok_prev) {
+    Serial.println(String(a_name) + (a_ok ? ": reading restored." : ": no response. Sensor values are not updated."));
+    a_ok_prev = a_ok;
   }
 }
 
-/// @brief AHRSセンサーからI2C経由でデータを読み取る関数.
-/// MPU6050, MPU9250を想定していますが, MPU9250は未実装.
-/// 各データは`ahrs.read`配列に格納され, 利用可能な場合は`ahrs.result`にコピーされる.
-bool mrd_wire0_read_ahrs_i2c(AhrsValue &a_ahrs) { // ※wireTimer0.beginの引数のためvoid必須
+/// @brief BNO055 がI2Cで応答するか(チップIDのレジスタ 0x00 が 0xA0 か).
+///        Adafruit のライブラリは読み取りの失敗を返さないため, 読む前にこれで確かめる.
+bool mrd_wire0_bno055_alive() {
+  const uint8_t addr_tmp = 0x28; // ahrs.bno のI2Cアドレス
+  Wire.beginTransmission(addr_tmp);
+  Wire.write(0x00);
+  if (Wire.endTransmission(false) != 0 || Wire.requestFrom(addr_tmp, uint8_t(1)) != 1) {
+    return false;
+  }
+  return Wire.read() == 0xA0;
+}
 
-  if (MOUNT_IMUAHRS == MPU6050_IMU) {                                // MPU6050
-    if (a_ahrs.mpu6050.dmpGetCurrentFIFOPacket(a_ahrs.fifoBuffer)) { // Get new data
-      a_ahrs.mpu6050.dmpGetQuaternion(&a_ahrs.q, a_ahrs.fifoBuffer);
-      a_ahrs.mpu6050.dmpGetGravity(&a_ahrs.gravity, &a_ahrs.q);
-      a_ahrs.mpu6050.dmpGetYawPitchRoll(a_ahrs.ypr, &a_ahrs.q, &a_ahrs.gravity);
-
-      // acceleration values
-      a_ahrs.mpu6050.dmpGetAccel(&a_ahrs.aa, a_ahrs.fifoBuffer);
-      a_ahrs.read[0] = (float)a_ahrs.aa.x;
-      a_ahrs.read[1] = (float)a_ahrs.aa.y;
-      a_ahrs.read[2] = (float)a_ahrs.aa.z;
-
-      // gyro values
-      a_ahrs.mpu6050.dmpGetGyro(&a_ahrs.gyro, a_ahrs.fifoBuffer);
-      a_ahrs.read[3] = (float)a_ahrs.gyro.x;
-      a_ahrs.read[4] = (float)a_ahrs.gyro.y;
-      a_ahrs.read[5] = (float)a_ahrs.gyro.z;
-
-      // magnetic field values
-      a_ahrs.read[6] = (float)a_ahrs.mag.x;
-      a_ahrs.read[7] = (float)a_ahrs.mag.y;
-      a_ahrs.read[8] = (float)a_ahrs.mag.z;
-
-      // Estimated gravity DMP value.
-      a_ahrs.read[9] = a_ahrs.gravity.x;
-      a_ahrs.read[10] = a_ahrs.gravity.y;
-      a_ahrs.read[11] = a_ahrs.gravity.z;
-
-      // Estimated heading value using DMP.
-      a_ahrs.read[12] = a_ahrs.ypr[2] * 180 / M_PI;                       // Estimated DMP_ROLL
-      a_ahrs.read[13] = a_ahrs.ypr[1] * 180 / M_PI;                       // Estimated DMP_PITCH
-      a_ahrs.read[14] = (a_ahrs.ypr[0] * 180 / M_PI) - a_ahrs.yaw_origin; // Estimated DMP_YAW
-
-      // Temperature
-      a_ahrs.read[15] = 0; // Not implemented.
-
-      if (flg.imuahrs_available) {
-        memcpy(a_ahrs.result, a_ahrs.read, sizeof(float) * 16);
-      }
-      return true;
-    } else {
-      return false;
+/// @brief bno055からI2C経由でデータを読み取るスレッド用関数. IMUAHRS_INTERVALの間隔で実行する.
+///        I2Cの読み取りを先に済ませ, ahrs.read への書き込みだけを排他区間で行う.
+///        BNO055 が応答しないあいだは値を更新しない(前回の値のまま. 表示で知らせる).
+void mrd_wire0_bno055_task(void *a_args) {
+  bool ok_prev_tmp = true;
+  while (1) {
+    const bool alive_tmp = mrd_wire0_bno055_alive();
+    mrd_wire0_health_report("BNO055", alive_tmp, ok_prev_tmp);
+    if (!alive_tmp) {
+      delay(cfg.imuahrs_interval);
+      continue;
     }
-  } else if (MOUNT_IMUAHRS == MPU9250_IMU) { // MPU9250
+    // 加速度センサ値 - VECTOR_ACCELEROMETER - m/s^2
+    imu::Vector<3> accelerometer_tmp = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+    // ジャイロセンサ値 - VECTOR_GYROSCOPE - deg/s
+    imu::Vector<3> gyroscope_tmp = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
+    // 磁力センサ値 - VECTOR_MAGNETOMETER - uT
+    imu::Vector<3> magnetometer_tmp = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_MAGNETOMETER);
+    // センサフュージョンによる方向推定値 - VECTOR_EULER - degrees
+    imu::Vector<3> euler_tmp = ahrs.bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+    // 温度 - degC (BNO055 内蔵の温度センサ. 1℃単位)
+    const int8_t temp_tmp = ahrs.bno.getTemp();
+
+    // ライブラリの値は double. ahrs は float で持つ
+    ahrs.yaw_source = float(euler_tmp.x()); // ソースデータ保持
+    ahrs.roll_source = float(euler_tmp.y());
+    ahrs.pitch_source = float(euler_tmp.z());
+    const float yaw_tmp = mrd_wire0_deg_from_origin(ahrs.yaw_source, ahrs.yaw_origin); // 補正センターからの角度
+    const float roll_tmp = mrd_wire0_deg_from_origin(ahrs.roll_source, ahrs.roll_origin);
+    const float pitch_tmp = mrd_wire0_deg_from_origin(ahrs.pitch_source, ahrs.pitch_origin);
+
+    portENTER_CRITICAL(&ahrs_mux);
+    ahrs.read[0] = float(accelerometer_tmp.x());
+    ahrs.read[1] = float(accelerometer_tmp.y());
+    ahrs.read[2] = float(accelerometer_tmp.z());
+    ahrs.read[3] = float(gyroscope_tmp.x());
+    ahrs.read[4] = float(gyroscope_tmp.y());
+    ahrs.read[5] = float(gyroscope_tmp.z());
+    ahrs.read[6] = float(magnetometer_tmp.x());
+    ahrs.read[7] = float(magnetometer_tmp.y());
+    ahrs.read[8] = float(magnetometer_tmp.z());
+    ahrs.read[12] = roll_tmp;  // DMP_ROLL推定値
+    ahrs.read[13] = pitch_tmp; // DMP_PITCH推定値
+    ahrs.read[14] = yaw_tmp;   // DMP_YAW推定値
+    ahrs.read[15] = temp_tmp;  // 温度(degC)
+    portEXIT_CRITICAL(&ahrs_mux);
+
+    delay(cfg.imuahrs_interval);
+  }
+}
+
+/// @brief MPU6050からI2C経由でDMPのデータを読み取り, ahrs.read に格納する.
+///        I2Cの読み取りと計算を先に済ませ, ahrs.read への書き込みだけを排他区間で行う.
+/// @param a_ahrs AHRSの値を保持する構造体.
+/// @return 新しいデータを読み取れた場合はtrue, そうでない場合はfalseを返す.
+bool mrd_wire0_mpu6050_read(AhrsValue &a_ahrs) {
+  if (!a_ahrs.mpu6050.dmpGetCurrentFIFOPacket(a_ahrs.fifo_buffer)) { // 新しいデータがない
     return false;
-  } else {
+  }
+  a_ahrs.mpu6050.dmpGetQuaternion(&a_ahrs.q, a_ahrs.fifo_buffer);
+  a_ahrs.mpu6050.dmpGetGravity(&a_ahrs.gravity, &a_ahrs.q);
+  a_ahrs.mpu6050.dmpGetYawPitchRoll(a_ahrs.ypr, &a_ahrs.q, &a_ahrs.gravity);
+  a_ahrs.mpu6050.dmpGetAccel(&a_ahrs.aa, a_ahrs.fifo_buffer);
+  a_ahrs.mpu6050.dmpGetGyro(&a_ahrs.gyro, a_ahrs.fifo_buffer);
+
+  const float rad2deg_tmp = 180.0f / float(M_PI);  // float で計算する(M_PI は double)
+  a_ahrs.yaw_source = a_ahrs.ypr[0] * rad2deg_tmp; // ソースデータ保持
+  a_ahrs.roll_source = a_ahrs.ypr[2] * rad2deg_tmp;
+  a_ahrs.pitch_source = a_ahrs.ypr[1] * rad2deg_tmp;
+
+  // BNO055と同じ単位にそろえる. DMPの加速度は 1g = 8192, ジャイロは ±2000deg/s(16.4 = 1deg/s)
+  const float accel_k_tmp = 9.80665f / 8192.0f; // → m/s^2
+  const float gyro_k_tmp = 1.0f / 16.4f;        // → deg/s
+
+  float val_tmp[16];
+  val_tmp[0] = a_ahrs.aa.x * accel_k_tmp; // 加速度(m/s^2)
+  val_tmp[1] = a_ahrs.aa.y * accel_k_tmp;
+  val_tmp[2] = a_ahrs.aa.z * accel_k_tmp;
+  val_tmp[3] = a_ahrs.gyro.x * gyro_k_tmp; // ジャイロ(deg/s)
+  val_tmp[4] = a_ahrs.gyro.y * gyro_k_tmp;
+  val_tmp[5] = a_ahrs.gyro.z * gyro_k_tmp;
+  val_tmp[6] = 0; // 磁力センサ(MPU6050にはない)
+  val_tmp[7] = 0;
+  val_tmp[8] = 0;
+  val_tmp[9] = a_ahrs.gravity.x; // DMPによる重力方向の推定値
+  val_tmp[10] = a_ahrs.gravity.y;
+  val_tmp[11] = a_ahrs.gravity.z;
+  val_tmp[12] = mrd_wire0_deg_from_origin(a_ahrs.roll_source, a_ahrs.roll_origin);   // DMP_ROLL推定値
+  val_tmp[13] = mrd_wire0_deg_from_origin(a_ahrs.pitch_source, a_ahrs.pitch_origin); // DMP_PITCH推定値
+  val_tmp[14] = mrd_wire0_deg_from_origin(a_ahrs.yaw_source, a_ahrs.yaw_origin);     // DMP_YAW推定値
+  val_tmp[15] = a_ahrs.mpu6050.getTemperature() / 340.0f + 36.53f;                   // 温度(degC. MPU-6050 のデータシートの換算式)
+
+  portENTER_CRITICAL(&ahrs_mux);
+  memcpy(a_ahrs.read, val_tmp, sizeof(val_tmp));
+  portEXIT_CRITICAL(&ahrs_mux);
+  return true;
+}
+
+/// @brief MPU6050からI2C経由でデータを読み取るスレッド用関数. IMUAHRS_INTERVALの間隔で実行する.
+///        新しいデータが 500ms 以上届かなければ, 応答なしとして表示する(値は前回のまま).
+void mrd_wire0_mpu6050_task(void *a_args) {
+  bool ok_prev_tmp = true;
+  unsigned long last_ok_ms_tmp = millis();
+  while (1) {
+    if (mrd_wire0_mpu6050_read(ahrs)) {
+      last_ok_ms_tmp = millis();
+    }
+    mrd_wire0_health_report("MPU6050", millis() - last_ok_ms_tmp < 500, ok_prev_tmp);
+    delay(cfg.imuahrs_interval);
+  }
+}
+
+//------------------------------------------------------------------------------------
+//  INA226(電流・電圧センサ)
+//------------------------------------------------------------------------------------
+// レジスタ: 0x00 設定, 0x01 シャント電圧(2.5µV/LSB, 符号付き), 0x02 バス電圧(1.25mV/LSB), 0xFE メーカーID(0x5449).
+// 電流はシャント電圧とシャント抵抗から計算する(校正レジスタ 0x05 は使わない).
+
+#define INA226_REG_CONFIG 0x00
+#define INA226_REG_SHUNT  0x01
+#define INA226_REG_BUS    0x02
+#define INA226_REG_MFR_ID 0xFE
+#define INA226_MFR_ID     0x5449 // "TI"
+#define INA226_CONFIG     0x4327 // 平均4回, 変換時間 1.1ms(バス・シャントとも), 連続測定. 約9ms ごとに更新
+
+/// @brief INA226 の値をCore0のスレッドとメインループで受け渡すための値と排他用スピンロック.
+struct Ina226Value {
+  int16_t volt100 = 0; // バス電圧(V × 100)
+  int16_t amp100 = 0;  // 電流(A × 100)
+};
+Ina226Value ina226;
+portMUX_TYPE ina226_mux = portMUX_INITIALIZER_UNLOCKED;
+
+/// @brief バス電圧のレジスタの値(1.25mV/LSB)を V × 100 にする.
+inline int16_t mrd_ina226_volt100(uint16_t a_raw) {
+  return int16_t(constrain(lroundf(float(a_raw) * 0.125f), 0L, 32767L));
+}
+
+/// @brief シャント電圧のレジスタの値(2.5µV/LSB)とシャント抵抗(mΩ)から, 電流を A × 100 にする.
+///        A × 100 = raw × 2.5µV / (mΩ / 1000) × 100 = raw × 0.25 / mΩ. シャント抵抗が0以下なら0.
+inline int16_t mrd_ina226_amp100(int16_t a_raw, float a_shunt_mohm) {
+  if (a_shunt_mohm <= 0.0f) {
+    return 0;
+  }
+  return int16_t(constrain(lroundf(float(a_raw) * 0.25f / a_shunt_mohm), -32767L, 32767L));
+}
+
+/// @brief INA226 の16bitのレジスタを読む(上位が先).
+bool mrd_ina226_reg_read(uint8_t a_addr, uint8_t a_reg, uint16_t &a_val) {
+  Wire.beginTransmission(a_addr);
+  Wire.write(a_reg);
+  if (Wire.endTransmission(false) != 0 || Wire.requestFrom(a_addr, uint8_t(2)) != 2) {
     return false;
+  }
+  const uint8_t hi_tmp = Wire.read();
+  const uint8_t lo_tmp = Wire.read();
+  a_val = uint16_t(hi_tmp << 8 | lo_tmp);
+  return true;
+}
+
+/// @brief INA226 を確かめて(メーカーID)設定を書く.
+/// @return INA226 が応答し, 設定を書けたらtrue.
+bool mrd_ina226_begin(uint8_t a_addr) {
+  uint16_t id_tmp = 0;
+  if (!mrd_ina226_reg_read(a_addr, INA226_REG_MFR_ID, id_tmp) || id_tmp != INA226_MFR_ID) {
+    return false;
+  }
+  Wire.beginTransmission(a_addr);
+  Wire.write(INA226_REG_CONFIG);
+  Wire.write(uint8_t(INA226_CONFIG >> 8));
+  Wire.write(uint8_t(INA226_CONFIG & 0xFF));
+  return Wire.endTransmission() == 0;
+}
+
+/// @brief INA226 から電圧と電流を読むスレッド用関数. INA226_INTERVAL の間隔で実行する.
+///        応答しないあいだは値を更新しない(前回の値のまま. 表示で知らせる). 戻ったら設定を書き直す.
+void mrd_ina226_task(void *a_args) {
+  const uint8_t addr_tmp = uint8_t(cfg.ina226_addr);
+  bool ok_prev_tmp = true;
+  bool ready_tmp = mrd_ina226_begin(addr_tmp);
+  while (1) {
+    uint16_t bus_tmp = 0;
+    uint16_t shunt_tmp = 0;
+    if (!ready_tmp) {
+      ready_tmp = mrd_ina226_begin(addr_tmp);
+    }
+    const bool ok_tmp = ready_tmp && mrd_ina226_reg_read(addr_tmp, INA226_REG_BUS, bus_tmp) &&
+                        mrd_ina226_reg_read(addr_tmp, INA226_REG_SHUNT, shunt_tmp);
+    mrd_wire0_health_report("INA226", ok_tmp, ok_prev_tmp);
+    if (ok_tmp) {
+      const int16_t volt_tmp = mrd_ina226_volt100(bus_tmp);
+      const int16_t amp_tmp = mrd_ina226_amp100(int16_t(shunt_tmp), cfg.ina226_shunt_mohm);
+      portENTER_CRITICAL(&ina226_mux);
+      ina226.volt100 = volt_tmp;
+      ina226.amp100 = amp_tmp;
+      portEXIT_CRITICAL(&ina226_mux);
+    } else {
+      ready_tmp = false; // 外れた: 戻ったら設定から書き直す
+    }
+    delay(cfg.ina226_interval);
   }
 }
 
@@ -241,29 +358,49 @@ bool mrd_wire0_read_ahrs_i2c(AhrsValue &a_ahrs) { // ※wireTimer0.beginの引�
 //------------------------------------------------------------------------------------
 
 /// @brief 指定されたIMU/AHRSタイプに基づいて, 計測したAHRSデータを読み込む.
-/// @param a_type 使用するセンサのタイプを示す列挙(MPU6050, MPU9250, BNO055).
+/// @param a_meridim 書き込み先のMeridim配列.
+/// @param a_type 使用するセンサのタイプを示す列挙(MPU6050_IMU, BNO055_AHRS. MPU9250は未対応).
 /// @param a_ahrs_result AHRSから読み取った結果を格納した配列.
 /// @return データの書き込みが成功した場合はtrue, それ以外の場合はfalseを返す.
-bool meriput90_ahrs(Meridim90Union &a_meridim, float a_ahrs_result[], int a_type) {
-  if (a_type == BNO055_AHRS) {
-    flg.imuahrs_available = false;
-    a_meridim.sval[2] = mrd.float2HfShort(a_ahrs_result[0]);   // IMU/AHRS_acc_x
-    a_meridim.sval[3] = mrd.float2HfShort(a_ahrs_result[1]);   // IMU/AHRS_acc_y
-    a_meridim.sval[4] = mrd.float2HfShort(a_ahrs_result[2]);   // IMU/AHRS_acc_z
-    a_meridim.sval[5] = mrd.float2HfShort(a_ahrs_result[3]);   // IMU/AHRS_gyro_x
-    a_meridim.sval[6] = mrd.float2HfShort(a_ahrs_result[4]);   // IMU/AHRS_gyro_y
-    a_meridim.sval[7] = mrd.float2HfShort(a_ahrs_result[5]);   // IMU/AHRS_gyro_z
-    a_meridim.sval[8] = mrd.float2HfShort(a_ahrs_result[6]);   // IMU/AHRS_mag_x
-    a_meridim.sval[9] = mrd.float2HfShort(a_ahrs_result[7]);   // IMU/AHRS_mag_y
-    a_meridim.sval[10] = mrd.float2HfShort(a_ahrs_result[8]);  // IMU/AHRS_mag_z
-    a_meridim.sval[11] = mrd.float2HfShort(a_ahrs_result[15]); // temperature
-    a_meridim.sval[12] = mrd.float2HfShort(a_ahrs_result[12]); // DMP_ROLL推定値
-    a_meridim.sval[13] = mrd.float2HfShort(a_ahrs_result[13]); // DMP_PITCH推定値
-    a_meridim.sval[14] = mrd.float2HfShort(a_ahrs_result[14]); // DMP_YAW推定値
-    flg.imuahrs_available = true;
+bool mrd_meriput90_ahrs(Meridim90Union &a_meridim, float a_ahrs_result[], int a_type) {
+  if (a_type == BNO055_AHRS || a_type == MPU6050_IMU) {
+    // センサスレッドの書き込み途中の値を読まないよう, 排他区間でまとめてコピーしてから変換する
+    float val_tmp[16];
+    portENTER_CRITICAL(&ahrs_mux);
+    memcpy(val_tmp, a_ahrs_result, sizeof(val_tmp));
+    portEXIT_CRITICAL(&ahrs_mux);
+    a_meridim.sval[2] = mrd.float2HfShort(val_tmp[0]);   // IMU/AHRS_acc_x
+    a_meridim.sval[3] = mrd.float2HfShort(val_tmp[1]);   // IMU/AHRS_acc_y
+    a_meridim.sval[4] = mrd.float2HfShort(val_tmp[2]);   // IMU/AHRS_acc_z
+    a_meridim.sval[5] = mrd.float2HfShort(val_tmp[3]);   // IMU/AHRS_gyro_x
+    a_meridim.sval[6] = mrd.float2HfShort(val_tmp[4]);   // IMU/AHRS_gyro_y
+    a_meridim.sval[7] = mrd.float2HfShort(val_tmp[5]);   // IMU/AHRS_gyro_z
+    a_meridim.sval[8] = mrd.float2HfShort(val_tmp[6]);   // IMU/AHRS_mag_x
+    a_meridim.sval[9] = mrd.float2HfShort(val_tmp[7]);   // IMU/AHRS_mag_y
+    a_meridim.sval[10] = mrd.float2HfShort(val_tmp[8]);  // IMU/AHRS_mag_z
+    a_meridim.sval[11] = mrd.float2HfShort(val_tmp[15]); // temperature
+    a_meridim.sval[12] = mrd.float2HfShort(val_tmp[12]); // DMP_ROLL推定値
+    a_meridim.sval[13] = mrd.float2HfShort(val_tmp[13]); // DMP_PITCH推定値
+    a_meridim.sval[14] = mrd.float2HfShort(val_tmp[14]); // DMP_YAW推定値
     return true;
   }
   return false;
+}
+
+/// @brief INA226 の電圧と電流を Meridim[86], [87] に書く. 搭載していなければ書かない(PCの値のまま).
+/// @param a_meridim 書き込み先のMeridim配列.
+/// @param a_mounted INA226 を搭載しているか(MOUNT_INA226).
+/// @return 書き込んだらtrue.
+bool mrd_meriput90_ina226(Meridim90Union &a_meridim, bool a_mounted) {
+  if (!a_mounted) {
+    return false;
+  }
+  portENTER_CRITICAL(&ina226_mux);
+  const Ina226Value val_tmp = ina226;
+  portEXIT_CRITICAL(&ina226_mux);
+  a_meridim.sval[MRD_INA226_VOLT] = val_tmp.volt100;
+  a_meridim.sval[MRD_INA226_CURR] = val_tmp.amp100;
+  return true;
 }
 
 #endif // __MERIDIAN_WIRE0_H__
