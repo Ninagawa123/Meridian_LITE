@@ -1,0 +1,2415 @@
+<!DOCTYPE html>
+<!-- Meridian Config Editor 2026 Izumi Ninagawa & Meridian Project. -->
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Izumi Ninagawa / Project Meridian">
+  <meta name="copyright" content="2026 Izumi Ninagawa & Meridian Project">
+  <title>Meridian Config Editor</title>
+  <style>
+    :root {
+      --bg-primary: #0a1628;
+      --bg-secondary: #132238;
+      --bg-tertiary: #1a3050;
+      --bg-input: #0d1e35;
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+      --accent-dim: #1e40af;
+      --text-primary: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #2d4a6f;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .header {
+      background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .logo {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .logo span { color: var(--text-primary); }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .preset-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-input);
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .preset-group label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+    .preset-select {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 0.375rem 0.75rem;
+      border-radius: 4px;
+      min-width: 150px;
+    }
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--bg-input); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { filter: brightness(1.1); }
+    .btn-danger { background: #1a1a1a; color: #ccc; border: 1px solid #444; }
+    .btn-danger:hover { background: #333; color: white; }
+    .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    .section {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+    }
+    .section-header {
+      background: var(--bg-tertiary);
+      padding: 0.4rem 0.75rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .section-header:hover { background: var(--bg-input); }
+    .section-header .toggle { transition: transform 0.2s; }
+    .section.collapsed .section-header .toggle { transform: rotate(-90deg); }
+    .section.collapsed .section-content { display: none; }
+    .section-content { padding: 0.5rem; }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.5rem;
+    }
+    .config-item {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.4rem 0.6rem;
+    }
+    .config-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.25rem;
+    }
+    .config-name {
+      font-family: 'Consolas', monospace;
+      font-size: 0.8rem;
+      color: var(--accent);
+    }
+    .config-range {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+    .config-desc {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      margin-top: 0.2rem;
+    }
+
+    input[type="number"], input[type="text"], select {
+      width: 100%;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 0.5rem;
+      border-radius: 4px;
+      font-size: 0.875rem;
+    }
+    input[type="number"]:focus, input[type="text"]:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Bulk select in table header */
+    .bulk-select {
+      width: 30px;
+      min-width: 30px;
+      padding: 0.2rem;
+      font-size: 0.75rem;
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      cursor: pointer;
+    }
+    .bulk-select:hover {
+      background: var(--accent);
+    }
+
+    /* Toggle Switch */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #1a2533;
+      border-radius: 24px;
+      transition: 0.2s;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 2px;
+      bottom: 2px;
+      background: #4a5568;
+      border-radius: 50%;
+      transition: 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background: var(--accent-dim);
+    }
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+      background: var(--accent);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--bg-primary);
+      padding: 2px;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    .tab {
+      padding: 0.5rem 1.5rem;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .tab:hover { color: var(--text-primary); }
+    .tab.active {
+      background: var(--accent);
+      color: white;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Servo Table */
+    .servo-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    .servo-table th, .servo-table td {
+      padding: 0.15rem 0.5rem;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .servo-table th {
+      background: var(--bg-tertiary);
+      font-weight: 500;
+      position: sticky;
+      top: 0;
+    }
+    .servo-table td { background: var(--bg-input); }
+    .servo-table input, .servo-table td select {
+      width: 100%;
+      min-width: 60px;
+      padding: 0.25rem;
+      text-align: center;
+    }
+    .servo-table th .bulk-select {
+      width: 50px;
+      min-width: 50px;
+      padding: 0.2rem;
+      font-size: 0.7rem;
+    }
+    .servo-table .idx {
+      background: var(--bg-tertiary);
+      font-weight: 600;
+      color: var(--accent);
+      width: 50px;
+      cursor: grab;
+    }
+    .servo-table .idx:active {
+      cursor: grabbing;
+    }
+    .servo-table tr.dragging {
+      opacity: 0.5;
+    }
+    .servo-table tr.drag-over {
+      border-top: 2px solid var(--accent);
+    }
+    .servo-table .part {
+      background: var(--bg-secondary);
+      text-align: left;
+      width: 200px;
+      max-width: 200px;
+    }
+    .servo-table .part input {
+      text-align: left;
+      background: var(--bg-secondary);
+      border: none;
+      width: 100%;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      min-width: 300px;
+      max-width: 90vw;
+    }
+    .modal h3 {
+      margin-bottom: 1rem;
+      color: var(--accent);
+    }
+    .modal-input {
+      margin-bottom: 1rem;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    /* Notifications */
+    .notification {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 6px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      z-index: 300;
+      animation: slideIn 0.3s ease;
+    }
+    .notification.success { border-color: var(--success); }
+    .notification.error { border-color: var(--danger); }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* File input */
+    .file-input { display: none; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header-content { flex-direction: column; align-items: stretch; }
+      .toolbar { justify-content: center; }
+      .config-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">Meridian <span>Config Editor</span> <span style="font-size: 0.6rem; color: var(--text-muted); font-weight: 400;">v0.0.1</span></div>
+      <div class="toolbar">
+        <div class="preset-group">
+          <label>Preset:</label>
+          <select id="presetSelect" class="preset-select">
+            <option value="">-- Select --</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="addPreset()">Add</button>
+        <button class="btn btn-secondary btn-sm" onclick="renamePreset()">Rename</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePreset()">Delete</button>
+        <div style="width: 1px; height: 24px; background: var(--border); margin: 0 0.5rem;"></div>
+        <button class="btn btn-secondary" onclick="openConfig()">Load Config</button>
+        <button class="btn btn-primary" onclick="saveConfig()">Save Config</button>
+        <button class="btn btn-success" onclick="savePreset()">Save Preset</button>
+      </div>
+    </div>
+    <input type="file" id="configFileInput" class="file-input" accept=".h" onchange="handleFileSelect(event)">
+  </header>
+
+  <div class="container">
+    <!-- Basic Settings -->
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <span>Meridim Basic Settings</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="section-content">
+        <div class="config-grid" id="basicSettings"></div>
+      </div>
+    </div>
+
+    <!-- Hardware Mount -->
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <span>Hardware Mount</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="section-content">
+        <div class="config-grid" id="hardwareMount"></div>
+      </div>
+    </div>
+
+    <!-- Operation Mode -->
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <span>Operation Mode</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="section-content">
+        <div class="config-grid" id="operationMode"></div>
+      </div>
+    </div>
+
+    <!-- WiFi / LAN Settings -->
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <span>WiFi / LAN Settings</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="section-content">
+        <!-- Connection Mode and UDP Timeout in same row -->
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+          <!-- Connection Mode Radio Buttons -->
+          <div style="padding: 0.75rem; background: var(--bg-input); border-radius: 6px; border: 1px solid var(--border); flex: 1; min-width: 280px;">
+            <div style="font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">Connection Mode</div>
+            <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="radio" name="connectionMode" value="wifi_dhcp" onchange="updateConnectionMode('wifi_dhcp')" checked>
+                <span>WiFi-DHCP</span>
+                <span style="color: var(--text-muted); font-size: 0.8rem;">(Default)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="radio" name="connectionMode" value="wifi_fixed" onchange="updateConnectionMode('wifi_fixed')">
+                <span>WiFi-FixedIP</span>
+                <span style="color: var(--text-muted); font-size: 0.8rem;">(MODE_FIXED_IP)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="radio" name="connectionMode" value="wired" onchange="updateConnectionMode('wired')">
+                <span>Wired-ETHER</span>
+                <span style="color: var(--text-muted); font-size: 0.8rem;">(MODE_ETHER)</span>
+              </label>
+            </div>
+          </div>
+          <!-- UDP Timeout Setting -->
+          <div style="padding: 0.75rem; background: var(--bg-input); border-radius: 6px; border: 1px solid var(--border); min-width: 200px;">
+            <div style="font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">UDP Settings</div>
+            <div class="config-grid" id="wifiSettings" style="margin: 0;"></div>
+          </div>
+        </div>
+        <!-- Keys.h Settings -->
+        <div style="padding: 0.75rem; background: var(--bg-input); border-radius: 6px; border: 1px solid var(--border);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <span style="font-weight: 600; color: var(--text-secondary);">keys.h Settings</span>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-secondary btn-sm" onclick="loadKeysFile()">Load Keys</button>
+              <button class="btn btn-primary btn-sm" onclick="saveKeysFile()">Save Keys</button>
+            </div>
+          </div>
+          <input type="file" id="keysFileInput" accept=".h" style="display: none;" onchange="handleKeysFileSelect(event)">
+
+          <!-- WiFi-DHCP Settings -->
+          <div id="keysWifiDhcp" class="config-grid">
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">WIFI_AP_SSID</span></div>
+              <input type="text" class="config-input" id="keys_WIFI_AP_SSID" value="" placeholder="SSID" onchange="updateKeysValue('WIFI_AP_SSID', this.value)">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">WIFI_AP_PASS</span></div>
+              <input type="text" class="config-input" id="keys_WIFI_AP_PASS" value="" placeholder="Password" onchange="updateKeysValue('WIFI_AP_PASS', this.value)">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">WIFI_SEND_IP</span></div>
+              <input type="text" class="config-input" id="keys_WIFI_SEND_IP" value="" placeholder="PC IP" onchange="updateKeysValue('WIFI_SEND_IP', this.value)">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">UDP_SEND_PORT</span></div>
+              <input type="number" class="config-input" id="keys_UDP_SEND_PORT" value="" placeholder="22222" onchange="updateKeysValue('UDP_SEND_PORT', this.value)">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">UDP_RECV_PORT</span></div>
+              <input type="number" class="config-input" id="keys_UDP_RECV_PORT" value="" placeholder="22224" onchange="updateKeysValue('UDP_RECV_PORT', this.value)">
+            </div>
+          </div>
+
+          <!-- WiFi-FixedIP Settings -->
+          <div id="keysWifiFixed" class="config-grid" style="display: none;">
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">WIFI_AP_SSID</span></div>
+              <input type="text" class="config-input" id="keys_WIFI_AP_SSID_fixed" value="" placeholder="SSID" onchange="updateKeysValue('WIFI_AP_SSID', this.value); syncKeysField('WIFI_AP_SSID', this.value);">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">WIFI_AP_PASS</span></div>
+              <input type="text" class="config-input" id="keys_WIFI_AP_PASS_fixed" value="" placeholder="Password" onchange="updateKeysValue('WIFI_AP_PASS', this.value); syncKeysField('WIFI_AP_PASS', this.value);">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">WIFI_SEND_IP</span></div>
+              <input type="text" class="config-input" id="keys_WIFI_SEND_IP_fixed" value="" placeholder="PC IP" onchange="updateKeysValue('WIFI_SEND_IP', this.value); syncKeysField('WIFI_SEND_IP', this.value);">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">UDP_SEND_PORT</span></div>
+              <input type="number" class="config-input" id="keys_UDP_SEND_PORT_fixed" value="" placeholder="22222" onchange="updateKeysValue('UDP_SEND_PORT', this.value); syncKeysField('UDP_SEND_PORT', this.value);">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">UDP_RECV_PORT</span></div>
+              <input type="number" class="config-input" id="keys_UDP_RECV_PORT_fixed" value="" placeholder="22224" onchange="updateKeysValue('UDP_RECV_PORT', this.value); syncKeysField('UDP_RECV_PORT', this.value);">
+            </div>
+            <div style="grid-column: 1 / -1; border-top: 1px solid var(--border); margin: 0.25rem 0;"></div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">FIXED_IP_ADDR</span></div>
+              <input type="text" class="config-input" id="keys_FIXED_IP_ADDR" value="" placeholder="ESP32 IP" onchange="updateKeysValue('FIXED_IP_ADDR', this.value)">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">FIXED_IP_GATEWAY</span></div>
+              <input type="text" class="config-input" id="keys_FIXED_IP_GATEWAY" value="" placeholder="Gateway" onchange="updateKeysValue('FIXED_IP_GATEWAY', this.value)">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">FIXED_IP_SUBNET</span></div>
+              <input type="text" class="config-input" id="keys_FIXED_IP_SUBNET" value="" placeholder="255.255.255.0" onchange="updateKeysValue('FIXED_IP_SUBNET', this.value)">
+            </div>
+          </div>
+
+          <!-- Wired-ETHER Settings -->
+          <div id="keysWired" class="config-grid" style="display: none;">
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">WIFI_SEND_IP</span></div>
+              <input type="text" class="config-input" id="keys_WIFI_SEND_IP_wired" value="" placeholder="PC IP" onchange="updateKeysValue('WIFI_SEND_IP', this.value); syncKeysField('WIFI_SEND_IP', this.value);">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">UDP_SEND_PORT</span></div>
+              <input type="number" class="config-input" id="keys_UDP_SEND_PORT_wired" value="" placeholder="22222" onchange="updateKeysValue('UDP_SEND_PORT', this.value); syncKeysField('UDP_SEND_PORT', this.value);">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">UDP_RECV_PORT</span></div>
+              <input type="number" class="config-input" id="keys_UDP_RECV_PORT_wired" value="" placeholder="22224" onchange="updateKeysValue('UDP_RECV_PORT', this.value); syncKeysField('UDP_RECV_PORT', this.value);">
+            </div>
+            <div style="grid-column: 1 / -1; border-top: 1px solid var(--border); margin: 0.25rem 0;"></div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">ETHER_LOCAL_IP</span></div>
+              <input type="text" class="config-input" id="keys_ETHER_LOCAL_IP" value="" placeholder="ESP32 IP" onchange="updateKeysValue('ETHER_LOCAL_IP', this.value)">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">ETHER_GATEWAY</span></div>
+              <input type="text" class="config-input" id="keys_ETHER_GATEWAY" value="" placeholder="PC IP" onchange="updateKeysValue('ETHER_GATEWAY', this.value)">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">ETHER_SUBNET</span></div>
+              <input type="text" class="config-input" id="keys_ETHER_SUBNET" value="" placeholder="255.255.255.0" onchange="updateKeysValue('ETHER_SUBNET', this.value)">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">ETHER_DNS</span></div>
+              <input type="text" class="config-input" id="keys_ETHER_DNS" value="" placeholder="8.8.8.8" onchange="updateKeysValue('ETHER_DNS', this.value)">
+            </div>
+            <div class="config-item">
+              <div class="config-item-header"><span class="config-name">ETHER_MAC</span></div>
+              <input type="text" class="config-input" id="keys_ETHER_MAC" value="" placeholder="xx:xx:xx:xx:xx:xx" onchange="updateKeysValue('ETHER_MAC', this.value)">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EEPROM Settings -->
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <span>EEPROM Settings</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="section-content">
+        <div class="config-grid" id="eepromSettings"></div>
+      </div>
+    </div>
+
+    <!-- Check Mode -->
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <span>Check Mode</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="section-content">
+        <div class="config-grid" id="checkMode"></div>
+      </div>
+    </div>
+
+    <!-- Serial Monitoring -->
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <span>Serial Monitoring</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="section-content">
+        <div class="config-grid" id="serialMonitoring"></div>
+      </div>
+    </div>
+
+    <!-- I2C / SPI / Serial Settings -->
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <span>I2C / SPI / Serial Settings</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="section-content">
+        <div class="config-grid" id="commSettings"></div>
+      </div>
+    </div>
+
+    <!-- Joypad Settings -->
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <span>Joypad Settings</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="section-content">
+        <div class="config-grid" id="joypadSettings"></div>
+      </div>
+    </div>
+
+    <!-- Servo Settings -->
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <span>Servo Settings</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="section-content">
+        <div class="config-grid" id="servoSettings"></div>
+      </div>
+    </div>
+
+    <!-- Servo Arrays -->
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <span>Servo Arrays (MT / ID / CW / TRIM)</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="section-content">
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab(event, 'tabL')">L System</button>
+          <button class="tab" onclick="switchTab(event, 'tabR')">R System</button>
+          <button class="tab" onclick="switchTab(event, 'tabC')">C System</button>
+        </div>
+        <div id="tabL" class="tab-panel active"></div>
+        <div id="tabR" class="tab-panel"></div>
+        <div id="tabC" class="tab-panel"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h3 id="modalTitle">Preset Name</h3>
+      <div class="modal-input">
+        <input type="text" id="modalInput" placeholder="Enter name...">
+      </div>
+      <div class="modal-buttons">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="modalConfirm">OK</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Embedded default config.h content
+const DEFAULT_CONFIG_CONTENT = `#ifndef __MERIDIAN_CONFIG__
+#define __MERIDIAN_CONFIG__
+
+// IMU/AHRSセンサ選択用のプリプロセッサ定数 (enumより先に定義が必要)
+// これらの値はプリプロセッサの#if条件で使用される
+#define IMUAHRS_NONE    0
+#define IMUAHRS_MPU6050 1
+#define IMUAHRS_MPU9250 2
+#define IMUAHRS_BNO055  3
+
+// サーボタイプ選択用のプリプロセッサ定数 (enumより先に定義が必要)
+// これらの値はプリプロセッサの#if条件で使用される
+#define SERVO_TYPE_NONE    0
+#define SERVO_TYPE_PWM_S   1
+#define SERVO_TYPE_PCA9685 11
+#define SERVO_TYPE_FTBRSX  21
+#define SERVO_TYPE_DXL1    31
+#define SERVO_TYPE_DXL2    32
+#define SERVO_TYPE_KOICS3  43
+#define SERVO_TYPE_KOPMX   44
+#define SERVO_TYPE_JRXBUS  51
+#define SERVO_TYPE_FTCSTS  61
+#define SERVO_TYPE_FTCSCS  62
+
+#include "mrd_common.h"
+
+//==================================================================================================
+//  MERIDIAN - LITE - ESP32の配線
+//==================================================================================================
+//
+// ESP32devkitC  -  デバイス
+//   3V3         -  BNO005 VIN
+//   21          -  BNO005 SCL
+//   22          -  BNO005 SDA
+//   GND         -  BNO005 GND
+//
+//   4  EN       -  ICS変換基板 R系統 EN
+//   16 RX       -  ICS変換基板 R系統 TX
+//   17 TX       -  ICS変換基板 R系統 RX
+//   5V          -  ICS変換基板 IOREF
+//   GND         -  ICS変換基板 GND
+//
+//   33 EN       -  ICS変換基板 L系統 EN
+//   32 RX       -  ICS変換基板 L系統 TX
+//   27 TX       -  ICS変換基板 L系統 RX
+//   5V          -  ICS変換基板 IOREF
+//   GND         -  ICS変換基板 GND
+//
+//   19          -  SPI_MISO
+//   23          -  SPI_MOSI
+//   18          -  SPI_CSK
+//   15          -  SPI_CS SD(起動時LOW必須, 外部PU厳禁)
+//   05          -  SPI_CS BOARD PIN(Etherなど)
+//
+//   00          -  NG/起動時HIGH必須
+//   01          -  NG(USBシリアルTX0)
+//   02          -  NG/起動時HIGH必須
+//   03          -  NG(USBシリアルRX0)
+//   06          -  NG(FLASH SCK)
+//   07          -  NG(FLASH D0)
+//   08          -  NG(FLASH D1)
+//   09          -  NG(FLASH HD)
+//   10          -  NG(FLASH WP)
+//   11          -  NG(FLASH CS)
+//   12          -  NG(起動時LOW必須/電圧設定1.8Vor3.3V)
+//   13          -  OK/LED?
+//   14          -  OK/(SPI HS CLK)
+//   25          -  OK/BOARD PIN(Input/Output)/DAC出力0-3.3V
+//   26          -  OK/BOARD PIN(Input/Output)/DAC出力0-3.3V
+//   34          -  OK/BOARD PIN, アナログ入力のみ（PD/PD/出力不可）
+//   35          -  OK/BOARD PIN, アナログ入力のみ（PD/PD/出力不可）
+//   39          -  OK/アナログ入力のみ（PD/PD/出力不可）
+//   36          -  OK/アナログ入力のみ（PD/PD/出力不可）
+
+//==================================================================================================
+//  サーボIDとロボット部位, 軸との対応表 (KHR-3HVの例)
+//==================================================================================================
+//
+// ID    Parts/Axis <ICS_Left_Upper SIO1,SIO2>
+// [L00] 頭/ヨー
+// [L01] 左肩/ピッチ
+// [L02] 左肩/ロール
+// [L03] 左肘/ヨー
+// [L04] 左肘/ピッチ
+// [L05] -
+// ID    Parts/Axis <ICS_Left_Lower SIO3,SIO4>
+// [L06] 左股/ロール
+// [L07] 左股/ピッチ
+// [L08] 左膝/ピッチ
+// [L09] 左足首/ピッチ
+// [L10] 左足首/ロール
+// ID    Parts/Axis  <ICS_Right_Upper SIO5,SIO6>
+// [R00] 腰/ヨー
+// [R01] 右肩/ピッチ
+// [R02] 右肩/ロール
+// [R03] 右肘/ヨー
+// [R04] 右肘/ピッチ
+// [R05] -
+// ID    Parts/Axis  <ICS_Right_Lower SIO7,SIO8>
+// [R06] 右股/ロール
+// [R07] 右股/ピッチ
+// [R08] 右膝/ピッチ
+// [R09] 右足首/ピッチ
+// [R10] 右足首/ロール
+
+//==================================================================================================
+//  Meridim90配列 一覧表
+//==================================================================================================
+//
+// [00]      マスターコマンド デフォルトは90 で配列数も同時に示す
+// [01]      シーケンス番号
+// [02]-[04] IMU/AHRS:acc_x,acc_y,acc_z      加速度x,y,z
+// [05]-[07] IMU/AHRS:gyro_x,gyro_y,gyro_z   ジャイロx,y,z
+// [08]-[10] IMU/AHRS:mag_x,mag_y,mag_z      磁気コンパスx,y,z
+// [11]      IMU/AHRS:temp                   温度
+// [12]-[14] IMU/AHRS:DMP ROLL,PITCH,YAW     DMP推定値 ロール,ピッチ,ヨー
+// [15]      ボタンデータ1
+// [16]      ボタンアナログ1(Stick Left)
+// [17]      ボタンアナログ2(Stick Right)
+// [18]      ボタンアナログ3(L2,R2 アナログ)
+// [19]      モーション設定(フレーム数)
+// [20]      サーボID LO  コマンド
+// [21]      サーボID LO  データ値
+// [...]     ...
+// [48]      サーボID L14 コマンド
+// [49]      サーボID L14 データ値
+// [50]      サーボID RO  コマンド
+// [51]      サーボID RO  データ値
+// [...]     ...
+// [78]      サーボID R14 コマンド
+// [79]      サーボID R14 データ値
+// [80]-[MRDM_LEN-3] free (Meridim90では[87]まで)
+// [MRDM_LEN-2] ERROR CODE
+// [MRDM_LEN-1] チェックサム
+
+//-------------------------------------------------------------------------
+//  各種設定
+//-------------------------------------------------------------------------
+
+// Meridimの基本設定
+#define MRDM_LEN        90  // Meridim配列の長さ設定(デフォルトは90)
+#define FRAME_DURATION  10  // 1フレームあたりの単位時間(単位ms, デフォルトは10)
+#define CHARGE_TIME     200 // 起動時のコンデンサチャージ待機時間(単位ms)
+#define MRD_L_ORIGIDX   20  // Meridim配列のL系統の最初のインデックス(デフォルトは20)
+#define MRD_R_ORIGIDX   50  // Meridim配列のR系統の最初のインデックス(デフォルトは50)
+#define MRD_SERVO_SLOTS 15  // Meridim配列の1系統あたりの最大接続サーボ数(デフォルトは15)
+
+// 各種ハードウェアのマウント有無
+#define MOUNT_SD      1              // SDカードリーダーの有無(0:なし, 1:あり)
+#define MOUNT_IMUAHRS IMUAHRS_BNO055 // IMU/AHRSの搭載 (0:なし, 1:MPU6050, 2:MPU9250, 3:BNO055)
+#define MOUNT_PAD     PC             // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
+
+// 動作モード
+#define MODE_ESP32_STANDALONE 0 // ESP32をボードに挿さず動作確認(0:NO, 1:YES)
+#define MODE_UDP_RECEIVE      1 // PCからのデータ受信(0:OFF, 1:ON, 通常は1)
+#define MODE_UDP_SEND         1 // PCへのデータ送信(0:OFF, 1:ON, 通常は1)
+
+// Wifi/有線LANの設定(SSID, パスワード, 固定IP, MACアドレス等は別途keys.hで指定)
+#define MODE_ETHER    0 // WiFiか有線LANか(0:wifi, 1:有線LAN, 通常は0)
+#define MODE_FIXED_IP 0 // WiFi用IPアドレスを固定するか(0:NO, 1:YES)
+#define UDP_TIMEOUT   4 // UDPの待受タイムアウト(単位ms,推奨値0)
+
+// EEPROMの設定
+#define EEPROM_SIZE    540 // 使用するEEPROMのサイズ(バイト)
+#define EEPROM_SET     0   // 起動時にEEPROMにconfig.hの内容をセット(mrd_set_eeprom)
+#define EEPROM_PROTECT 0   // EEPROMの書き込み保護(0:保護しない, 1:書き込み禁止)
+#define EEPROM_LOAD    1   // 起動時にEEPROMの内容を諸設定にロードする
+#define EEPROM_DUMP    0   // 起動時のEEPROMデータのダンプ表示
+#define EEPROM_STYLE   Dec // 起動時のEEPROM内容のダンプ表示の書式(Bin,Hex,Dec)
+
+// 動作チェックモード
+#define CHECK_SD_RW     1 // 起動時のSDカードリーダーの読み書きチェック
+#define CHECK_EEPROM_RW 0 // 起動時のEEPROMの動作チェック
+
+// シリアルモニタリング
+#define MONITOR_FRAME_DELAY       1    // シリアルモニタでフレーム遅延時間を表示(0:OFF, 1:ON)
+#define MONITOR_FLOW              0    // シリアルモニタでフローを表示(0:OFF, 1:ON)
+#define MONITOR_ERR_SERVO         0    // シリアルモニタでサーボエラーを表示(0:OFF, 1:ON)
+#define MONITOR_ERR_ALL           0    // 全経路の受信エラー率を表示
+#define MONITOR_SEQ               0    // シリアルモニタでシーケンス番号チェックを表示(0:OFF, 1:ON)
+#define MONITOR_PAD               0    // シリアルモニタでリモコンのデータを表示(0:OFF, 1:ON)
+#define MONITOR_SUPPRESS_DURATION 8000 // 起動直後のタイムアウトメッセージ抑制時間(単位ms)
+
+// I2C設定, I2Cセンサ関連設定
+#define I2C0_SPEED       400000 // I2Cの速度(400kHz推奨)
+#define IMUAHRS_INTERVAL 10     // IMU/AHRSのセンサの読み取り間隔(ms)
+#define IMUAHRS_STOCK    4      // MPUで移動平均を取る際の元にする時系列データの個数
+// #define I2C1_SPEED 100000  // I2Cの速度(100kHz推奨?)
+// #define I2C1_MERIMOTE_ADDR 0x58 // MerimoteのI2Cアドレス
+
+// SPI設定
+#define SPI0_SPEED 30000000 // SPI通信の速度(30MHz)
+
+// PC接続関連設定
+#define SERIAL_PC_BPS     115200 // PCとのシリアル速度(モニタリング表示用)
+#define SERIAL_PC_TIMEOUT 2000   // PCとのシリアル接続確立タイムアウト(ms)
+
+// JOYPAD関連設定
+#define PAD_INIT_TIMEOUT 10000 // 起動時のJOYPADの接続確立のタイムアウト(ms)
+#define PAD_INTERVAL     10    // JOYPADのデータを読みに行くフレーム間隔 (※KRC-5FHでは4推奨)
+#define PAD_BUTTON_MARGE 1     // 0:JOYPADのボタンデータをMeridim受信値に論理積, 1:Meridim受信値に論理和
+#define PAD_GENERALIZE   1     // ジョイパッドの入力値をPS系に一般化する
+
+// ピンアサイン
+#define PIN_ERR_LED        25 // LED用 処理が時間内に収まっていない場合に点灯
+#define PIN_EN_L           33 // サーボL系統のENピン
+#define PIN_EN_R           4  // サーボR系統のENピン
+#define PIN_CHIPSELECT_SD  15 // SDカード用のCSピン
+#define PIN_CHIPSELECT_LAN 5  // 有線LAN用のCSピン
+#define PIN_RESET_LAN      14 // W5500リセットピン(※ボード裏から半田付けにてフリーピンに配線)
+#define PIN_I2C0_SDA       22 // I2CのSDAピン
+#define PIN_I2C0_SCL       21 // I2CのSCLピン
+#define PIN_LED_BT         26 // Bluetooth接続確認用ピン(点滅はペアリング,点灯でリンク確立)
+
+//-------------------------------------------------------------------------
+// サーボ設定
+//-------------------------------------------------------------------------
+
+// コマンドサーボの種類
+// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
+// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
+// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
+// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
+// 51: JRXBUS (JRPROPO_XBUS)[WIP]
+// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
+#define MOUNT_SERVO_TYPE_L SERVO_TYPE_KOICS3 // L系統のコマンドサーボの種類 (43)
+#define MOUNT_SERVO_TYPE_R SERVO_TYPE_KOICS3 // R系統のコマンドサーボの種類 (43)
+
+// サーボ関連設定
+#define SERVO_BAUDRATE_L    1250000 // L系統のICSサーボの通信速度bps
+#define SERVO_BAUDRATE_R    1250000 // R系統のICSサーボの通信速度bps
+#define SERVO_TIMEOUT_L     2       // L系統のICS返信待ちのタイムアウト時間
+#define SERVO_TIMEOUT_R     2       // R系統のICS返信待ちのタイムアウト時間
+#define SERVO_LOST_ERR_WAIT 6       // 連続何フレームサーボ信号をロストしたら異常とするか
+
+// 各サーボ系統の最大サーボマウント数
+#define IXL_MAX 15 // L系統の最大サーボ数. 標準は15.
+#define IXR_MAX 15 // R系統の最大サーボ数. 標準は15.
+
+// サーボのマウント/種類 (0:NOSERVO, 43:KONDO ICS, 等)
+// インデックス 0-10: アクティブサーボ, 11-14: 予約
+extern int IXL_MT[IXL_MAX];
+extern int IXR_MT[IXR_MAX];
+
+// サーボのハードウェアID
+extern int IXL_ID[IXL_MAX];
+extern int IXR_ID[IXR_MAX];
+
+// サーボの回転方向 (1:正転, -1:逆転)
+extern int IXL_CW[IXL_MAX];
+extern int IXR_CW[IXR_MAX];
+
+// 直立姿勢用サーボトリム値 (度)
+extern float IXL_TRIM[IXL_MAX];
+extern float IXR_TRIM[IXR_MAX];
+
+//-------------------------------------------------------------------------
+//  固定値, マスターコマンド定義
+//-------------------------------------------------------------------------
+// 固定値, マスターコマンド定義
+#define MCMD_TORQUE_ALL_OFF         0      // すべてのサーボトルクをオフにする(脱力)
+#define MCMD_DUMMY_DATA             -32768 // SPI送受信用のダミーデータ判定用
+#define MCMD_TEST_VALUE             -32767 // テスト用の仮設変数
+#define MCMD_SENSOR_YAW_CALIB       10002  // センサの推定ヨー軸を現在値センターとしてリセット
+#define MCMD_SENSOR_ALL_CALIB       10003  // センサの3軸について現在値を原点としてリセット
+#define MCMD_ERR_CLEAR_SERVO_ID     10004  // 通信エラーのサーボのIDをクリア(MRD_ERR_l)
+#define MCMD_BOARD_TRANSMIT_ACTIVE  10005  // ボードが定刻で送信を行うモード(PC側が受信待ち)
+#define MCMD_BOARD_TRANSMIT_PASSIVE 10006  // ボードが受信を待ち返信するモード(PC側が定刻送信)
+#define MCMD_FRAMETIMER_RESET       10007  // フレームタイマーを現在時刻にリセット
+#define MCMD_BOARD_STOP_DURING      10008  // ボードの末端処理を[MRD_STOP_FRAMES]ミリ秒止める
+#define MCMD_EEPROM_ENTER_WRITE     10009  // EEPROM書き込みモードのスタート
+#define MCMD_EEPROM_EXIT_WRITE      10010  // EEPROM書き込みモードの終了
+#define MCMD_EEPROM_ENTER_READ      10011  // EEPROM読み出しモードのスタート
+#define MCMD_EEPROM_EXIT_READ       10012  // EEPROM読み出しモードの終了
+#define MCMD_SDCARD_ENTER_WRITE     10013  // SDCARD書き込みモードのスタート
+#define MCMD_SDCARD_EXIT_WRITE      10014  // SDCARD書き込みモードの終了
+#define MCMD_SDCARD_ENTER_READ      10015  // SDCARD読み出しモードのスタート
+#define MCMD_SDCARD_EXIT_READ       10016  // SDCARD読み出しモードの終了
+#define MCMD_START_TRIM_SETTING     10100  // トリム設定モードに入る(Meridian_console.py連携)
+#define MCMD_EEPROM_SAVE_TRIM       10101  // 現在の姿勢をトリム値としてEEPROMに書き込む
+#define MCMD_EEPROM_LOAD_TRIM       10102  // EEPROMのトリム値をサーボに反映する
+#define MCMD_EEPROM_BOARDTOPC_DATA0 10200  // EEPROMの[0][*]をボードからPCにMeridimで送信する
+#define MCMD_EEPROM_BOARDTOPC_DATA1 10201  // EEPROMの[1][*]をボードからPCにMeridimで送信する
+#define MCMD_EEPROM_BOARDTOPC_DATA2 10202  // EEPROMの[2][*]をボードからPCにMeridimで送信する
+#define MCMD_EEPROM_PCTOBOARD_DATA0 10300  // EEPROM用の[0][*]をPCからボードにMeridimで送信する
+#define MCMD_EEPROM_PCTOBOARD_DATA1 10301  // EEPROM用の[1][*]をPCからボードにMeridimで送信する
+#define MCMD_EEPROM_PCTOBOARD_DATA2 10302  // EEPROM用の[2][*]をPCからボードにMeridimで送信する
+
+#define MCMD_NAK 32766 // コマンド実行の失敗を応答
+#define MCMD_ACK 32767 // コマンド実行の成功を応答
+
+//-------------------------------------------------------------------------
+//  Meridim90 配列アクセス対応キー
+//-------------------------------------------------------------------------
+#define MRD_MASTER        0  // マスターコマンド
+#define MRD_SEQ           1  // シーケンス番号
+#define MRD_ACC_X         2  // 加速度センサX値
+#define MRD_ACC_Y         3  // 加速度センサY値
+#define MRD_ACC_Z         4  // 加速度センサZ値
+#define MRD_GYRO_X        5  // ジャイロセンサX値
+#define MRD_GYRO_Y        6  // ジャイロセンサY値
+#define MRD_GYRO_Z        7  // ジャイロセンサZ値
+#define MRD_MAG_X         8  // 磁気コンパスX値
+#define MRD_MAG_Y         9  // 磁気コンパスY値
+#define MRD_MAG_Z         10 // 磁気コンパスZ値
+#define MRD_TEMP          11 // 温度センサ値
+#define MRD_DIR_ROLL      12 // DMP推定ロール方向値
+#define MRD_DIR_PITCH     13 // DMP推定ピッチ方向値
+#define MRD_DIR_YAW       14 // DMP推定ヨー方向値
+#define MRD_PAD_BUTTONS   15 // リモコンの基本ボタン値
+#define MRD_PAD_STICK_L   16 // リモコンの左スティックアナログ値
+#define MRD_PAD_STICK_R   17 // リモコンの右スティックアナログ値
+#define MRD_PAD_L2R2VAL   18 // リモコンのL2R2ボタンアナログ値
+#define MRD_MOTION_FRAMES 19 // モーション設定のフレーム数
+#define MRD_STOP_FRAMES   19 // ボード停止時のフレーム数(MCMD_BOARD_STOP_DURINGで指定)
+#define C_HEAD_Y_CMD      20 // 頭ヨーのコマンド
+#define C_HEAD_Y_VAL      21 // 頭ヨーの値
+#define L_SHOULDER_P_CMD  22 // 左肩ピッチのコマンド
+#define L_SHOULDER_P_VAL  23 // 左肩ピッチの値
+#define L_SHOULDER_R_CMD  24 // 左肩ロールのコマンド
+#define L_SHOULDER_R_VAL  25 // 左肩ロールの値
+#define L_ELBOW_Y_CMD     26 // 左肘ヨーのコマンド
+#define L_ELBOW_Y_VAL     27 // 左肘ヨーの値
+#define L_ELBOW_P_CMD     28 // 左肘ピッチのコマンド
+#define L_ELBOW_P_VAL     29 // 左肘ピッチの値
+#define L_HIPJOINT_Y_CMD  30 // 左股ヨーのコマンド
+#define L_HIPJOINT_Y_VAL  31 // 左股ヨーの値
+#define L_HIPJOINT_R_CMD  32 // 左股ロールのコマンド
+#define L_HIPJOINT_R_VAL  33 // 左股ロールの値
+#define L_HIPJOINT_P_CMD  34 // 左股ピッチのコマンド
+#define L_HIPJOINT_P_VAL  35 // 左股ピッチの値
+#define L_KNEE_P_CMD      36 // 左膝ピッチのコマンド
+#define L_KNEE_P_VAL      37 // 左膝ピッチの値
+#define L_ANKLE_P_CMD     38 // 左足首ピッチのコマンド
+#define L_ANKLE_P_VAL     39 // 左足首ピッチの値
+#define L_ANKLE_R_CMD     40 // 左足首ロールのコマンド
+#define L_ANKLE_R_VAL     41 // 左足首ロールの値
+#define L_SERVO_IX11_CMD  42 // 追加サーボ用のコマンド
+#define L_SERVO_IX11_VAL  43 // 追加サーボ用の値
+#define L_SERVO_IX12_CMD  44 // 追加サーボ用のコマンド
+#define L_SERVO_IX12_VAL  45 // 追加サーボ用の値
+#define L_SERVO_IX13_CMD  46 // 追加サーボ用のコマンド
+#define L_SERVO_IX13_VAL  47 // 追加サーボ用の値
+#define L_SERVO_IX14_CMD  48 // 追加サーボ用のコマンド
+#define L_SERVO_IX14_VAL  49 // 追加サーボ用の値
+
+#define C_WAIST_Y_CMD    50 // 腰ヨーのコマンド
+#define C_WAIST_Y_VAL    51 // 腰ヨーの値
+#define R_SHOULDER_P_CMD 52 // 右肩ピッチのコマンド
+#define R_SHOULDER_P_VAL 53 // 右肩ピッチの値
+#define R_SHOULDER_R_CMD 54 // 右肩ロールのコマンド
+#define R_SHOULDER_R_VAL 55 // 右肩ロールの値
+#define R_ELBOW_Y_CMD    56 // 右肘ヨーのコマンド
+#define R_ELBOW_Y_VAL    57 // 右肘ヨーの値
+#define R_ELBOW_P_CMD    58 // 右肘ピッチのコマンド
+#define R_ELBOW_P_VAL    59 // 右肘ピッチの値
+#define R_HIPJOINT_Y_CMD 60 // 右股ヨーのコマンド
+#define R_HIPJOINT_Y_VAL 61 // 右股ヨーの値
+#define R_HIPJOINT_R_CMD 62 // 右股ロールのコマンド
+#define R_HIPJOINT_R_VAL 63 // 右股ロールの値
+#define R_HIPJOINT_P_CMD 64 // 右股ピッチのコマンド
+#define R_HIPJOINT_P_VAL 65 // 右股ピッチの値
+#define R_KNEE_P_CMD     66 // 右膝ピッチのコマンド
+#define R_KNEE_P_VAL     67 // 右膝ピッチの値
+#define R_ANKLE_P_CMD    68 // 右足首ピッチのコマンド
+#define R_ANKLE_P_VAL    69 // 右足首ピッチの値
+#define R_ANKLE_R_CMD    70 // 右足首ロールのコマンド
+#define R_ANKLE_R_VAL    71 // 右足首ロールの値
+#define R_SERVO_IX11_CMD 72 // 追加テスト用のコマンド
+#define R_SERVO_IX11_VAL 73 // 追加テスト用の値
+#define R_SERVO_IX12_CMD 74 // 追加テスト用のコマンド
+#define R_SERVO_IX12_VAL 75 // 追加テスト用の値
+#define R_SERVO_IX13_CMD 76 // 追加テスト用のコマンド
+#define R_SERVO_IX13_VAL 77 // 追加テスト用の値
+#define R_SERVO_IX14_CMD 78 // 追加テスト用のコマンド
+#define R_SERVO_IX14_VAL 79 // 追加テスト用の値
+
+#define MRD_USERDATA_80 80 // ユーザー定義用
+#define MRD_USERDATA_81 81 // ユーザー定義用
+#define MRD_USERDATA_82 82 // ユーザー定義用
+#define MRD_USERDATA_83 83 // ユーザー定義用
+#define MRD_USERDATA_84 84 // ユーザー定義用
+#define MRD_USERDATA_85 85 // ユーザー定義用
+#define MRD_USERDATA_86 86 // ユーザー定義用
+#define MRD_USERDATA_87 87 // ユーザー定義用
+// #define MRD_ERR         88 // エラーコード (MRDM_LEN - 2)
+// #define MRD_CKSM        89 // チェックサム (MRDM_LEN - 1)
+
+// エラービット MRD_ERR_CODEの上位8bit分
+#define ERRBIT_15_ESP_PC       15 // ESP32 → PC のUDP受信エラー (0:エラーなし, 1:エラー検出)
+#define ERRBIT_14_PC_ESP       14 // PC → ESP32 のUDP受信エラー
+#define ERRBIT_13_ESP_TSY      13 // ESP32 → TeensyのSPI受信エラー
+#define ERRBIT_12_TSY_ESP      12 // Teensy → ESP32 のSPI受信エラー
+#define ERRBIT_11_BOARD_DELAY  11 // Teensy or ESP32の処理ディレイ (末端で捕捉)
+#define ERRBIT_10_UDP_ESP_SKIP 10 // PC → ESP32 のUDPフレームスキップエラー
+#define ERRBIT_9_BOARD_SKIP    9  // PC → ESP32 → Teensy のフレームスキップエラー(末端で捕捉)
+#define ERRBIT_8_PC_SKIP       8  // Teensy → ESP32 → PC のフレームスキップエラー(末端で捕捉)
+
+//-------------------------------------------------------------------------
+//  サーボ設定配列の実体定義 (main.cppでのみ有効化)
+//-------------------------------------------------------------------------
+#ifdef CONFIG_DEFINE_ARRAYS
+
+// L系統のサーボのマウントの設定
+// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
+// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
+// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
+// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
+// 51: JRXBUS (JRPROPO_XBUS)[WIP]
+// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
+int IXL_MT[IXL_MAX] = {
+    43, // [00]頭ヨー
+    0,  // [01]左肩ピッチ
+    0,  // [02]左肩ロール
+    0,  // [03]左肘ヨー
+    0,  // [04]左肘ピッチ
+    0,  // [05]左股ヨー
+    0,  // [06]左股ロール
+    0,  // [07]左股ピッチ
+    0,  // [08]左膝ピッチ
+    0,  // [09]左足首ピッチ
+    0,  // [10]左足首ロール
+    0,  // [11]追加サーボ用
+    0,  // [12]追加サーボ用
+    0,  // [13]追加サーボ用
+    0   // [14]追加サーボ用
+};
+
+// R系統のサーボのマウントの設定
+// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
+// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
+// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
+// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
+// 51: JRXBUS (JRPROPO_XBUS)[WIP]
+// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
+int IXR_MT[IXR_MAX] = {
+    0, // [00]腰ヨー
+    0, // [01]右肩ピッチ
+    0, // [02]右肩ロール
+    0, // [03]右肘ヨー
+    0, // [04]右肘ピッチ
+    0, // [05]右股ヨー
+    0, // [06]右股ロール
+    0, // [07]右股ピッチ
+    0, // [08]右膝ピッチ
+    0, // [09]右足首ピッチ
+    0, // [10]右足首ロール
+    0, // [11]追加サーボ用
+    0, // [12]追加サーボ用
+    0, // [13]追加サーボ用
+    0  // [14]追加サーボ用
+};
+
+// L系統のコード上のサーボIndexに対し, 実際に呼び出すハードウェアのID番号
+int IXL_ID[IXL_MAX] = {
+    0,  // [00]頭ヨー
+    1,  // [01]左肩ピッチ
+    2,  // [02]左肩ロール
+    3,  // [03]左肘ヨー
+    4,  // [04]左肘ピッチ
+    5,  // [05]左股ヨー
+    6,  // [06]左股ロール
+    7,  // [07]左股ピッチ
+    8,  // [08]左膝ピッチ
+    9,  // [09]左足首ピッチ
+    10, // [10]左足首ロール
+    11, // [11]追加サーボ用
+    12, // [12]追加サーボ用
+    13, // [13]追加サーボ用
+    14  // [14]追加サーボ用
+};
+
+// R系統のコード上のサーボIndexに対し, 実際に呼び出すハードウェアのID番号
+int IXR_ID[IXR_MAX] = {
+    0,  // [00]腰ヨー
+    1,  // [01]右肩ピッチ
+    2,  // [02]右肩ロール
+    3,  // [03]右肘ヨー
+    4,  // [04]右肘ピッチ
+    5,  // [05]右股ヨー
+    6,  // [06]右股ロール
+    7,  // [07]右股ピッチ
+    8,  // [08]右膝ピッチ
+    9,  // [09]右足首ピッチ
+    10, // [10]右足首ロール
+    11, // [11]追加サーボ用
+    12, // [12]追加サーボ用
+    13, // [13]追加サーボ用
+    14  // [14]追加サーボ用
+};
+
+// L系統のサーボ回転方向補正(1:変更なし, -1:逆転)
+int IXL_CW[IXL_MAX] = {
+    1, // [00]頭ヨー
+    1, // [01]左肩ピッチ
+    1, // [02]左肩ロール
+    1, // [03]左肘ヨー
+    1, // [04]左肘ピッチ
+    1, // [05]左股ヨー
+    1, // [06]左股ロール
+    1, // [07]左股ピッチ
+    1, // [08]左膝ピッチ
+    1, // [09]左足首ピッチ
+    1, // [10]左足首ロール
+    1, // [11]追加サーボ用
+    1, // [12]追加サーボ用
+    1, // [13]追加サーボ用
+    1  // [14]追加サーボ用
+};
+
+// R系統のサーボ回転方向補正(1:変更なし, -1:逆転)
+int IXR_CW[IXR_MAX] = {
+    1, // [00]腰ヨー
+    1, // [01]右肩ピッチ
+    1, // [02]右肩ロール
+    1, // [03]右肘ヨー
+    1, // [04]右肘ピッチ
+    1, // [05]右股ヨー
+    1, // [06]右股ロール
+    1, // [07]右股ピッチ
+    1, // [08]右膝ピッチ
+    1, // [09]右足首ピッチ
+    1, // [10]右足首ロール
+    1, // [11]追加サーボ用
+    1, // [12]追加サーボ用
+    1, // [13]追加サーボ用
+    1  // [14]追加サーボ用
+};
+
+// L系統のトリム値(degree)
+float IXL_TRIM[IXL_MAX] = {
+    0.0,     // [00]頭ヨー
+    -20.42,  // [01]左肩ピッチ
+    -103.55, // [02]左肩ロール
+    0.85,    // [03]左肘ヨー
+    88.41,   // [04]左肘ピッチ
+    0.0,     // [05]左股ヨー
+    -2.0,    // [06]左股ロール
+    -17.12,  // [07]左股ピッチ
+    -68.54,  // [08]左膝ピッチ
+    -25.7,   // [09]左足首ピッチ
+    0.0,     // [10]左足首ロール
+    0.0,     // [11]追加サーボ用
+    0.0,     // [12]追加サーボ用
+    0.0,     // [13]追加サーボ用
+    0.0      // [14]追加サーボ用
+};
+
+// R系統のトリム値(degree)
+float IXR_TRIM[IXR_MAX] = {
+    -4.28,  // [00]腰ヨー
+    0.68,   // [01]右肩ピッチ
+    -89.41, // [02]右肩ロール
+    0.0,    // [03]右肘ヨー
+    91.83,  // [04]右肘ピッチ
+    0.0,    // [05]右股ヨー
+    1.0,    // [06]右股ロール
+    -21.42, // [07]右股ピッチ
+    -53.68, // [08]右膝ピッチ
+    -24.12, // [09]右足首ピッチ
+    0.0,    // [10]右足首ロール
+    0.0,    // [11]追加サーボ用
+    0.0,    // [12]追加サーボ用
+    0.0,    // [13]追加サーボ用
+    0.0     // [14]追加サーボ用
+};
+
+#endif // CONFIG_DEFINE_ARRAYS
+
+#endif // __MERIDIAN_CONFIG__
+`;
+
+// Configuration definitions
+const CONFIG_DEFS = {
+  basicSettings: [
+    { name: 'MRDM_LEN', type: 'number', default: 90, min: 1, max: 256, desc: 'Meridim array length' },
+    { name: 'FRAME_DURATION', type: 'number', default: 10, min: 1, max: 100, unit: 'ms', desc: 'Frame duration' },
+    { name: 'CHARGE_TIME', type: 'number', default: 200, min: 0, max: 2000, unit: 'ms', desc: 'Capacitor charge wait time at startup' },
+    { name: 'MRD_L_ORIGIDX', type: 'number', default: 20, min: 0, max: 255, desc: 'L system start index' },
+    { name: 'MRD_R_ORIGIDX', type: 'number', default: 50, min: 0, max: 255, desc: 'R system start index' },
+    { name: 'MRD_SERVO_SLOTS', type: 'number', default: 15, min: 1, max: 30, desc: 'Max servos per system' },
+  ],
+  hardwareMount: [
+    { name: 'MOUNT_SD', type: 'bool', default: 1, desc: 'SD card reader' },
+    { name: 'MOUNT_IMUAHRS', type: 'enum', default: 'IMUAHRS_BNO055',
+      options: [
+        { value: 'IMUAHRS_NONE', label: 'None (0)' },
+        { value: 'IMUAHRS_MPU6050', label: 'MPU6050 (1)' },
+        { value: 'IMUAHRS_MPU9250', label: 'MPU9250 (2)' },
+        { value: 'IMUAHRS_BNO055', label: 'BNO055 (3)' }
+      ], desc: 'IMU/AHRS sensor type' },
+    { name: 'MOUNT_PAD', type: 'enum', default: 'PC',
+      options: [
+        { value: 'PC', label: 'PC' },
+        { value: 'MERIMOTE', label: 'MERIMOTE' },
+        { value: 'BLUERETRO', label: 'BLUERETRO' },
+        { value: 'KRR5FH', label: 'KRR5FH' },
+        { value: 'WIIMOTE', label: 'WIIMOTE' }
+      ], desc: 'Joypad type' },
+  ],
+  operationMode: [
+    { name: 'MODE_ESP32_STANDALONE', type: 'bool', default: 0, desc: 'Run without board connection (for testing)' },
+    { name: 'MODE_UDP_RECEIVE', type: 'bool', default: 1, desc: 'Receive data from PC' },
+    { name: 'MODE_UDP_SEND', type: 'bool', default: 1, desc: 'Send data to PC' },
+  ],
+  wifiSettings: [
+    // MODE_ETHER and MODE_FIXED_IP are managed by radio buttons above
+    { name: 'UDP_TIMEOUT', type: 'number', default: 4, min: 0, max: 100, unit: 'ms', desc: 'UDP receive timeout' },
+  ],
+  eepromSettings: [
+    { name: 'EEPROM_SIZE', type: 'number', default: 540, min: 1, max: 4096, unit: 'bytes', desc: 'EEPROM size to use' },
+    { name: 'EEPROM_SET', type: 'bool', default: 0, desc: 'Write config.h values to EEPROM at startup' },
+    { name: 'EEPROM_PROTECT', type: 'bool', default: 0, desc: 'Write-protect EEPROM' },
+    { name: 'EEPROM_LOAD', type: 'bool', default: 1, desc: 'Load EEPROM values at startup' },
+    { name: 'EEPROM_DUMP', type: 'bool', default: 0, desc: 'Dump EEPROM data at startup' },
+    { name: 'EEPROM_STYLE', type: 'enum', default: 'Dec',
+      options: [
+        { value: 'Bin', label: 'Binary' },
+        { value: 'Hex', label: 'Hexadecimal' },
+        { value: 'Dec', label: 'Decimal' }
+      ], desc: 'EEPROM dump display format' },
+  ],
+  checkMode: [
+    { name: 'CHECK_SD_RW', type: 'bool', default: 1, desc: 'Check SD card read/write at startup' },
+    { name: 'CHECK_EEPROM_RW', type: 'bool', default: 0, desc: 'Check EEPROM read/write at startup' },
+  ],
+  serialMonitoring: [
+    { name: 'MONITOR_FRAME_DELAY', type: 'bool', default: 1, desc: 'Show frame delay time' },
+    { name: 'MONITOR_FLOW', type: 'bool', default: 0, desc: 'Show flow information' },
+    { name: 'MONITOR_ERR_SERVO', type: 'bool', default: 0, desc: 'Show servo errors' },
+    { name: 'MONITOR_ERR_ALL', type: 'bool', default: 0, desc: 'Show all receive error rates' },
+    { name: 'MONITOR_SEQ', type: 'bool', default: 0, desc: 'Show sequence number check' },
+    { name: 'MONITOR_PAD', type: 'bool', default: 0, desc: 'Show remote controller data' },
+    { name: 'MONITOR_SUPPRESS_DURATION', type: 'number', default: 8000, min: 0, max: 30000, unit: 'ms', desc: 'Suppress timeout messages after startup' },
+  ],
+  commSettings: [
+    { name: 'I2C0_SPEED', type: 'number', default: 400000, min: 100000, max: 1000000, unit: 'Hz', desc: 'I2C speed' },
+    { name: 'IMUAHRS_INTERVAL', type: 'number', default: 10, min: 1, max: 100, unit: 'ms', desc: 'IMU/AHRS read interval' },
+    { name: 'IMUAHRS_STOCK', type: 'number', default: 4, min: 1, max: 16, desc: 'Moving average sample count' },
+    { name: 'SPI0_SPEED', type: 'number', default: 30000000, min: 1000000, max: 80000000, unit: 'Hz', desc: 'SPI speed' },
+    { name: 'SERIAL_PC_BPS', type: 'number', default: 115200, min: 9600, max: 2000000, unit: 'bps', desc: 'Serial speed for PC' },
+    { name: 'SERIAL_PC_TIMEOUT', type: 'number', default: 2000, min: 100, max: 10000, unit: 'ms', desc: 'Serial connection timeout' },
+  ],
+  joypadSettings: [
+    { name: 'PAD_INIT_TIMEOUT', type: 'number', default: 10000, min: 1000, max: 60000, unit: 'ms', desc: 'Joypad connection timeout at startup' },
+    { name: 'PAD_INTERVAL', type: 'number', default: 10, min: 1, max: 100, desc: 'Joypad read interval (frames). Use 4 for KRC-5FH' },
+    { name: 'PAD_BUTTON_MARGE', type: 'bool', default: 1, descOff: 'AND with Meridim', descOn: 'OR with Meridim', desc: 'Button merge mode' },
+    { name: 'PAD_GENERALIZE', type: 'bool', default: 1, desc: 'Normalize joypad input to PS format' },
+  ],
+  servoSettings: [
+    { name: 'MOUNT_SERVO_TYPE_L', type: 'servo_type', default: 'SERVO_TYPE_KOICS3', desc: 'L system servo type' },
+    { name: 'MOUNT_SERVO_TYPE_R', type: 'servo_type', default: 'SERVO_TYPE_KOICS3', desc: 'R system servo type' },
+    { name: 'SERVO_BAUDRATE_L', type: 'number', default: 1250000, min: 9600, max: 4000000, unit: 'bps', desc: 'L system baudrate' },
+    { name: 'SERVO_BAUDRATE_R', type: 'number', default: 1250000, min: 9600, max: 4000000, unit: 'bps', desc: 'R system baudrate' },
+    { name: 'SERVO_TIMEOUT_L', type: 'number', default: 2, min: 1, max: 100, unit: 'ms', desc: 'L system response timeout' },
+    { name: 'SERVO_TIMEOUT_R', type: 'number', default: 2, min: 1, max: 100, unit: 'ms', desc: 'R system response timeout' },
+    { name: 'SERVO_LOST_ERR_WAIT', type: 'number', default: 6, min: 1, max: 100, desc: 'Frames before servo error' },
+    { name: 'IXL_MAX', type: 'number', default: 15, min: 1, max: 30, desc: 'L system max servos' },
+    { name: 'IXR_MAX', type: 'number', default: 15, min: 1, max: 30, desc: 'R system max servos' },
+  ],
+};
+
+const SERVO_TYPES = [
+  { value: 'SERVO_TYPE_NONE', label: 'NONE (0)' },
+  { value: 'SERVO_TYPE_PWM_S', label: 'PWM_S (1)' },
+  { value: 'SERVO_TYPE_PCA9685', label: 'PCA9685 (11)' },
+  { value: 'SERVO_TYPE_FTBRSX', label: 'FTBRSX (21)' },
+  { value: 'SERVO_TYPE_DXL1', label: 'DXL1 (31)' },
+  { value: 'SERVO_TYPE_DXL2', label: 'DXL2 (32)' },
+  { value: 'SERVO_TYPE_KOICS3', label: 'KOICS3 (43)' },
+  { value: 'SERVO_TYPE_KOPMX', label: 'KOPMX (44)' },
+  { value: 'SERVO_TYPE_JRXBUS', label: 'JRXBUS (51)' },
+  { value: 'SERVO_TYPE_FTCSTS', label: 'FTCSTS (61)' },
+  { value: 'SERVO_TYPE_FTCSCS', label: 'FTCSCS (62)' },
+];
+
+const SERVO_MT_OPTIONS = [
+  { value: 0, label: '0: NONE' },
+  { value: 43, label: '43: KOICS3' },
+  { value: 1, label: '1: PWM_S' },
+  { value: 11, label: '11: PCA9685' },
+  { value: 21, label: '21: FTBRSX' },
+  { value: 31, label: '31: DXL1' },
+  { value: 32, label: '32: DXL2' },
+  { value: 44, label: '44: KOPMX' },
+  { value: 51, label: '51: JRXBUS' },
+  { value: 61, label: '61: FTCSTS' },
+  { value: 62, label: '62: FTCSCS' },
+];
+
+const SERVO_PARTS = {
+  L: ['頭ヨー', '左肩ピッチ', '左肩ロール', '左肘ヨー', '左肘ピッチ',
+      '左股ヨー', '左股ロール', '左股ピッチ', '左膝ピッチ', '左足首ピッチ',
+      '左足首ロール', '追加サーボ用', '追加サーボ用', '追加サーボ用', '追加サーボ用'],
+  R: ['腰ヨー', '右肩ピッチ', '右肩ロール', '右肘ヨー', '右肘ピッチ',
+      '右股ヨー', '右股ロール', '右股ピッチ', '右膝ピッチ', '右足首ピッチ',
+      '右足首ロール', '追加サーボ用', '追加サーボ用', '追加サーボ用', '追加サーボ用'],
+  C: ['センター0', 'センター1', 'センター2', 'センター3', 'センター4',
+      'センター5', 'センター6', 'センター7', 'センター8', 'センター9',
+      'センター10', 'センター11', 'センター12', 'センター13', 'センター14'],
+};
+
+// Current configuration values
+let configValues = {};
+let servoArrays = {
+  IXL_MT: [43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  IXR_MT: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  IXC_MT: Array(15).fill(0),
+  IXL_ID: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+  IXR_ID: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+  IXC_ID: Array(15).fill(0).map((_, i) => i),
+  IXL_CW: Array(15).fill(1),
+  IXR_CW: Array(15).fill(1),
+  IXC_CW: Array(15).fill(1),
+  IXL_TRIM: [0.0, -20.42, -103.55, 0.85, 88.41, 0.0, -2.0, -17.12, -68.54, -25.7, 0.0, 0.0, 0.0, 0.0, 0.0],
+  IXR_TRIM: [-4.28, 0.68, -89.41, 0.0, 91.83, 0.0, 1.0, -21.42, -53.68, -24.12, 0.0, 0.0, 0.0, 0.0, 0.0],
+  IXC_TRIM: Array(15).fill(0.0),
+  IXL_PARTS: ['頭ヨー', '左肩ピッチ', '左肩ロール', '左肘ヨー', '左肘ピッチ', '左股ヨー', '左股ロール', '左股ピッチ', '左膝ピッチ', '左足首ピッチ', '左足首ロール', '追加サーボ用', '追加サーボ用', '追加サーボ用', '追加サーボ用'],
+  IXR_PARTS: ['腰ヨー', '右肩ピッチ', '右肩ロール', '右肘ヨー', '右肘ピッチ', '右股ヨー', '右股ロール', '右股ピッチ', '右膝ピッチ', '右足首ピッチ', '右足首ロール', '追加サーボ用', '追加サーボ用', '追加サーボ用', '追加サーボ用'],
+  IXC_PARTS: ['センター0', 'センター1', 'センター2', 'センター3', 'センター4', 'センター5', 'センター6', 'センター7', 'センター8', 'センター9', 'センター10', 'センター11', 'センター12', 'センター13', 'センター14'],
+};
+
+// Presets
+let presets = {};
+let currentPreset = '';
+
+// Original config.h content (for preserving structure)
+let originalConfigContent = '';
+
+// File System Access API handles
+let loadedDirectoryHandle = null;
+let loadedFileHandle = null;
+let keysDirectoryHandle = null;
+let keysFileHandle = null;
+
+// keys.h values
+let keysValues = {
+  WIFI_AP_SSID: '',
+  WIFI_AP_PASS: '',
+  WIFI_SEND_IP: '',
+  UDP_SEND_PORT: '22222',
+  UDP_RECV_PORT: '22224',
+  FIXED_IP_ADDR: '',
+  FIXED_IP_GATEWAY: '',
+  FIXED_IP_SUBNET: '255.255.255.0',
+  ETHER_LOCAL_IP: '',
+  ETHER_GATEWAY: '',
+  ETHER_SUBNET: '255.255.255.0',
+  ETHER_DNS: '8.8.8.8',
+  ETHER_MAC: ''
+};
+let originalKeysContent = '';
+
+// Undo history (max 100)
+const MAX_HISTORY = 100;
+let undoHistory = [];
+
+function saveState() {
+  const state = {
+    configValues: JSON.parse(JSON.stringify(configValues)),
+    servoArrays: JSON.parse(JSON.stringify(servoArrays))
+  };
+  undoHistory.push(state);
+  if (undoHistory.length > MAX_HISTORY) {
+    undoHistory.shift();
+  }
+}
+
+function undo() {
+  if (undoHistory.length === 0) {
+    notify('No more undo history', 'error');
+    return;
+  }
+  const state = undoHistory.pop();
+  configValues = state.configValues;
+  servoArrays = state.servoArrays;
+  renderAllSections();
+  renderServoTables();
+  notify('Undo', 'success');
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+  initConfigValues();
+  loadDefaultConfig();
+  renderAllSections();
+  renderServoTables();
+  updateConnectionModeRadio();
+  loadPresets();
+});
+
+function initConfigValues() {
+  Object.values(CONFIG_DEFS).flat().forEach(def => {
+    configValues[def.name] = def.default;
+  });
+  // Initialize connection mode values (managed by radio buttons)
+  configValues['MODE_ETHER'] = 0;
+  configValues['MODE_FIXED_IP'] = 0;
+}
+
+function loadDefaultConfig() {
+  // Load embedded config.h as default
+  originalConfigContent = DEFAULT_CONFIG_CONTENT;
+  parseConfigFile(DEFAULT_CONFIG_CONTENT);
+}
+
+function renderAllSections() {
+  Object.entries(CONFIG_DEFS).forEach(([sectionId, defs]) => {
+    const container = document.getElementById(sectionId);
+    if (container) {
+      container.innerHTML = defs.map(def => renderConfigItem(def)).join('');
+    }
+  });
+}
+
+function renderConfigItem(def) {
+  const value = configValues[def.name] ?? def.default;
+  let inputHtml = '';
+  let rangeHtml = '';
+
+  if (def.type === 'number') {
+    rangeHtml = `<span class="config-range">${def.min} - ${def.max}${def.unit ? ' ' + def.unit : ''}</span>`;
+    inputHtml = `<input type="number" id="${def.name}" value="${value}" min="${def.min}" max="${def.max}" onchange="updateValue('${def.name}', this.value)">`;
+  } else if (def.type === 'bool') {
+    inputHtml = `
+      <label class="toggle-switch">
+        <input type="checkbox" id="${def.name}" ${value ? 'checked' : ''} onchange="updateValue('${def.name}', this.checked ? 1 : 0)">
+        <span class="toggle-slider"></span>
+      </label>`;
+  } else if (def.type === 'enum') {
+    const options = def.options.map(opt =>
+      `<option value="${opt.value}" ${value === opt.value ? 'selected' : ''}>${opt.label}</option>`
+    ).join('');
+    inputHtml = `<select id="${def.name}" onchange="updateValue('${def.name}', this.value)">${options}</select>`;
+  } else if (def.type === 'servo_type') {
+    const options = SERVO_TYPES.map(opt =>
+      `<option value="${opt.value}" ${value === opt.value ? 'selected' : ''}>${opt.label}</option>`
+    ).join('');
+    inputHtml = `<select id="${def.name}" onchange="updateValue('${def.name}', this.value)">${options}</select>`;
+  }
+
+  return `
+    <div class="config-item">
+      <div class="config-item-header">
+        <span class="config-name">${def.name}</span>
+        ${rangeHtml}
+      </div>
+      ${inputHtml}
+      <div class="config-desc">${def.desc}</div>
+    </div>`;
+}
+
+function renderServoTables() {
+  ['L', 'R', 'C'].forEach(sys => {
+    const container = document.getElementById(`tab${sys}`);
+    container.innerHTML = renderServoTable(sys);
+  });
+}
+
+function renderServoTable(sys) {
+  const mtKey = `IX${sys}_MT`;
+  const idKey = `IX${sys}_ID`;
+  const cwKey = `IX${sys}_CW`;
+  const trimKey = `IX${sys}_TRIM`;
+  const partsKey = `IX${sys}_PARTS`;
+
+  // Bulk MT options for header
+  const bulkMtOptions = SERVO_MT_OPTIONS.map(opt =>
+    `<option value="${opt.value}">${opt.label}</option>`
+  ).join('');
+
+  let rows = '';
+  for (let i = 0; i < 15; i++) {
+    const mtOptions = SERVO_MT_OPTIONS.map(opt =>
+      `<option value="${opt.value}" ${servoArrays[mtKey][i] === opt.value ? 'selected' : ''}>${opt.label}</option>`
+    ).join('');
+
+    // tabindex: column * 100 + row (so Tab moves down within same column)
+    const partTab = 100 + i;
+    const mtTab = 200 + i;
+    const idTab = 300 + i;
+    const cwTab = 400 + i;
+    const trimTab = 500 + i;
+
+    rows += `
+      <tr draggable="true" data-sys="${sys}" data-idx="${i}"
+          ondragstart="handleDragStart(event)" ondragend="handleDragEnd(event)"
+          ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+        <td class="idx">[${String(i).padStart(2, '0')}]</td>
+        <td class="part"><input type="text" tabindex="${partTab}" value="${servoArrays[partsKey][i]}" onchange="updateServoArray('${partsKey}', ${i}, this.value)"></td>
+        <td><select id="${mtKey}_${i}" tabindex="${mtTab}" onchange="updateServoArray('${mtKey}', ${i}, parseInt(this.value))">${mtOptions}</select></td>
+        <td><input type="number" tabindex="${idTab}" value="${servoArrays[idKey][i]}" min="0" max="31" onchange="updateServoArray('${idKey}', ${i}, parseInt(this.value))"></td>
+        <td>
+          <select tabindex="${cwTab}" onchange="updateServoArray('${cwKey}', ${i}, parseInt(this.value))">
+            <option value="1" ${servoArrays[cwKey][i] === 1 ? 'selected' : ''}>1 (Normal)</option>
+            <option value="-1" ${servoArrays[cwKey][i] === -1 ? 'selected' : ''}>-1 (Reverse)</option>
+          </select>
+        </td>
+        <td><input type="number" tabindex="${trimTab}" value="${servoArrays[trimKey][i]}" step="0.01" min="-180" max="180" onchange="updateServoArray('${trimKey}', ${i}, parseFloat(this.value))"></td>
+      </tr>`;
+  }
+
+  return `
+    <div style="overflow-x: auto;">
+      <table class="servo-table">
+        <thead>
+          <tr>
+            <th>Index</th>
+            <th>Part</th>
+            <th style="position: relative;">
+              <span>Mount (MT)</span>
+              <select class="bulk-select" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%);" onchange="bulkSetMT('${mtKey}', parseInt(this.value)); this.selectedIndex=0;" title="Set all MT">
+                <option value="" disabled selected>All</option>
+                ${bulkMtOptions}
+              </select>
+            </th>
+            <th>HW ID</th>
+            <th>CW</th>
+            <th>Trim (deg)</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function updateValue(name, value) {
+  saveState();
+  configValues[name] = value;
+}
+
+function updateServoArray(arrayName, index, value) {
+  saveState();
+  servoArrays[arrayName][index] = value;
+}
+
+function bulkSetMT(arrayName, value) {
+  saveState();
+  for (let i = 0; i < 15; i++) {
+    servoArrays[arrayName][i] = value;
+    const select = document.getElementById(`${arrayName}_${i}`);
+    if (select) select.value = value;
+  }
+  notify(`All MT set to ${value}`, 'success');
+}
+
+// Drag and drop for row reordering
+let dragSrcRow = null;
+
+function handleDragStart(e) {
+  dragSrcRow = e.target.closest('tr');
+  dragSrcRow.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', dragSrcRow.dataset.idx);
+}
+
+function handleDragEnd(e) {
+  e.target.closest('tr').classList.remove('dragging');
+  document.querySelectorAll('.servo-table tr').forEach(row => {
+    row.classList.remove('drag-over');
+  });
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const row = e.target.closest('tr');
+  if (row && row !== dragSrcRow) {
+    row.classList.add('drag-over');
+  }
+}
+
+function handleDragLeave(e) {
+  e.target.closest('tr')?.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  const targetRow = e.target.closest('tr');
+  if (!targetRow || targetRow === dragSrcRow) return;
+
+  const sys = dragSrcRow.dataset.sys;
+  const fromIdx = parseInt(dragSrcRow.dataset.idx);
+  const toIdx = parseInt(targetRow.dataset.idx);
+
+  if (fromIdx === toIdx) return;
+
+  saveState();
+
+  // Swap data in all related arrays
+  const arrayKeys = [`IX${sys}_MT`, `IX${sys}_ID`, `IX${sys}_CW`, `IX${sys}_TRIM`, `IX${sys}_PARTS`];
+  arrayKeys.forEach(key => {
+    const arr = servoArrays[key];
+    const temp = arr[fromIdx];
+    if (fromIdx < toIdx) {
+      for (let i = fromIdx; i < toIdx; i++) arr[i] = arr[i + 1];
+    } else {
+      for (let i = fromIdx; i > toIdx; i--) arr[i] = arr[i - 1];
+    }
+    arr[toIdx] = temp;
+  });
+
+  // Re-render only the current tab immediately
+  const container = document.getElementById(`tab${sys}`);
+  container.innerHTML = renderServoTable(sys);
+  notify(`Row moved from [${String(fromIdx).padStart(2, '0')}] to [${String(toIdx).padStart(2, '0')}]`, 'success');
+}
+
+function toggleSection(header) {
+  header.parentElement.classList.toggle('collapsed');
+}
+
+function switchTab(event, tabId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+
+// File operations
+async function openConfig() {
+  // Try File System Access API first
+  if ('showOpenFilePicker' in window) {
+    try {
+      const [fileHandle] = await window.showOpenFilePicker({
+        types: [{
+          description: 'Header Files',
+          accept: { 'text/plain': ['.h'] }
+        }],
+        multiple: false
+      });
+
+      const file = await fileHandle.getFile();
+      const content = await file.text();
+
+      // Save file handle for fallback
+      loadedFileHandle = fileHandle;
+
+      // Try to get the parent directory handle
+      try {
+        loadedDirectoryHandle = await fileHandle.getParent?.() || null;
+      } catch (e) {
+        loadedDirectoryHandle = null;
+      }
+
+      saveState();
+      originalConfigContent = content;
+      parseConfigFile(originalConfigContent);
+      renderAllSections();
+      renderServoTables();
+      updateConnectionModeRadio();
+      notify('Config loaded successfully', 'success');
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.error('File System Access API error:', e);
+        // Fallback to traditional input
+        document.getElementById('configFileInput').click();
+      }
+    }
+  } else {
+    // Fallback for browsers without File System Access API
+    document.getElementById('configFileInput').click();
+  }
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const fileName = file.name;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    saveState();
+    originalConfigContent = e.target.result;
+    parseConfigFile(originalConfigContent);
+    renderAllSections();
+    renderServoTables();
+    updateConnectionModeRadio();
+    notify('Config loaded successfully', 'success');
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// Keys.h file operations
+async function loadKeysFile() {
+  if ('showOpenFilePicker' in window) {
+    try {
+      const [fileHandle] = await window.showOpenFilePicker({
+        types: [{
+          description: 'Header Files',
+          accept: { 'text/plain': ['.h'] }
+        }],
+        multiple: false
+      });
+
+      const file = await fileHandle.getFile();
+      const content = await file.text();
+
+      keysFileHandle = fileHandle;
+      try {
+        keysDirectoryHandle = await fileHandle.getParent?.() || null;
+      } catch (e) {
+        keysDirectoryHandle = null;
+      }
+
+      originalKeysContent = content;
+      parseKeysFile(content);
+      renderKeysFields();
+      notify('Keys loaded successfully', 'success');
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.error('File System Access API error:', e);
+        document.getElementById('keysFileInput').click();
+      }
+    }
+  } else {
+    document.getElementById('keysFileInput').click();
+  }
+}
+
+function handleKeysFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    originalKeysContent = e.target.result;
+    parseKeysFile(originalKeysContent);
+    renderKeysFields();
+    notify('Keys loaded successfully', 'success');
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function parseKeysFile(content) {
+  const defineRegex = /#define\s+(\w+)\s+"?([^"\n]+)"?/g;
+  let match;
+  while ((match = defineRegex.exec(content)) !== null) {
+    const name = match[1];
+    let value = match[2].trim();
+    // Remove trailing comment
+    value = value.replace(/\s*\/\/.*$/, '').trim();
+    // Remove surrounding quotes if present
+    value = value.replace(/^"(.*)"$/, '$1');
+    if (keysValues.hasOwnProperty(name)) {
+      keysValues[name] = value;
+    }
+  }
+}
+
+function renderKeysFields() {
+  for (const [key, value] of Object.entries(keysValues)) {
+    // Update all instances of this field across different panels
+    const ids = [
+      `keys_${key}`,
+      `keys_${key}_fixed`,
+      `keys_${key}_wired`
+    ];
+    ids.forEach(id => {
+      const input = document.getElementById(id);
+      if (input) {
+        input.value = value;
+      }
+    });
+  }
+}
+
+function updateKeysValue(name, value) {
+  keysValues[name] = value;
+}
+
+async function saveKeysFile() {
+  const content = generateKeysContent();
+
+  if ('showSaveFilePicker' in window) {
+    try {
+      const options = {
+        suggestedName: 'keys.h',
+        types: [{
+          description: 'Header Files',
+          accept: { 'text/plain': ['.h'] }
+        }]
+      };
+
+      // Use keys directory or config directory
+      if (keysDirectoryHandle) {
+        options.startIn = keysDirectoryHandle;
+      } else if (loadedDirectoryHandle) {
+        try {
+          const srcHandle = await loadedDirectoryHandle.getDirectoryHandle('src', { create: false });
+          options.startIn = srcHandle;
+        } catch (e) {
+          options.startIn = loadedDirectoryHandle;
+        }
+      } else if (keysFileHandle) {
+        options.startIn = keysFileHandle;
+      } else if (loadedFileHandle) {
+        options.startIn = loadedFileHandle;
+      }
+
+      const fileHandle = await window.showSaveFilePicker(options);
+      const writable = await fileHandle.createWritable();
+      await writable.write(content);
+      await writable.close();
+
+      notify('Keys saved', 'success');
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.error('File System Access API error:', e);
+        downloadFile('keys.h', content);
+        notify('Keys saved', 'success');
+      }
+    }
+  } else {
+    downloadFile('keys.h', content);
+    notify('Keys saved', 'success');
+  }
+}
+
+function generateKeysContent() {
+  if (originalKeysContent) {
+    let content = originalKeysContent;
+    for (const [key, value] of Object.entries(keysValues)) {
+      const isNumeric = key === 'UDP_SEND_PORT' || key === 'UDP_RECV_PORT';
+      const regex = new RegExp(`(#define\\s+${key}\\s+)("[^"]*"|\\S+)`);
+      if (isNumeric) {
+        content = content.replace(regex, `$1${value}`);
+      } else {
+        content = content.replace(regex, `$1"${value}"`);
+      }
+    }
+    return content;
+  }
+
+  // Generate new keys.h
+  return `#ifndef __MERIDIAN_KEYS_H__
+#define __MERIDIAN_KEYS_H__
+
+// Wifiアクセスポイントの設定
+#define WIFI_AP_SSID "${keysValues.WIFI_AP_SSID}"
+#define WIFI_AP_PASS "${keysValues.WIFI_AP_PASS}"
+#define WIFI_SEND_IP "${keysValues.WIFI_SEND_IP}"
+
+#define UDP_SEND_PORT ${keysValues.UDP_SEND_PORT}
+#define UDP_RECV_PORT ${keysValues.UDP_RECV_PORT}
+
+// Wifi用のESP32固定IPアドレスの設定
+#define FIXED_IP_ADDR    "${keysValues.FIXED_IP_ADDR}"
+#define FIXED_IP_GATEWAY "${keysValues.FIXED_IP_GATEWAY}"
+#define FIXED_IP_SUBNET  "${keysValues.FIXED_IP_SUBNET}"
+
+// Ethernet用のESP32固定IPアドレスの設定
+#define ETHER_LOCAL_IP "${keysValues.ETHER_LOCAL_IP}"
+#define ETHER_GATEWAY  "${keysValues.ETHER_GATEWAY}"
+#define ETHER_SUBNET   "${keysValues.ETHER_SUBNET}"
+#define ETHER_DNS      "${keysValues.ETHER_DNS}"
+#define ETHER_MAC      "${keysValues.ETHER_MAC}"
+
+#endif // __MERIDIAN_KEYS_H__
+`;
+}
+
+// Connection mode handling
+function updateConnectionMode(mode) {
+  switch (mode) {
+    case 'wifi_dhcp':
+      configValues['MODE_ETHER'] = 0;
+      configValues['MODE_FIXED_IP'] = 0;
+      break;
+    case 'wifi_fixed':
+      configValues['MODE_ETHER'] = 0;
+      configValues['MODE_FIXED_IP'] = 1;
+      break;
+    case 'wired':
+      configValues['MODE_ETHER'] = 1;
+      configValues['MODE_FIXED_IP'] = 0;
+      break;
+  }
+  updateKeysFieldsVisibility(mode);
+}
+
+function updateKeysFieldsVisibility(mode) {
+  const wifiDhcp = document.getElementById('keysWifiDhcp');
+  const wifiFixed = document.getElementById('keysWifiFixed');
+  const wired = document.getElementById('keysWired');
+
+  if (wifiDhcp) wifiDhcp.style.display = mode === 'wifi_dhcp' ? 'grid' : 'none';
+  if (wifiFixed) wifiFixed.style.display = mode === 'wifi_fixed' ? 'grid' : 'none';
+  if (wired) wired.style.display = mode === 'wired' ? 'grid' : 'none';
+}
+
+function syncKeysField(name, value) {
+  // Sync value across all mode panels
+  const ids = [
+    `keys_${name}`,
+    `keys_${name}_fixed`,
+    `keys_${name}_wired`
+  ];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  });
+}
+
+function updateConnectionModeRadio() {
+  const modeEther = configValues['MODE_ETHER'] || 0;
+  const modeFixedIP = configValues['MODE_FIXED_IP'] || 0;
+
+  let mode = 'wifi_dhcp';
+  if (modeEther === 1) {
+    mode = 'wired';
+  } else if (modeFixedIP === 1) {
+    mode = 'wifi_fixed';
+  }
+
+  const radio = document.querySelector(`input[name="connectionMode"][value="${mode}"]`);
+  if (radio) {
+    radio.checked = true;
+  }
+  updateKeysFieldsVisibility(mode);
+}
+
+function parseConfigFile(content) {
+  // Parse #define values
+  const defineRegex = /#define\s+(\w+)\s+(.+?)(?:\s*\/\/.*)?$/gm;
+  let match;
+  while ((match = defineRegex.exec(content)) !== null) {
+    const name = match[1];
+    let value = match[2].trim();
+
+    // Skip non-config defines
+    if (name.startsWith('MCMD_') || name.startsWith('MRD_') || name.startsWith('ERRBIT_') ||
+        name.startsWith('__') || name.startsWith('PIN_') || name.startsWith('C_') ||
+        name.startsWith('L_') || name.startsWith('R_')) continue;
+
+    // Special handling for connection mode (managed by radio buttons)
+    if (name === 'MODE_ETHER' || name === 'MODE_FIXED_IP') {
+      configValues[name] = parseInt(value) ? 1 : 0;
+      continue;
+    }
+
+    // Check if it's a known config
+    const def = Object.values(CONFIG_DEFS).flat().find(d => d.name === name);
+    if (def) {
+      if (def.type === 'number') {
+        configValues[name] = parseInt(value) || parseFloat(value) || def.default;
+      } else if (def.type === 'bool') {
+        configValues[name] = parseInt(value) ? 1 : 0;
+      } else {
+        configValues[name] = value;
+      }
+    }
+  }
+
+  // Parse servo arrays
+  const arrayPatterns = [
+    { regex: /int\s+IXL_MT\[.*?\]\s*=\s*\{([^}]+)\}/s, key: 'IXL_MT', parse: parseInt },
+    { regex: /int\s+IXR_MT\[.*?\]\s*=\s*\{([^}]+)\}/s, key: 'IXR_MT', parse: parseInt },
+    { regex: /int\s+IXL_ID\[.*?\]\s*=\s*\{([^}]+)\}/s, key: 'IXL_ID', parse: parseInt },
+    { regex: /int\s+IXR_ID\[.*?\]\s*=\s*\{([^}]+)\}/s, key: 'IXR_ID', parse: parseInt },
+    { regex: /int\s+IXL_CW\[.*?\]\s*=\s*\{([^}]+)\}/s, key: 'IXL_CW', parse: parseInt },
+    { regex: /int\s+IXR_CW\[.*?\]\s*=\s*\{([^}]+)\}/s, key: 'IXR_CW', parse: parseInt },
+    { regex: /float\s+IXL_TRIM\[.*?\]\s*=\s*\{([^}]+)\}/s, key: 'IXL_TRIM', parse: parseFloat },
+    { regex: /float\s+IXR_TRIM\[.*?\]\s*=\s*\{([^}]+)\}/s, key: 'IXR_TRIM', parse: parseFloat },
+  ];
+
+  arrayPatterns.forEach(({ regex, key, parse }) => {
+    const arrayMatch = content.match(regex);
+    if (arrayMatch) {
+      const lines = arrayMatch[1].split('\n');
+      const values = [];
+      const parts = [];
+      lines.forEach(line => {
+        const numMatch = line.match(/-?\d+\.?\d*/);
+        if (numMatch) {
+          values.push(parse(numMatch[0]));
+          // Extract part name from comment: // [00]PartName
+          const commentMatch = line.match(/\/\/\s*\[\d+\](.+)/);
+          parts.push(commentMatch ? commentMatch[1].trim() : '');
+        }
+      });
+      servoArrays[key] = values.slice(0, 15);
+      while (servoArrays[key].length < 15) servoArrays[key].push(0);
+
+      // Store part names for MT arrays (they have the comments)
+      if (key.endsWith('_MT')) {
+        const partsKey = key.replace('_MT', '_PARTS');
+        const sys = key.includes('IXL') ? 'L' : 'R';
+        servoArrays[partsKey] = parts.slice(0, 15).map((p, i) => p || SERVO_PARTS[sys][i]);
+        while (servoArrays[partsKey].length < 15) {
+          servoArrays[partsKey].push(SERVO_PARTS[sys][servoArrays[partsKey].length]);
+        }
+      }
+    }
+  });
+
+  // Parse embedded presets from config.h
+  parseEmbeddedPresets(content);
+}
+
+function parseEmbeddedPresets(content) {
+  const presetMatch = content.match(/\/\*MERIDIAN_PRESETS_BEGIN\n([\s\S]*?)\nMERIDIAN_PRESETS_END\*\//);
+  if (presetMatch) {
+    try {
+      const loadedPresets = JSON.parse(presetMatch[1]);
+      presets = loadedPresets;
+      savePresetsToStorage();
+      updatePresetSelect();
+      notify('Presets loaded from config.h', 'success');
+    } catch (e) {
+      console.error('Failed to parse embedded presets:', e);
+    }
+  }
+}
+
+async function saveConfig() {
+  let content = generateConfigContent();
+
+  // Try File System Access API first
+  if ('showSaveFilePicker' in window) {
+    try {
+      const options = {
+        suggestedName: 'config.h',
+        types: [{
+          description: 'Header Files',
+          accept: { 'text/plain': ['.h'] }
+        }]
+      };
+
+      // If we have a loaded directory, try to use its src subdirectory
+      if (loadedDirectoryHandle) {
+        try {
+          // Try to get the src subdirectory
+          const srcHandle = await loadedDirectoryHandle.getDirectoryHandle('src', { create: false });
+          options.startIn = srcHandle;
+        } catch (e) {
+          // src directory doesn't exist, use the loaded directory
+          options.startIn = loadedDirectoryHandle;
+        }
+      } else if (loadedFileHandle) {
+        // Fallback to file handle (opens in same directory as loaded file)
+        options.startIn = loadedFileHandle;
+      }
+
+      const fileHandle = await window.showSaveFilePicker(options);
+      const writable = await fileHandle.createWritable();
+      await writable.write(content);
+      await writable.close();
+
+      notify('Config saved', 'success');
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.error('File System Access API error:', e);
+        // Fallback to download
+        downloadFile('config.h', content);
+        notify('Config saved', 'success');
+      }
+    }
+  } else {
+    // Fallback for browsers without File System Access API
+    downloadFile('config.h', content);
+    notify('Config saved', 'success');
+  }
+}
+
+function generateConfigContent() {
+  // If we have original content, try to preserve structure
+  if (originalConfigContent) {
+    let content = originalConfigContent;
+
+    // Remove existing embedded presets
+    content = content.replace(/\n*\/\*MERIDIAN_PRESETS_BEGIN\n[\s\S]*?\nMERIDIAN_PRESETS_END\*\/\n*/g, '');
+
+    // Update #define values
+    Object.entries(configValues).forEach(([name, value]) => {
+      const regex = new RegExp(`(#define\\s+${name}\\s+)([^\\s\\/]+)`, 'g');
+      content = content.replace(regex, `$1${value}`);
+    });
+
+    // Update servo arrays
+    const arrayUpdates = [
+      { key: 'IXL_MT', regex: /(int\s+IXL_MT\[.*?\]\s*=\s*\{)[^}]+(\})/s },
+      { key: 'IXR_MT', regex: /(int\s+IXR_MT\[.*?\]\s*=\s*\{)[^}]+(\})/s },
+      { key: 'IXL_ID', regex: /(int\s+IXL_ID\[.*?\]\s*=\s*\{)[^}]+(\})/s },
+      { key: 'IXR_ID', regex: /(int\s+IXR_ID\[.*?\]\s*=\s*\{)[^}]+(\})/s },
+      { key: 'IXL_CW', regex: /(int\s+IXL_CW\[.*?\]\s*=\s*\{)[^}]+(\})/s },
+      { key: 'IXR_CW', regex: /(int\s+IXR_CW\[.*?\]\s*=\s*\{)[^}]+(\})/s },
+      { key: 'IXL_TRIM', regex: /(float\s+IXL_TRIM\[.*?\]\s*=\s*\{)[^}]+(\})/s, format: v => v.toFixed(2) },
+      { key: 'IXR_TRIM', regex: /(float\s+IXR_TRIM\[.*?\]\s*=\s*\{)[^}]+(\})/s, format: v => v.toFixed(2) },
+    ];
+
+    arrayUpdates.forEach(({ key, regex, format }) => {
+      const values = servoArrays[key].map((v, i) => {
+        const formatted = format ? format(v) : v;
+        const comment = getServoComment(key, i);
+        return `    ${formatted}${i < 14 ? ',' : ' '} // ${comment}`;
+      }).join('\n');
+      content = content.replace(regex, `$1\n${values}\n$2`);
+    });
+
+    // Append presets at the end if any exist
+    content = appendPresetsToContent(content);
+
+    return content;
+  }
+
+  // Generate new content from scratch (fallback)
+  return generateNewConfigContent();
+}
+
+function appendPresetsToContent(content) {
+  // Only append if there are presets
+  if (Object.keys(presets).length === 0) {
+    return content;
+  }
+
+  // Ensure content ends with proper structure
+  content = content.trimEnd();
+
+  // Add presets as a comment block at the end
+  const presetsJson = JSON.stringify(presets, null, 2);
+  const presetBlock = `\n\n/*MERIDIAN_PRESETS_BEGIN\n${presetsJson}\nMERIDIAN_PRESETS_END*/\n`;
+
+  return content + presetBlock;
+}
+
+function getServoComment(key, index) {
+  const sys = key.includes('IXL') ? 'L' : 'R';
+  const partsKey = `IX${sys}_PARTS`;
+  const partName = servoArrays[partsKey][index] || SERVO_PARTS[sys][index];
+  return `[${String(index).padStart(2, '0')}]${partName}`;
+}
+
+function generateNewConfigContent() {
+  // This would generate a complete new config.h - simplified for brevity
+  return `// Generated by Meridian Config Editor\n// Please use "Load Config" to load your original config.h first.`;
+}
+
+function downloadFile(filename, content) {
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Preset operations
+function loadPresets() {
+  const saved = localStorage.getItem('meridian_presets');
+  if (saved) {
+    presets = JSON.parse(saved);
+    updatePresetSelect();
+  }
+}
+
+function savePresetsToStorage() {
+  localStorage.setItem('meridian_presets', JSON.stringify(presets));
+}
+
+function updatePresetSelect() {
+  const select = document.getElementById('presetSelect');
+  select.innerHTML = '<option value="">-- Select --</option>' +
+    Object.keys(presets).map(name =>
+      `<option value="${name}" ${name === currentPreset ? 'selected' : ''}>${name}</option>`
+    ).join('');
+}
+
+document.getElementById('presetSelect').addEventListener('change', function() {
+  const name = this.value;
+  if (name && presets[name]) {
+    loadPreset(name);
+  }
+});
+
+function loadPreset(name) {
+  const preset = presets[name];
+  if (!preset) return;
+
+  saveState();
+  configValues = { ...preset.configValues };
+  servoArrays = JSON.parse(JSON.stringify(preset.servoArrays));
+  if (preset.keysValues) {
+    keysValues = { ...preset.keysValues };
+  }
+  currentPreset = name;
+
+  renderAllSections();
+  renderServoTables();
+  updateConnectionModeRadio();
+  renderKeysFields();
+  notify(`Preset "${name}" loaded`, 'success');
+}
+
+function savePreset() {
+  if (currentPreset) {
+    presets[currentPreset] = {
+      configValues: { ...configValues },
+      servoArrays: JSON.parse(JSON.stringify(servoArrays)),
+      keysValues: { ...keysValues }
+    };
+    savePresetsToStorage();
+    notify(`Preset "${currentPreset}" saved`, 'success');
+  } else {
+    addPreset();
+  }
+}
+
+function addPreset() {
+  showModal('New Preset', 'Enter preset name:', (name) => {
+    if (name && name.trim()) {
+      // Use selected preset's values if available, otherwise use current values
+      if (currentPreset && presets[currentPreset]) {
+        presets[name.trim()] = {
+          configValues: { ...presets[currentPreset].configValues },
+          servoArrays: JSON.parse(JSON.stringify(presets[currentPreset].servoArrays)),
+          keysValues: presets[currentPreset].keysValues ? { ...presets[currentPreset].keysValues } : { ...keysValues }
+        };
+      } else {
+        presets[name.trim()] = {
+          configValues: { ...configValues },
+          servoArrays: JSON.parse(JSON.stringify(servoArrays)),
+          keysValues: { ...keysValues }
+        };
+      }
+      currentPreset = name.trim();
+      savePresetsToStorage();
+      updatePresetSelect();
+      notify(`Preset "${name}" created`, 'success');
+    }
+  });
+}
+
+function renamePreset() {
+  if (!currentPreset) {
+    notify('Select a preset first', 'error');
+    return;
+  }
+  showModal('Rename Preset', 'Enter new name:', (name) => {
+    if (name && name.trim() && name !== currentPreset) {
+      presets[name.trim()] = presets[currentPreset];
+      delete presets[currentPreset];
+      currentPreset = name.trim();
+      savePresetsToStorage();
+      updatePresetSelect();
+      notify(`Preset renamed to "${name}"`, 'success');
+    }
+  }, currentPreset);
+}
+
+function deletePreset() {
+  if (!currentPreset) {
+    notify('Select a preset first', 'error');
+    return;
+  }
+  if (confirm(`Delete preset "${currentPreset}"?`)) {
+    delete presets[currentPreset];
+    currentPreset = '';
+    savePresetsToStorage();
+    updatePresetSelect();
+    notify('Preset deleted', 'success');
+  }
+}
+
+// Modal
+function showModal(title, placeholder, callback, defaultValue = '') {
+  document.getElementById('modalTitle').textContent = title;
+  const input = document.getElementById('modalInput');
+  input.placeholder = placeholder;
+  input.value = defaultValue;
+  document.getElementById('modalOverlay').classList.add('active');
+  input.focus();
+
+  const confirmBtn = document.getElementById('modalConfirm');
+  confirmBtn.onclick = () => {
+    callback(input.value);
+    closeModal();
+  };
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+// Notifications
+function notify(message, type = '') {
+  const notif = document.createElement('div');
+  notif.className = `notification ${type}`;
+  notif.textContent = message;
+  document.body.appendChild(notif);
+  setTimeout(() => notif.remove(), 3000);
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  const mod = e.ctrlKey || e.metaKey;
+  if (e.key === 'Escape') closeModal();
+  if (mod && e.key === 's') {
+    e.preventDefault();
+    saveConfig();
+  }
+  if (mod && e.key === 'o') {
+    e.preventDefault();
+    openConfig();
+  }
+  if (mod && e.key === 'z') {
+    e.preventDefault();
+    undo();
+  }
+});
+</script>
+</body>
+</html>
