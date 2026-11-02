@@ -76,9 +76,9 @@ public:
   /// @param a_max サーボの最大数.
   /// @param a_mount サーボのマウント状態を示す配列.
   /// @param a_id サーボIDの配列.
-  void print_servo_ids(const char *a_label, int a_max, int *a_mount, const int *a_id) {
+  void print_servo_ids(const char *a_label, int a_max, const int *a_mount, const int *a_id) {
     m_serial.print(a_label);
-    for (int i = 0; i <= a_max; i++) {
+    for (int i = 0; i < a_max; i++) {
       if (a_mount[i] != 0) {
         if (a_id[i] < 10) {
           m_serial.print(" ");
@@ -94,7 +94,7 @@ public:
 
   /// @brief マウントされているサーボのIDを表示する.
   /// @param a_sv サーボパラメータの構造体.
-  void servo_mounts_2lines(ServoParam a_sv) {
+  void servo_mounts_2lines(const ServoParam &a_sv) {
     print_servo_ids("UART_L Servos mounted: ", a_sv.num_max, a_sv.ixl_mount, a_sv.ixl_id);
     print_servo_ids("UART_R Servos mounted: ", a_sv.num_max, a_sv.ixr_mount, a_sv.ixr_id);
   }
@@ -116,44 +116,38 @@ public:
       m_serial.print(" protocol : ");
 
       switch (a_servo_type) {
-      case 1:
+      case PWM_S:
         m_serial.print("single PWM");
-        m_serial.println(" - Not supported yet.");
+        m_serial.println(" - used per slot (IXL_MT/IXR_MT), not as a line type.");
         break;
-      case 11:
+      case PCA9685:
         m_serial.print("I2C_PCA9685 to PWM");
-        m_serial.println(" - Not supported yet.");
+        m_serial.println(" - used per slot (IXL_MT/IXR_MT), not as a line type.");
         break;
-      case 21:
-        m_serial.print("RSxTTL (FUTABA)");
-        m_serial.println(" - Not supported yet.");
+      case FTBRSX:
+        m_serial.println("RS30x TTL(FUTABA)");
         break;
-      case 31:
-        m_serial.print("DYNAMIXEL Protocol 1.0");
-        m_serial.println(" - Not supported yet.");
+      case DXL1:
+        m_serial.println("DYNAMIXEL Protocol 1.0(AX/RX/MX)");
         break;
-      case 32:
-        m_serial.print("DYNAMIXEL Protocol 2.0");
-        m_serial.println(" - Not supported yet.");
+      case DXL2:
+        m_serial.println("DYNAMIXEL Protocol 2.0(X series)");
         break;
-      case 43:
+      case KOICS3:
         m_serial.println("ICS3.5/3.6(KONDO,KRS)");
         break;
-      case 44:
-        m_serial.print("PMX(KONDO)");
-        m_serial.println(" - Not supported yet.");
+      case KOPMX:
+        m_serial.println("PMX(KONDO)");
         break;
-      case 51:
-        m_serial.print("XBUS(JR PROPO)");
-        m_serial.println(" - Not supported yet.");
+      case JRXBUS:
+        m_serial.println("XBUS(JR PROPO)");
         break;
-      case 61:
-        m_serial.print("STS(FEETECH)");
-        m_serial.println(" - Not supported yet.");
+      case FTCSTS:
+      case FTCSCS:
+        m_serial.println("STS/SCS(FEETECH)");
         break;
-      case 62:
-        m_serial.print("SCS(FEETECH)");
-        m_serial.println(" - Not supported yet.");
+      case HTCHSR:
+        m_serial.println("HSR(Hitec)");
         break;
       default:
         m_serial.println(" Not defined. ");

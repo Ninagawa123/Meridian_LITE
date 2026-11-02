@@ -84,28 +84,60 @@ UnionEEPROM mrd_eeprom_read() {
   return read_data_tmp;
 }
 
+/// @brief サーボ設定の90語(EEPROMの[1][*]と同じ並び. [20+i*2]:設定ワード, [21+i*2]:トリム. R系統は[50]から)に,
+///        サーボの設定が書かれているか. 未書き込み(マウントが1つもない)や消去状態(すべて0xFFFF)なら false.
+/// @param a_words サーボ設定の90語.
+/// @param a_num 調べるスロット数.
+bool mrd_eeprom_servo_words_valid(const int16_t *a_words, int a_num) {
+  bool mounted_tmp = false;
+  bool erased_tmp = true;
+  for (int i = 0; i < a_num; i++) {
+    const uint16_t l_tmp = uint16_t(a_words[20 + i * 2]);
+    const uint16_t r_tmp = uint16_t(a_words[50 + i * 2]);
+    mounted_tmp = mounted_tmp || (l_tmp & 0x0001) || (r_tmp & 0x0001);
+    erased_tmp = erased_tmp && l_tmp == 0xFFFF && r_tmp == 0xFFFF;
+  }
+  return mounted_tmp && !erased_tmp;
+}
+
+/// @brief サーボ設定の90語(EEPROMの[1][*]と同じ並び)をサーボ値構造体に反映する.
+///        マウントは config.h の IXL_MT/IXR_MT でUARTのサーボとしたスロットだけ有効で, この語で外すことだけできる.
+/// @param a_sv サーボ設定を保持する構造体.
+/// @param a_words サーボ設定の90語.
+void mrd_eeprom_servo_words_apply(ServoParam &a_sv, const int16_t *a_words) {
+  for (int i = 0; i < a_sv.num_max; i++) {
+    const uint16_t l_tmp = uint16_t(a_words[20 + i * 2]);
+    const uint16_t r_tmp = uint16_t(a_words[50 + i * 2]);
+    // 各サーボのマウント有無(bit0)
+    a_sv.ixl_mount[i] = (l_tmp & 0x0001) && IXL_MT[i] != NOSERVO && !mrd_servo_is_pwm_type(IXL_MT[i]);
+    a_sv.ixr_mount[i] = (r_tmp & 0x0001) && IXR_MT[i] != NOSERVO && !mrd_servo_is_pwm_type(IXR_MT[i]);
+    // 各サーボの実サーボ呼び出しID番号(bit1-7)
+    a_sv.ixl_id[i] = (l_tmp >> 1) & 0x007F;
+    a_sv.ixr_id[i] = (r_tmp >> 1) & 0x007F;
+    // 各サーボの回転方向(bit8)
+    a_sv.ixl_cw[i] = ((l_tmp >> 8) & 0x0001) ? 1 : -1;
+    a_sv.ixr_cw[i] = ((r_tmp >> 8) & 0x0001) ? 1 : -1;
+    // 各サーボの直立デフォルト角度,トリム値(degree小数2桁までを100倍した値で格納されているものを展開)
+    a_sv.ixl_trim[i] = a_words[21 + i * 2] / 100.0f;
+    a_sv.ixr_trim[i] = a_words[51 + i * 2] / 100.0f;
+  }
+}
+
 /// @brief EEPROMの内容を読み込みサーボ値構造体に反映する.
+///        EEPROMにサーボの設定が書かれていなければ(未書き込み, 消去状態)反映せず, いまの値(config)のままにする.
 /// @param a_sv サーボ設定を保持する構造体.
 /// @param a_monitor シリアルモニタへのデータ表示.
 /// @param a_serial 出力先シリアルの指定.
-/// @return 終了時にtrueを返す.
+/// @return 反映した場合はtrue, EEPROMにサーボの設定がなければfalseを返す.
 bool mrd_eeprom_load_servosettings(ServoParam &a_sv, bool a_monitor, HardwareSerial &a_serial) {
-  a_serial.println("Load and set servo settings from EEPROM.");
   UnionEEPROM array_tmp = mrd_eeprom_read();
+  if (!mrd_eeprom_servo_words_valid(array_tmp.saval[1], a_sv.num_max)) {
+    a_serial.println("No servo settings in EEPROM. Keep the servo settings of config.h.");
+    return false;
+  }
+  a_serial.println("Load and set servo settings from EEPROM.");
+  mrd_eeprom_servo_words_apply(a_sv, array_tmp.saval[1]);
   for (int i = 0; i < a_sv.num_max; i++) {
-    // 各サーボのマウント有無
-    a_sv.ixl_mount[i] = static_cast<bool>(array_tmp.saval[1][20 + i * 2] & 0x0001); // bit0:マウント有無
-    a_sv.ixr_mount[i] = static_cast<bool>(array_tmp.saval[1][50 + i * 2] & 0x0001); // bit0:マウント有無
-    // 各サーボの実サーボ呼び出しID番号
-    a_sv.ixl_id[i] = static_cast<uint8_t>(array_tmp.saval[1][20 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
-    a_sv.ixr_id[i] = static_cast<uint8_t>(array_tmp.saval[1][50 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
-    // 各サーボの回転方向(正転・逆転)
-    a_sv.ixl_cw[i] = static_cast<int8_t>((array_tmp.saval[1][20 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
-    a_sv.ixr_cw[i] = static_cast<int8_t>((array_tmp.saval[1][50 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
-    // 各サーボの直立デフォルト角度,トリム値(degree小数2桁までを100倍した値で格納されているものを展開)
-    a_sv.ixl_trim[i] = array_tmp.saval[1][21 + i * 2] / 100.0f;
-    a_sv.ixr_trim[i] = array_tmp.saval[1][51 + i * 2] / 100.0f;
-
     if (a_monitor) {
       a_serial.print("L-idx:");
       a_serial.print(mrd_pddstr(i, 2, 0, false));

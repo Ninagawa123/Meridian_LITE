@@ -9,9 +9,54 @@
 #include <MPU6050_6Axis_MotionApps20.h> // MPU6050用
 #include <Meridian.h>                   // Meridianのライブラリ導入
 extern MERIDIANFLOW::Meridian mrd;
-#include <IcsHardSerialClass.h> // ICSサーボのインスタンス設定
-extern IcsHardSerialClass ics_L;
-extern IcsHardSerialClass ics_R;
+class MrdHalfDuplexUart;         // 半二重UARTバス (mrd_servo.h で定義)
+class IcsHalfDuplexClass;        // ICSサーボ (mrd_module/sv_ics.h で定義)
+class FeetechHalfDuplexClass;    // FEETECHサーボ (mrd_module/sv_ftc.h で定義)
+class Dynamixel2HalfDuplexClass; // DYNAMIXEL 2.0サーボ (mrd_module/sv_dxl2.h で定義)
+class FutabaHalfDuplexClass;     // FUTABA RS30xサーボ (mrd_module/sv_ftbrx.h で定義)
+class XbusHalfDuplexClass;       // JR XBUSサーボ (mrd_module/sv_xbus.h で定義)
+class HitecHalfDuplexClass;      // Hitec HSRサーボ (mrd_module/sv_hitec.h で定義)
+class PmxHalfDuplexClass;        // KONDO PMXサーボ (mrd_module/sv_pmx.h で定義)
+class Dynamixel1HalfDuplexClass; // DYNAMIXEL 1.0サーボ (mrd_module/sv_dxl1.h で定義)
+extern MrdHalfDuplexUart sv_bus_l;
+extern MrdHalfDuplexUart sv_bus_r;
+extern IcsHalfDuplexClass ics_l;
+extern IcsHalfDuplexClass ics_r;
+extern FeetechHalfDuplexClass ftc_l;
+extern FeetechHalfDuplexClass ftc_r;
+extern Dynamixel2HalfDuplexClass dxl2_l;
+extern Dynamixel2HalfDuplexClass dxl2_r;
+extern FutabaHalfDuplexClass ftb_l;
+extern FutabaHalfDuplexClass ftb_r;
+extern XbusHalfDuplexClass xbus_l;
+extern XbusHalfDuplexClass xbus_r;
+extern HitecHalfDuplexClass htc_l;
+extern HitecHalfDuplexClass htc_r;
+extern PmxHalfDuplexClass pmx_l;
+extern PmxHalfDuplexClass pmx_r;
+extern Dynamixel1HalfDuplexClass dxl1_l;
+extern Dynamixel1HalfDuplexClass dxl1_r;
+
+/// @brief ピンを LED 以外に使うか: 本体PWM(PWM_PIN_MODE 1), I2C1(PCA9685 の PWM_PIN_MODE 2).
+inline bool mrd_pin_used_for_other(int a_pin) {
+  if (PWM_PIN_MODE == 1 && (a_pin == PIN_PWM_0 || a_pin == PIN_PWM_1)) {
+    return true;
+  }
+  return PWM_PIN_MODE == 2 && (a_pin == PIN_I2C1_SDA || a_pin == PIN_I2C1_SCL);
+}
+
+/// @brief エラーLEDのピン(PIN_ERR_LED). そのピンを LED 以外に使うときは LED なし(-1).
+inline int mrd_pin_err_led() { return (PIN_ERR_LED >= 0 && !mrd_pin_used_for_other(PIN_ERR_LED)) ? PIN_ERR_LED : -1; }
+
+/// @brief Bluetooth接続確認用LEDのピン(PIN_LED_BT). そのピンを LED 以外に使うときは LED なし(-1).
+inline int mrd_pin_led_bt() { return (PIN_LED_BT >= 0 && !mrd_pin_used_for_other(PIN_LED_BT)) ? PIN_LED_BT : -1; }
+
+/// @brief LEDを点灯/消灯する. ピン番号が負(ピンをPWM等に使うためLEDなし)なら何もしない.
+inline void mrd_led_write(int a_pin, int a_val) {
+  if (a_pin >= 0) {
+    digitalWrite(a_pin, a_val);
+  }
+}
 
 //------------------------------------------------------------------------------------
 //  列挙型
@@ -25,22 +70,27 @@ enum UartLine { // サーボ系統の列挙型(L,R,C)
 
 enum ServoType { // サーボプロトコルのタイプ
   NOSERVO = 0,   // サーボなし
-  PWM_S = 1,     // Single PWM (WIP)
-  PCA9685 = 11,  // I2C_PCA9685 to PWM (WIP)
-  FTBRSX = 21,   // FUTABA_RSxTTL (WIP)
-  DXL1 = 31,     // DYNAMIXEL 1.0 (WIP)
-  DXL2 = 32,     // DYNAMIXEL 2.0 (WIP)
+  PWM_S = 1,     // 本体ピンのPWM(スロット単位で使用. sv_pwm.h)
+  PCA9685 = 11,  // I2C_PCA9685 to PWM(スロット単位で使用. sv_pwm.h)
+  FTBRSX = 21,   // FUTABA_RSxTTL (RS30x)
+  DXL1 = 31,     // DYNAMIXEL 1.0 (AX/RX/EX/MX)
+  DXL2 = 32,     // DYNAMIXEL 2.0 (Xシリーズ)
   KOICS3 = 43,   // KONDO_ICS 3.5 / 3.6
-  KOPMX = 44,    // KONDO_PMX (WIP)
-  JRXBUS = 51,   // JRPROPO_XBUS (WIP)
-  FTCSTS = 61,   // FEETECH_STS (WIP)
-  FTCSCS = 62    // FEETECH_SCS (WIP)
+  KOPMX = 44,    // KONDO_PMX (RS-485)
+  JRXBUS = 51,   // JRPROPO_XBUS
+  FTCSTS = 61,   // FEETECH_STS
+  FTCSCS = 62,   // FEETECH_SCS
+  HTCHSR = 71    // Hitec_HSR (HMIシリアル)
 };
+
+/// @brief UARTを使わないスロットのサーボタイプか(1:本体PWM, 11:PCA9685).
+///        このスロットはUARTの系統では扱わず, PWM出力の対応表(sv_pwm.h)から指令値として参照される.
+inline bool mrd_servo_is_pwm_type(int a_type) { return a_type == PWM_S || a_type == PCA9685; }
 
 enum ImuAhrsType { // 6軸9軸センサ種の列挙型(NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS)
   NO_IMU = 0,      // IMU/AHRS なし.
   MPU6050_IMU = 1, // MPU6050
-  MPU9250_IMU = 2, // MPU9250(未設定)
+  MPU9250_IMU = 2, // MPU9250
   BNO055_AHRS = 3  // BNO055
 };
 
@@ -102,11 +152,12 @@ TaskHandle_t thp[4];                   // マルチスレッドのタスクハ�
 typedef union {
   short sval[MRDM_LEN + 4];           // short型で90個の配列データを持つ
   unsigned short usval[MRDM_LEN + 2]; // 上記のunsigned short型
-  uint8_t bval[+4];                   // byte型で180個の配列データを持つ
+  uint8_t bval[MRDM_BYTE + 4];        // byte型で180個の配列データを持つ
   uint8_t ubval[MRDM_BYTE + 4];       // 上記のunsigned byte型
 } Meridim90Union;
 Meridim90Union s_udp_meridim;       // Meridim配列データ送信用(short型, センサや角度は100倍値)
 Meridim90Union r_udp_meridim;       // Meridim配列データ受信用
+Meridim90Union r_udp_meridim_last;  // 最後にチェックサムが正しかった受信データ(チェックサム不正のフレームで使う)
 Meridim90Union s_udp_meridim_dummy; // SPI送信ダミー用
 
 // フラグ用変数
@@ -207,6 +258,10 @@ struct AhrsValue {
   float ypr[3];           // [roll, pitch, yaw]   roll/pitch/yaw container and gravity vector
   float yaw_origin = 0;   // ヨー軸の補正センター値
   float yaw_source = 0;   // ヨー軸のソースデータ保持用
+  float roll_origin = 0;  // ロール軸の補正センター値(MCMD_SENSOR_ALL_CALIB)
+  float roll_source = 0;  // ロール軸のソースデータ保持用
+  float pitch_origin = 0; // ピッチ軸の補正センター値(MCMD_SENSOR_ALL_CALIB)
+  float pitch_source = 0; // ピッチ軸のソースデータ保持用
 
   float read[16]; // mpuからの読み込んだ一次データacc_x,y,z,gyro_x,y,z,mag_x,y,z,gr_x,y,z,rpy_r,p,y,temp
 
@@ -219,10 +274,13 @@ struct AhrsValue {
   VectorInt16 gyro;                    // [x, y, z]            角速度センサの測定値
   VectorInt16 mag;                     // [x, y, z]            磁力センサの測定値
   long temperature;                    // センサの温度測定値
+  float mag_scale[3] = {0.15f, 0.15f, 0.15f}; // MPU9250(AK8963)の磁気センサ感度(uT/LSB, 感度補正込み)
+  bool mag_available = false;                // MPU9250(AK8963)の磁気センサを検出したか
 };
 AhrsValue ahrs;
 
-// サーボ用変数
+// サーボ用変数. 各配列は IXL_MAX / IXR_MAX の長さで, Meridim の1系統のスロット数(MRD_SERVO_SLOTS)と同じであること
+static_assert(IXL_MAX == MRD_SERVO_SLOTS && IXR_MAX == MRD_SERVO_SLOTS, "IXL_MAX and IXR_MAX must equal MRD_SERVO_SLOTS");
 struct ServoParam {
   // サーボの最大接続 (サーボ送受信のループ処理数)
   int num_max;
@@ -243,7 +301,7 @@ struct ServoParam {
   float ixl_trim[IXL_MAX]; // L系統
   float ixr_trim[IXR_MAX]; // R系統
 
-  // 各サーボのベンダーと型番(config.hで設定)
+  // 各サーボの種類(IXL_MT/IXR_MT の番号. config.hで設定)
   float ixl_type[IXL_MAX]; // L系統
   float ixr_type[IXR_MAX]; // R系統
 
@@ -252,6 +310,10 @@ struct ServoParam {
   float ixr_tgt[IXR_MAX] = {0};      // R系統の目標値
   float ixl_tgt_past[IXL_MAX] = {0}; // L系統の前回の値
   float ixr_tgt_past[IXR_MAX] = {0}; // R系統の前回の値
+  float ixl_cmd_past[IXL_MAX] = {0}; // L系統の前回の指令値(移動量制限の基準)
+  float ixr_cmd_past[IXR_MAX] = {0}; // R系統の前回の指令値(移動量制限の基準)
+  bool ixl_base_ok[IXL_MAX] = {0};   // L系統の移動量制限の基準があるか(起動直後はなし)
+  bool ixr_base_ok[IXR_MAX] = {0};   // R系統の移動量制限の基準があるか(起動直後はなし)
 
   // サーボのエラーカウンタ配列
   int ixl_err[IXL_MAX] = {0}; // L系統
@@ -262,6 +324,16 @@ struct ServoParam {
   uint16_t ixr_stat[IXR_MAX] = {0}; // R系統サーボのコンディションステータス配列
 };
 ServoParam sv;
+
+// 応答待ち時間の集計(mrd_servo_lines_run で集計)
+// 系統ごとに, 受信切替から受信完了までの時間(系統ごとの応答の速さ).
+struct MrdHduartStat {
+  uint32_t sum_us[2] = {0, 0};
+  uint32_t max_us[2] = {0, 0};
+  uint32_t count[2] = {0, 0};
+  uint16_t fail[2][5] = {{0}}; // 系統ごとの受信失敗の種類別回数(MrdHalfDuplexUart::RxResult)
+};
+MrdHduartStat hduart_stat;
 
 // モニタリング設定
 struct MrdMonitor {

@@ -100,6 +100,21 @@ ESP32-DevKitC単独動作テスト用に, config.hの設定を下記のように
 ...
 ```
   
+### meridian_config_editor.html での設定  
+config.h はテキストエディタで直接書き換えるほか, リポジトリ直下の meridian_config_editor.html を使って画面上で設定することもできます.  
+  
+<img width=100% alt="meridian_config_editor" src="./docs/images/config_editor.png">  
+  
+1. meridian_config_editor.html を Chrome または Edge で開きます(ダブルクリックまたはブラウザにドラッグ).  
+2. 「Load Config」で Meridian_LITE_for_ESP32/src/config.h を選びます.  
+3. 各項目を設定します. 上から Operation Mode, Hardware Mount, EEPROM, WiFi / LAN, Meridim Basic, Check Mode, Serial Monitoring, I2C / SPI / Serial, Joypad, Servo Settings, Servo Arrays(L/R系統のサーボの種類, ID, 回転方向, トリム)の順に並んでいます.  
+4. 「Save Config」で config.h に上書き保存します. 保存しない設定や, 画面にない設定(機種ごとのサーボの設定, PWMの対応表など)は config.h の内容がそのまま残ります.  
+  
+- MODE_ESP32_STANDALONE が ON のときは説明が赤く表示されます. ESP32 単体でのテスト用の設定なので, ボードに挿してサーボを動かすときは OFF にしてください.  
+- config.h の値が選択肢にない場合は「(current)」「(not allowed here)」として表示され, そのまま保存されます.  
+- WiFi / LAN Settings の「Load Keys」「Save Keys」で keys.h も読み書きできます.  
+- プリセット(Preset の Add / Save Preset)はブラウザに保存され, Save Config のときに config.h の末尾にも書き込まれます. プリセットには keys.h の値(WiFiのパスワード等)も含まれるため, config.h を公開する場合は末尾の MERIDIAN_PRESETS のブロックを削除してください.  
+  
 ## ビルドの確認とESP32-DevKitCへのアップロード（書き込み）  
 
 ### ビルドの確認
@@ -169,7 +184,7 @@ Meridian consoleを起動し, ESP32DevKitCの電源が入っていると自動�
 - 電源(KHR付属バッテリー, 安定化電源等)
 - Meridian Board - LITE -
   
-## Meridian Boaard - LITE - について  
+## Meridian Board - LITE - について  
 <img width="400" alt="lite_pinassign" src="./docs/images/Meridian_LITE_Board.png">  
   
 "Meridian board -LITE-" はサーボ制御用の半二重通信回路2系統とSPI,I2Cなどの基本的な入出力ピンを備えたボードです. ESP32DevKitCを搭載し, サーボやセンサーを接続して使用します.  
@@ -220,7 +235,7 @@ Wiiリモコンにも対応しており, config.hの#define MOUNT_PAD WIIMOTEと
 
 ### config.hの修正  
 config.hの内容について, お手持ちのKHR-3HVの状況にあわせ適度に更新してください.  
-設定の内容については, コード内にコメントを記しています.  
+設定の内容については, コード内にコメントを記しています. meridian_config_editor.html でも設定できます(「Getting started 1」の「meridian_config_editor.html での設定」を参照).  
 主な修正点は下記の通りです.  
 
 ```  
@@ -343,7 +358,26 @@ config.hにて「#define MOUNT_PAD WIIMOTE」と設定してボードにアッ�
 また, HOMEボタンがアナログスティックのキャリブレーション（リセット）として機能します.  
   
 # バージョン更新履歴  
-  
+
+### 2026.11.03 v1.1.3  
+サーボとセンサを拡張しました.  
+- サーボ: KONDO ICS, FEETECH STS/SCS, DYNAMIXEL Protocol 1.0/2.0, FUTABA, XBUS, Hitec, PMX, PWM, PCA9685 に対応. L/R 系統ごとに1種類を config.h の MOUNT_SERVO_TYPE_L/R で選びます(1系統での混在は不可).  
+- 1フレームあたりのサーボ角度の変化量を SERVO_STEP_MAX(度) で制限します.  
+- センサ: MPU6050/MPU9250(磁気センサ含む)/BNO055 を config.h の MOUNT_IMUAHRS で選べるようにしました. ジャイロ補正の固定回数化, BNO055 のロール・ピッチ原点に対応. コマンド10003でロール・ピッチ・ヨーの原点をリセットします.  
+- ビルド環境を espressif32@6.12.0 に固定しました.  
+
+動作のバグを修正しました.  
+- 10100(トリム設定モード開始)でサーボがトリム量だけ急に動く問題.  
+- 10101(トリム保存)で EEPROM の他の領域が0で消える / そのフレームでサーボが脱力する / 保存したトリムがすぐ反映されない問題.  
+- チェックサム NG のフレームで前回の返信値をサーボ指令に使う問題(最後に正常に受信したフレームを使います).  
+- EEPROM が空のときにその内容でサーボ設定を上書きする問題(config.h の設定を使います).  
+- サーボ数の範囲外アクセス, IMU の種類が BNO055 に固定されていた問題, KRR5FH のアナログ値の桁あふれ, Wiiリモコンのスティック値, 単体モードのサインカーブが動かない問題など.  
+
+meridian_config_editor.html をこの版に合わせました(IMU とサーボ種類の値の書き出しを修正, Hitec(71), SERVO_STEP_MAX, SERVO_UNMOUNT_REPLY, PWM_PIN_MODE を追加, 埋め込みの初期値をこの版の config.h に更新). 機種ごとの設定と PWM の対応表は config.h を直接編集してください.  
+
+### 2026.04.26 v1.1.1  
+Hotfixをマージ.  
+
 ### 2025.06.14 v1.1.1  
 WiFi固定IP, 有線LANに対応しました.  
 トリムモードに対応しました.  

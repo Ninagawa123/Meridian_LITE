@@ -149,15 +149,15 @@ const char *mrd_get_line_name(UartLine a_line) {
 //------------------------------------------------------------------------------------
 
 /// @brief エラーメッセージ＆LED点滅と共にシステム停止.
-/// @param a_led ERROR通知用のLEDのピン番号.
+/// @param a_led ERROR通知用のLEDのピン番号(負ならLEDなし. ピンをPWM等に使う場合).
 /// @param a_msg エラーメッセージ.
 /// @param a_serial 出力先シリアルの指定.
 void mrd_error_stop(int a_led, String a_msg, HardwareSerial &a_serial) {
   Serial.println(a_msg);
   while (1) {
-    digitalWrite(a_led, HIGH);
+    mrd_led_write(a_led, HIGH);
     delay(250);
-    digitalWrite(a_led, LOW);
+    mrd_led_write(a_led, LOW);
     delay(250);
   }
 }
@@ -176,6 +176,15 @@ bool mrd_meriput90_cksm(Meridim90Union &a_meridim, int len = 90) {
   }
   a_meridim.sval[len - 1] = short(~a_cksm);
   return true;
+}
+
+/// @brief 指令値の1フレームあたりの変化量を制限する.
+/// @param a_tgt 目標値(degree).
+/// @param a_base 基準値(degree. 前回の指令値など).
+/// @param a_step_max 1フレームあたりの最大変化量(degree).
+/// @return 基準値から a_step_max 以内に制限した値.
+float mrd_step_limit(float a_tgt, float a_base, float a_step_max) {
+  return constrain(a_tgt, a_base - a_step_max, a_base + a_step_max);
 }
 
 #endif //__MERIDIAN_UTILITY_H__

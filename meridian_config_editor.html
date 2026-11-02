@@ -382,10 +382,36 @@
     .file-input { display: none; }
 
     /* Responsive */
+    .config-desc.on { color: #ffffff; }
+    .config-desc.warn { color: var(--danger); font-weight: 500; }
+    .servo-settings-grid {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) minmax(170px, 210px);
+      gap: 0.5rem;
+    }
+    .servo-row-label {
+      grid-column: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 0.9rem;
+      background: rgba(59, 130, 246, 0.12);
+      border-radius: 6px;
+      font-weight: 500;
+      color: var(--accent-hover);
+      white-space: nowrap;
+    }
+    .servo-row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .servo-common { grid-row: span 2; grid-template-columns: 1fr; }
+    .servo-motion { margin-top: 0.5rem; }
+
     @media (max-width: 768px) {
       .header-content { flex-direction: column; align-items: stretch; }
       .toolbar { justify-content: center; }
-      .config-grid { grid-template-columns: 1fr; }
+      .config-grid, .servo-row { grid-template-columns: 1fr; }
+      .servo-settings-grid { grid-template-columns: 1fr; }
+      .servo-row-label { padding: 0.35rem 0.9rem; }
+      .servo-common { grid-row: auto; }
     }
   </style>
 </head>
@@ -413,14 +439,14 @@
   </header>
 
   <div class="container">
-    <!-- Basic Settings -->
+    <!-- Operation Mode -->
     <div class="section">
       <div class="section-header" onclick="toggleSection(this)">
-        <span>Meridim Basic Settings</span>
+        <span>Operation Mode</span>
         <span class="toggle">▼</span>
       </div>
       <div class="section-content">
-        <div class="config-grid" id="basicSettings"></div>
+        <div class="config-grid" id="operationMode"></div>
       </div>
     </div>
 
@@ -435,14 +461,14 @@
       </div>
     </div>
 
-    <!-- Operation Mode -->
+    <!-- EEPROM Settings -->
     <div class="section">
       <div class="section-header" onclick="toggleSection(this)">
-        <span>Operation Mode</span>
+        <span>EEPROM Settings</span>
         <span class="toggle">▼</span>
       </div>
       <div class="section-content">
-        <div class="config-grid" id="operationMode"></div>
+        <div class="config-grid" id="eepromSettings"></div>
       </div>
     </div>
 
@@ -594,14 +620,14 @@
       </div>
     </div>
 
-    <!-- EEPROM Settings -->
+    <!-- Basic Settings -->
     <div class="section">
       <div class="section-header" onclick="toggleSection(this)">
-        <span>EEPROM Settings</span>
+        <span>Meridim Basic Settings</span>
         <span class="toggle">▼</span>
       </div>
       <div class="section-content">
-        <div class="config-grid" id="eepromSettings"></div>
+        <div class="config-grid" id="basicSettings"></div>
       </div>
     </div>
 
@@ -656,7 +682,15 @@
         <span class="toggle">▼</span>
       </div>
       <div class="section-content">
-        <div class="config-grid" id="servoSettings"></div>
+        <!-- L / R rows; the common setting spans both rows -->
+        <div class="servo-settings-grid">
+          <div class="servo-row-label">L System</div>
+          <div class="config-grid servo-row" id="servoSettingsL"></div>
+          <div class="config-grid servo-common" id="servoSettingsCommon"></div>
+          <div class="servo-row-label">R System</div>
+          <div class="config-grid servo-row" id="servoSettingsR"></div>
+        </div>
+        <div class="config-grid servo-motion" id="servoSettingsMotion"></div>
       </div>
     </div>
 
@@ -670,11 +704,9 @@
         <div class="tabs">
           <button class="tab active" onclick="switchTab(event, 'tabL')">L System</button>
           <button class="tab" onclick="switchTab(event, 'tabR')">R System</button>
-          <button class="tab" onclick="switchTab(event, 'tabC')">C System</button>
         </div>
         <div id="tabL" class="tab-panel active"></div>
         <div id="tabR" class="tab-panel"></div>
-        <div id="tabC" class="tab-panel"></div>
       </div>
     </div>
   </div>
@@ -697,29 +729,6 @@
 // Embedded default config.h content
 const DEFAULT_CONFIG_CONTENT = `#ifndef __MERIDIAN_CONFIG__
 #define __MERIDIAN_CONFIG__
-
-// IMU/AHRSセンサ選択用のプリプロセッサ定数 (enumより先に定義が必要)
-// これらの値はプリプロセッサの#if条件で使用される
-#define IMUAHRS_NONE    0
-#define IMUAHRS_MPU6050 1
-#define IMUAHRS_MPU9250 2
-#define IMUAHRS_BNO055  3
-
-// サーボタイプ選択用のプリプロセッサ定数 (enumより先に定義が必要)
-// これらの値はプリプロセッサの#if条件で使用される
-#define SERVO_TYPE_NONE    0
-#define SERVO_TYPE_PWM_S   1
-#define SERVO_TYPE_PCA9685 11
-#define SERVO_TYPE_FTBRSX  21
-#define SERVO_TYPE_DXL1    31
-#define SERVO_TYPE_DXL2    32
-#define SERVO_TYPE_KOICS3  43
-#define SERVO_TYPE_KOPMX   44
-#define SERVO_TYPE_JRXBUS  51
-#define SERVO_TYPE_FTCSTS  61
-#define SERVO_TYPE_FTCSCS  62
-
-#include "mrd_common.h"
 
 //==================================================================================================
 //  MERIDIAN - LITE - ESP32の配線
@@ -770,7 +779,7 @@ const DEFAULT_CONFIG_CONTENT = `#ifndef __MERIDIAN_CONFIG__
 //   36          -  OK/アナログ入力のみ（PD/PD/出力不可）
 
 //==================================================================================================
-//  サーボIDとロボット部位, 軸との対応表 (KHR-3HVの例)
+//  サーボIDとロボット部位、軸との対応表 (KHR-3HVの例)
 //==================================================================================================
 //
 // ID    Parts/Axis <ICS_Left_Upper SIO1,SIO2>
@@ -843,12 +852,12 @@ const DEFAULT_CONFIG_CONTENT = `#ifndef __MERIDIAN_CONFIG__
 #define MRD_SERVO_SLOTS 15  // Meridim配列の1系統あたりの最大接続サーボ数(デフォルトは15)
 
 // 各種ハードウェアのマウント有無
-#define MOUNT_SD      1              // SDカードリーダーの有無(0:なし, 1:あり)
-#define MOUNT_IMUAHRS IMUAHRS_BNO055 // IMU/AHRSの搭載 (0:なし, 1:MPU6050, 2:MPU9250, 3:BNO055)
-#define MOUNT_PAD     PC             // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
+#define MOUNT_SD      0           // SDカードリーダーの有無s(0:なし, 1:あり)
+#define MOUNT_IMUAHRS BNO055_AHRS // IMU/AHRSの搭載 NO_IMU, MPU6050_IMU, MPU9250_IMU, BNO055_AHRS
+#define MOUNT_PAD     PC          // ジョイパッドの搭載 PC, MERIMOTE, BLUERETRO, KRR5FH, WIIMOTE
 
 // 動作モード
-#define MODE_ESP32_STANDALONE 0 // ESP32をボードに挿さず動作確認(0:NO, 1:YES)
+#define MODE_ESP32_STANDALONE 1 // ESP32をボードに挿さず動作確認(0:NO, 1:YES)
 #define MODE_UDP_RECEIVE      1 // PCからのデータ受信(0:OFF, 1:ON, 通常は1)
 #define MODE_UDP_SEND         1 // PCへのデータ送信(0:OFF, 1:ON, 通常は1)
 
@@ -886,7 +895,7 @@ const DEFAULT_CONFIG_CONTENT = `#ifndef __MERIDIAN_CONFIG__
 // #define I2C1_MERIMOTE_ADDR 0x58 // MerimoteのI2Cアドレス
 
 // SPI設定
-#define SPI0_SPEED 30000000 // SPI通信の速度(30MHz)
+#define SPI0_SPEED 6000000 // SPI通信の速度(6000000kHz推奨)
 
 // PC接続関連設定
 #define SERIAL_PC_BPS     115200 // PCとのシリアル速度(モニタリング表示用)
@@ -899,57 +908,430 @@ const DEFAULT_CONFIG_CONTENT = `#ifndef __MERIDIAN_CONFIG__
 #define PAD_GENERALIZE   1     // ジョイパッドの入力値をPS系に一般化する
 
 // ピンアサイン
+#define PWM_PIN_MODE       0  // ピン25/26の用途(0:LED(従来), 1:本体PWMサーボ2ch, 2:PCA9685用I2C(Wire1, SDA=25, SCL=26))
+                              // ※1/2の場合, エラーLED(25)とBT LED(26)は使えない
 #define PIN_ERR_LED        25 // LED用 処理が時間内に収まっていない場合に点灯
 #define PIN_EN_L           33 // サーボL系統のENピン
+#define PIN_TX_L           27 // サーボL系統のTXピン(Serial1)
+#define PIN_RX_L           32 // サーボL系統のRXピン(Serial1)
 #define PIN_EN_R           4  // サーボR系統のENピン
+#define PIN_TX_R           17 // サーボR系統のTXピン(Serial2)
+#define PIN_RX_R           16 // サーボR系統のRXピン(Serial2)
 #define PIN_CHIPSELECT_SD  15 // SDカード用のCSピン
 #define PIN_CHIPSELECT_LAN 5  // 有線LAN用のCSピン
 #define PIN_RESET_LAN      14 // W5500リセットピン(※ボード裏から半田付けにてフリーピンに配線)
 #define PIN_I2C0_SDA       22 // I2CのSDAピン
 #define PIN_I2C0_SCL       21 // I2CのSCLピン
 #define PIN_LED_BT         26 // Bluetooth接続確認用ピン(点滅はペアリング,点灯でリンク確立)
+#define PIN_PWM_0          25 // 本体PWMサーボ0 (PWM_PIN_MODE 1)
+#define PIN_PWM_1          26 // 本体PWMサーボ1 (PWM_PIN_MODE 1)
+#define PIN_I2C1_SDA       25 // I2C1(Wire1)のSDA (PCA9685 の PWM_PIN_MODE 2)
+#define PIN_I2C1_SCL       26 // I2C1(Wire1)のSCL (PCA9685 の PWM_PIN_MODE 2)
 
 //-------------------------------------------------------------------------
 // サーボ設定
 //-------------------------------------------------------------------------
 
 // コマンドサーボの種類
-// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
-// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
-// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
-// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
-// 51: JRXBUS (JRPROPO_XBUS)[WIP]
-// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
-#define MOUNT_SERVO_TYPE_L SERVO_TYPE_KOICS3 // L系統のコマンドサーボの種類 (43)
-#define MOUNT_SERVO_TYPE_R SERVO_TYPE_KOICS3 // R系統のコマンドサーボの種類 (43)
+// 00: NOSERVO (マウントなし),            01: PWM_S (本体ピンPWM)
+// 11: PCA9685 (I2C_PCA9685toPWM),      21: FTBRSX (FUTABA_RSxTTL, RS30x)
+// 31: DXL1 (DYNAMIXEL 1.0, AX/RX/MX), 32: DXL2 (DYNAMIXEL 2.0, Xシリーズ)
+// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX, RS-485変換経由)
+// 51: JRXBUS (JRPROPO_XBUS),          71: HTCHSR (Hitec_HSR)
+// 61: FTCSTS (FEETECH_STS),            62: FTCSCS (FEETECH_SCS) ※STSとSCSは別物. 同じ系統に両方あれば位置を交互に読む
+#define MOUNT_SERVO_TYPE_L 43 // L系統のコマンドサーボの種類
+#define MOUNT_SERVO_TYPE_R 43 // R系統のコマンドサーボの種類
 
 // サーボ関連設定
-#define SERVO_BAUDRATE_L    1250000 // L系統のICSサーボの通信速度bps
-#define SERVO_BAUDRATE_R    1250000 // R系統のICSサーボの通信速度bps
-#define SERVO_TIMEOUT_L     2       // L系統のICS返信待ちのタイムアウト時間
-#define SERVO_TIMEOUT_R     2       // R系統のICS返信待ちのタイムアウト時間
+#define SERVO_BAUDRATE_L    1250000 // L系統のサーボの通信速度bps(ICS:1250000, FEETECH:1000000, DXL:サーボの設定値(AXは1M, MX/RXは57600), FUTABA:460800推奨, XBUS:250000, HITEC:19200, PMX:3000000推奨)
+#define SERVO_BAUDRATE_R    1250000 // R系統のサーボの通信速度bps(ICS:1250000, FEETECH:1000000, DXL:サーボの設定値(AXは1M, MX/RXは57600), FUTABA:460800推奨, XBUS:250000, HITEC:19200, PMX:3000000推奨)
+#define SERVO_TIMEOUT_L     2       // L系統のサーボ返信待ちのタイムアウト時間(ms)
+#define SERVO_TIMEOUT_R     2       // R系統のサーボ返信待ちのタイムアウト時間(ms)
 #define SERVO_LOST_ERR_WAIT 6       // 連続何フレームサーボ信号をロストしたら異常とするか
+#define SERVO_STEP_MAX          3.0  // 1フレームあたりの指令値の最大変化量(degree)
+#define SERVO_UNMOUNT_REPLY     1    // マウントしていないサーボのスロットへの返信値(0:0を返す, 1:受信した値をそのまま返す)
+
+// FEETECH(STS/SCS)サーボ関連設定. 系列(STS/SCS)はスロットの種類(61/62)で決まる. 起動時にサーボの値と違えば警告を表示する
+#define SERVO_FTC_STS_RANGE        360.0 // STSの位置値0-4095に対応する角度範囲(degree)
+#define SERVO_FTC_SCS_RANGE        300.0 // SCSの位置値0-1023に対応する角度範囲(degree, SCS0009等. 機種により異なる)
+#define SERVO_FTC_SCS_SPEED        1500  // SCSの目標速度(位置値/秒). SCSは0だと駆動しない. 1500で約440deg/s(300deg機種)
+#define SERVO_FTC_FIX_RETURN_DELAY 1     // 起動時に応答遅延時間が0でなければ0に書き換える(0:しない, 1:する)
+                                         // ※サーボのEEPROMに保存される. 0でないと1系統15台で100Hzを維持できない
+
+// DYNAMIXEL Protocol 1.0/2.0 サーボ関連設定. 通信速度は事前にDYNAMIXEL Wizard等で1Mbps以上にしておく
+#define SERVO_DXL_FIX_RETURN_DELAY 1 // 起動時に応答遅延時間(初期値500us)が0でなければ0に書き換える(0:しない, 1:する)
+                                     // ※サーボのEEPROMに保存される. 書き換えの際は一度トルクOFFにする
+
+// JR XBUSサーボ関連設定. 通信速度は250000bps固定. 50Hzで全サーボへ送信(戻り値なし, 指令値を返す)
+#define SERVO_XBUS_ANGLE180 0 // サーボ側の180度モードに合わせる(0:通常 ±60deg=900-2100us, 1:180度モード ±90deg)
+
+// Hitec HSRサーボ関連設定. 通信速度は19200bps固定. 1台ずつ処理する
+//   動作中(トルクONのサーボあり): 位置を送るだけ(返信は待たず, 指令値を返す)
+//   脱力中(全サーボOFF): 現在位置を読むだけ(角度値は送らず, 読み取った角度を返す)
+#define SERVO_HTC_PER_FRAME  1    // 1フレームに位置を送る/読むサーボ数(1台約4.2ms). 送る場合は各サーボ50Hzまで
+                                  // 1なら2台まで各50Hz, 4台で各25Hz
+#define SERVO_HTC_US_PER_DEG 10.0 // 1degあたりのパルス幅(us). 1500us中心, 550-2450us
+#define SERVO_HTC_SPEED      0xFF // 現在位置の読み出し(0xE9)で同時に設定される速度(1-255. 0xFFはEEPROMの初期値)
+
+// PWMサーボ(本体ピン25/26, PCA9685)関連設定. 50Hz, 動作命令のみ(戻り値なし). ピンの用途は PWM_PIN_MODE で選ぶ
+// パルス幅と角度の範囲はスロットごと(IXL_PWM_CENTER などの配列)
+#define I2C1_SPEED     400000   // I2C1(Wire1. PCA9685)の速度
+#define PCA9685_NUM    1        // PCA9685の枚数(0-2). 1枚目は偶数フレーム, 2枚目は奇数フレームで更新(各50Hz)
+#define PCA9685_ADDR_0 0x40     // 1枚目のI2Cアドレス
+#define PCA9685_ADDR_1 0x41     // 2枚目のI2Cアドレス(A0をHIGHに)
+#define PCA9685_OSC_HZ 25000000 // 内蔵発振器の周波数. 個体差でパルス幅がずれる場合に実測値に合わせる
+
+// FUTABA RS30xサーボ関連設定. 通信速度は最大460800bps(初期値115200bps)
+#define SERVO_FTB_READ_PER_FRAME 8 // 1フレームに現在位置を読むサーボ数(超える分は次のフレームで順に読む)
+                                   // 460800bpsで1台あたり約0.5ms. 15台を毎フレーム読むと100Hzに収まらない
 
 // 各サーボ系統の最大サーボマウント数
 #define IXL_MAX 15 // L系統の最大サーボ数. 標準は15.
 #define IXR_MAX 15 // R系統の最大サーボ数. 標準は15.
 
-// サーボのマウント/種類 (0:NOSERVO, 43:KONDO ICS, 等)
-// インデックス 0-10: アクティブサーボ, 11-14: 予約
-extern int IXL_MT[IXL_MAX];
-extern int IXR_MT[IXR_MAX];
+// L系統のサーボのマウントの設定
+// 00: NOSERVO (マウントなし),            01: PWM_S (本体ピンPWM)
+// 11: PCA9685 (I2C_PCA9685toPWM),      21: FTBRSX (FUTABA_RSxTTL, RS30x)
+// 31: DXL1 (DYNAMIXEL 1.0, AX/RX/MX), 32: DXL2 (DYNAMIXEL 2.0, Xシリーズ)
+// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX, RS-485変換経由)
+// 51: JRXBUS (JRPROPO_XBUS),          71: HTCHSR (Hitec_HSR)
+// 61: FTCSTS (FEETECH_STS),            62: FTCSCS (FEETECH_SCS) ※STSとSCSは別物. 同じ系統に両方あれば位置を交互に読む
+// ※UARTのサーボは系統の種類(MOUNT_SERVO_TYPE_L/R)と同じもの(FEETECHは61/62)にする. 1/11はPWMの対応表で使う
+int IXL_MT[IXL_MAX] = {
+    // L系統のマウント状態
+    43, // [00]頭ヨー
+    43, // [01]左肩ピッチ
+    43, // [02]左肩ロール
+    43, // [03]左肘ヨー
+    43, // [04]左肘ピッチ
+    43, // [05]左股ヨー
+    43, // [06]左股ロール
+    43, // [07]左股ピッチ
+    43, // [08]左膝ピッチ
+    43, // [09]左足首ピッチ
+    43, // [10]左足首ロール
+    0,  // [11]追加サーボ用
+    0,  // [12]追加サーボ用
+    0,  // [13]追加サーボ用
+    0   // [14]追加サーボ用
+};
 
-// サーボのハードウェアID
-extern int IXL_ID[IXL_MAX];
-extern int IXR_ID[IXR_MAX];
+// R系統のサーボのマウントの設定
+// 00: NOSERVO (マウントなし),            01: PWM_S (本体ピンPWM)
+// 11: PCA9685 (I2C_PCA9685toPWM),      21: FTBRSX (FUTABA_RSxTTL, RS30x)
+// 31: DXL1 (DYNAMIXEL 1.0, AX/RX/MX), 32: DXL2 (DYNAMIXEL 2.0, Xシリーズ)
+// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX, RS-485変換経由)
+// 51: JRXBUS (JRPROPO_XBUS),          71: HTCHSR (Hitec_HSR)
+// 61: FTCSTS (FEETECH_STS),            62: FTCSCS (FEETECH_SCS) ※STSとSCSは別物. 同じ系統に両方あれば位置を交互に読む
+// ※UARTのサーボは系統の種類(MOUNT_SERVO_TYPE_L/R)と同じもの(FEETECHは61/62)にする. 1/11はPWMの対応表で使う
+int IXR_MT[IXR_MAX] = {
+    // R系統のマウント状態
+    43, // [00]腰ヨー
+    43, // [01]右肩ピッチ
+    43, // [02]右肩ロール
+    43, // [03]右肘ヨー
+    43, // [04]右肘ピッチ
+    43, // [05]右股ヨー
+    43, // [06]右股ロール
+    43, // [07]右股ピッチ
+    43, // [08]右膝ピッチ
+    43, // [09]右足首ピッチ
+    43, // [10]右足首ロール
+    0,  // [11]追加サーボ用
+    0,  // [12]追加サーボ用
+    0,  // [13]追加サーボ用
+    0   // [14]追加サーボ用
+};
 
-// サーボの回転方向 (1:正転, -1:逆転)
-extern int IXL_CW[IXL_MAX];
-extern int IXR_CW[IXR_MAX];
+// L系統のコード上のサーボIndexに対し, 実際に呼び出すハードウェアのID番号
+int IXL_ID[IXL_MAX] = {
+    0,  // [00]頭ヨー
+    1,  // [01]左肩ピッチ
+    2,  // [02]左肩ロール
+    3,  // [03]左肘ヨー
+    4,  // [04]左肘ピッチ
+    5,  // [05]左股ヨー
+    6,  // [06]左股ロール
+    7,  // [07]左股ピッチ
+    8,  // [08]左膝ピッチ
+    9,  // [09]左足首ピッチ
+    10, // [10]左足首ロール
+    11, // [11]追加サーボ用
+    12, // [12]追加サーボ用
+    13, // [13]追加サーボ用
+    14  // [14]追加サーボ用
+};
 
-// 直立姿勢用サーボトリム値 (度)
-extern float IXL_TRIM[IXL_MAX];
-extern float IXR_TRIM[IXR_MAX];
+// R系統のコード上のサーボIndexに対し, 実際に呼び出すハードウェアのID番号
+int IXR_ID[IXR_MAX] = {
+    0,  // [00]腰ヨー
+    1,  // [01]右肩ピッチ
+    2,  // [02]右肩ロール
+    3,  // [03]右肘ヨー
+    4,  // [04]右肘ピッチ
+    5,  // [05]右股ヨー
+    6,  // [06]右股ロール
+    7,  // [07]右股ピッチ
+    8,  // [08]右膝ピッチ
+    9,  // [09]右足首ピッチ
+    10, // [10]右足首ロール
+    11, // [11]追加サーボ用
+    12, // [12]追加サーボ用
+    13, // [13]追加サーボ用
+    14  // [14]追加サーボ用
+};
+
+// L系統のサーボ回転方向補正(1:変更なし, -1:逆転)
+int IXL_CW[IXL_MAX] = {
+    1, // [00]頭ヨー
+    1, // [01]左肩ピッチ
+    1, // [02]左肩ロール
+    1, // [03]左肘ヨー
+    1, // [04]左肘ピッチ
+    1, // [05]左股ヨー
+    1, // [06]左股ロール
+    1, // [07]左股ピッチ
+    1, // [08]左膝ピッチ
+    1, // [09]左足首ピッチ
+    1, // [10]左足首ロール
+    1, // [11]追加サーボ用
+    1, // [12]追加サーボ用
+    1, // [13]追加サーボ用
+    1  // [14]追加サーボ用
+};
+
+// R系統のサーボ回転方向補正(1:変更なし, -1:逆転)
+int IXR_CW[IXR_MAX] = {
+    // R系統の正転逆転
+    1, // [00]腰ヨー
+    1, // [01]右肩ピッチ
+    1, // [02]右肩ロール
+    1, // [03]右肘ヨー
+    1, // [04]右肘ピッチ
+    1, // [05]右股ヨー
+    1, // [06]右股ロール
+    1, // [07]右股ピッチ
+    1, // [08]右膝ピッチ
+    1, // [09]右足首ピッチ
+    1, // [10]右足首ロール
+    1, // [11]追加サーボ用
+    1, // [12]追加サーボ用
+    1, // [13]追加サーボ用
+    1  // [14]追加サーボ用
+};
+
+// L系統のトリム値(degree)
+float IXL_TRIM[IXL_MAX] = {
+    0.0,     // [00]頭ヨー
+    -20.42,  // [01]左肩ピッチ
+    -103.55, // [02]左肩ロール
+    0.85,    // [03]左肘ヨー
+    88.41,   // [04]左肘ピッチ
+    0.0,     // [05]左股ヨー
+    -2.0,    // [06]左股ロール
+    -17.12,  // [07]左股ピッチ
+    -68.54,  // [08]左膝ピッチ
+    -25.7,   // [09]左足首ピッチ
+    0.0,     // [10]左足首ロール
+    0.0,     // [11]追加サーボ用
+    0.0,     // [12]追加サーボ用
+    0.0,     // [13]追加サーボ用
+    0.0,     // [14]追加サーボ用
+};
+
+// R系統のトリム値(degree)
+float IXR_TRIM[IXR_MAX] = {
+    -4.28,  // [00]腰ヨー
+    0.68,   // [01]右肩ピッチ
+    -89.41, // [02]右肩ロール
+    0.0,    // [03]右肘ヨー
+    91.83,  // [04]右肘ピッチ
+    0.0,    // [05]右股ヨー
+    1.0,    // [06]右股ロール
+    -21.42, // [07]右股ピッチ
+    -53.68, // [08]右膝ピッチ
+    -24.12, // [09]右足首ピッチ
+    0.0,    // [10]右足首ロール
+    0.0,    // [11]追加サーボ用
+    0.0,    // [12]追加サーボ用
+    0.0,    // [13]追加サーボ用
+    0.0,    // [14]追加サーボ用
+};
+
+// PWMサーボのスロットごとの設定(種類1/11のスロットと, PWM_PIN_SLOT/PCA9685_SLOT で指定したスロットで使う).
+// パルス幅 = 中央 + サーボ側の角度 × (+90°のパルス − 中央) / 90. −90°は中央に対して対称(2×中央 − +90°のパルス).
+// サーボ側の角度 = トリム + 指令の角度 × 回転方向. 上限/下限を超える指令は上限/下限で止める.
+
+// L系統: 0degのパルス幅(us)
+int IXL_PWM_CENTER[IXL_MAX] = {
+    1500, // [00]None
+    1500, // [01]None
+    1500, // [02]None
+    1500, // [03]None
+    1500, // [04]None
+    1500, // [05]None
+    1500, // [06]None
+    1500, // [07]None
+    1500, // [08]None
+    1500, // [09]None
+    1500, // [10]None
+    1500, // [11]None
+    1500, // [12]None
+    1500, // [13]None
+    1500  // [14]None
+};
+
+// L系統: +90degのパルス幅(us). 中央より小さくすると逆回転
+int IXL_PWM_P90[IXL_MAX] = {
+    2500, // [00]None
+    2500, // [01]None
+    2500, // [02]None
+    2500, // [03]None
+    2500, // [04]None
+    2500, // [05]None
+    2500, // [06]None
+    2500, // [07]None
+    2500, // [08]None
+    2500, // [09]None
+    2500, // [10]None
+    2500, // [11]None
+    2500, // [12]None
+    2500, // [13]None
+    2500  // [14]None
+};
+
+// L系統: サーボ側の角度の上限(degree)
+float IXL_PWM_MAX_DEG[IXL_MAX] = {
+    90.0, // [00]None
+    90.0, // [01]None
+    90.0, // [02]None
+    90.0, // [03]None
+    90.0, // [04]None
+    90.0, // [05]None
+    90.0, // [06]None
+    90.0, // [07]None
+    90.0, // [08]None
+    90.0, // [09]None
+    90.0, // [10]None
+    90.0, // [11]None
+    90.0, // [12]None
+    90.0, // [13]None
+    90.0  // [14]None
+};
+
+// L系統: サーボ側の角度の下限(degree)
+float IXL_PWM_MIN_DEG[IXL_MAX] = {
+    -90.0, // [00]None
+    -90.0, // [01]None
+    -90.0, // [02]None
+    -90.0, // [03]None
+    -90.0, // [04]None
+    -90.0, // [05]None
+    -90.0, // [06]None
+    -90.0, // [07]None
+    -90.0, // [08]None
+    -90.0, // [09]None
+    -90.0, // [10]None
+    -90.0, // [11]None
+    -90.0, // [12]None
+    -90.0, // [13]None
+    -90.0  // [14]None
+};
+
+// R系統: 0degのパルス幅(us)
+int IXR_PWM_CENTER[IXR_MAX] = {
+    1500, // [00]None
+    1500, // [01]None
+    1500, // [02]None
+    1500, // [03]None
+    1500, // [04]None
+    1500, // [05]None
+    1500, // [06]None
+    1500, // [07]None
+    1500, // [08]None
+    1500, // [09]None
+    1500, // [10]None
+    1500, // [11]None
+    1500, // [12]None
+    1500, // [13]None
+    1500  // [14]None
+};
+
+// R系統: +90degのパルス幅(us). 中央より小さくすると逆回転
+int IXR_PWM_P90[IXR_MAX] = {
+    2500, // [00]None
+    2500, // [01]None
+    2500, // [02]None
+    2500, // [03]None
+    2500, // [04]None
+    2500, // [05]None
+    2500, // [06]None
+    2500, // [07]None
+    2500, // [08]None
+    2500, // [09]None
+    2500, // [10]None
+    2500, // [11]None
+    2500, // [12]None
+    2500, // [13]None
+    2500  // [14]None
+};
+
+// R系統: サーボ側の角度の上限(degree)
+float IXR_PWM_MAX_DEG[IXR_MAX] = {
+    90.0, // [00]None
+    90.0, // [01]None
+    90.0, // [02]None
+    90.0, // [03]None
+    90.0, // [04]None
+    90.0, // [05]None
+    90.0, // [06]None
+    90.0, // [07]None
+    90.0, // [08]None
+    90.0, // [09]None
+    90.0, // [10]None
+    90.0, // [11]None
+    90.0, // [12]None
+    90.0, // [13]None
+    90.0  // [14]None
+};
+
+// R系統: サーボ側の角度の下限(degree)
+float IXR_PWM_MIN_DEG[IXR_MAX] = {
+    -90.0, // [00]None
+    -90.0, // [01]None
+    -90.0, // [02]None
+    -90.0, // [03]None
+    -90.0, // [04]None
+    -90.0, // [05]None
+    -90.0, // [06]None
+    -90.0, // [07]None
+    -90.0, // [08]None
+    -90.0, // [09]None
+    -90.0, // [10]None
+    -90.0, // [11]None
+    -90.0, // [12]None
+    -90.0, // [13]None
+    -90.0  // [14]None
+};
+
+// PWM出力とMeridimスロットの対応表. SV_L(n)/SV_R(n)でL/R系統のn番スロットの指令に従う. SV_NONEは未使用.
+// スロットのコマンドが1なら角度を出力, 0/2ならパルスを止める(通常以外のスロットは直前の出力を保持). トリムと回転方向はスロットの設定を使う.
+// UARTのサーボと共有しないスロットは, IXL_MT/IXR_MTの種類を1(本体PWM)/11(PCA9685)にする(指令値をそのまま返す).
+#define SV_L(n) (n)         // L系統のn番スロット
+#define SV_R(n) (100 + (n)) // R系統のn番スロット
+#define SV_NONE (-1)        // 未使用
+
+// 本体PWMサーボ [0]:ピン25, [1]:ピン26 (PWM_PIN_MODE 1)
+int PWM_PIN_SLOT[2] = {
+    SV_NONE, // [00]ピン25
+    SV_NONE  // [01]ピン26
+};
+
+// PCA9685 [枚][ch] (PWM_PIN_MODE 2)
+int PCA9685_SLOT[2][16] = {
+    {SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE}, // [0]1枚目 ch0-15
+    {SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE}  // [1]2枚目 ch0-15
+};
 
 //-------------------------------------------------------------------------
 //  固定値, マスターコマンド定義
@@ -1084,7 +1466,7 @@ extern float IXR_TRIM[IXR_MAX];
 // #define MRD_CKSM        89 // チェックサム (MRDM_LEN - 1)
 
 // エラービット MRD_ERR_CODEの上位8bit分
-#define ERRBIT_15_ESP_PC       15 // ESP32 → PC のUDP受信エラー (0:エラーなし, 1:エラー検出)
+#define ERRBIT_15_ESP_PC       15 // ESP32 → PC のUDP受信エラー (0:エラーなし、1:エラー検出)
 #define ERRBIT_14_PC_ESP       14 // PC → ESP32 のUDP受信エラー
 #define ERRBIT_13_ESP_TSY      13 // ESP32 → TeensyのSPI受信エラー
 #define ERRBIT_12_TSY_ESP      12 // Teensy → ESP32 のSPI受信エラー
@@ -1092,177 +1474,6 @@ extern float IXR_TRIM[IXR_MAX];
 #define ERRBIT_10_UDP_ESP_SKIP 10 // PC → ESP32 のUDPフレームスキップエラー
 #define ERRBIT_9_BOARD_SKIP    9  // PC → ESP32 → Teensy のフレームスキップエラー(末端で捕捉)
 #define ERRBIT_8_PC_SKIP       8  // Teensy → ESP32 → PC のフレームスキップエラー(末端で捕捉)
-
-//-------------------------------------------------------------------------
-//  サーボ設定配列の実体定義 (main.cppでのみ有効化)
-//-------------------------------------------------------------------------
-#ifdef CONFIG_DEFINE_ARRAYS
-
-// L系統のサーボのマウントの設定
-// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
-// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
-// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
-// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
-// 51: JRXBUS (JRPROPO_XBUS)[WIP]
-// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
-int IXL_MT[IXL_MAX] = {
-    43, // [00]頭ヨー
-    0,  // [01]左肩ピッチ
-    0,  // [02]左肩ロール
-    0,  // [03]左肘ヨー
-    0,  // [04]左肘ピッチ
-    0,  // [05]左股ヨー
-    0,  // [06]左股ロール
-    0,  // [07]左股ピッチ
-    0,  // [08]左膝ピッチ
-    0,  // [09]左足首ピッチ
-    0,  // [10]左足首ロール
-    0,  // [11]追加サーボ用
-    0,  // [12]追加サーボ用
-    0,  // [13]追加サーボ用
-    0   // [14]追加サーボ用
-};
-
-// R系統のサーボのマウントの設定
-// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
-// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
-// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
-// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
-// 51: JRXBUS (JRPROPO_XBUS)[WIP]
-// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
-int IXR_MT[IXR_MAX] = {
-    0, // [00]腰ヨー
-    0, // [01]右肩ピッチ
-    0, // [02]右肩ロール
-    0, // [03]右肘ヨー
-    0, // [04]右肘ピッチ
-    0, // [05]右股ヨー
-    0, // [06]右股ロール
-    0, // [07]右股ピッチ
-    0, // [08]右膝ピッチ
-    0, // [09]右足首ピッチ
-    0, // [10]右足首ロール
-    0, // [11]追加サーボ用
-    0, // [12]追加サーボ用
-    0, // [13]追加サーボ用
-    0  // [14]追加サーボ用
-};
-
-// L系統のコード上のサーボIndexに対し, 実際に呼び出すハードウェアのID番号
-int IXL_ID[IXL_MAX] = {
-    0,  // [00]頭ヨー
-    1,  // [01]左肩ピッチ
-    2,  // [02]左肩ロール
-    3,  // [03]左肘ヨー
-    4,  // [04]左肘ピッチ
-    5,  // [05]左股ヨー
-    6,  // [06]左股ロール
-    7,  // [07]左股ピッチ
-    8,  // [08]左膝ピッチ
-    9,  // [09]左足首ピッチ
-    10, // [10]左足首ロール
-    11, // [11]追加サーボ用
-    12, // [12]追加サーボ用
-    13, // [13]追加サーボ用
-    14  // [14]追加サーボ用
-};
-
-// R系統のコード上のサーボIndexに対し, 実際に呼び出すハードウェアのID番号
-int IXR_ID[IXR_MAX] = {
-    0,  // [00]腰ヨー
-    1,  // [01]右肩ピッチ
-    2,  // [02]右肩ロール
-    3,  // [03]右肘ヨー
-    4,  // [04]右肘ピッチ
-    5,  // [05]右股ヨー
-    6,  // [06]右股ロール
-    7,  // [07]右股ピッチ
-    8,  // [08]右膝ピッチ
-    9,  // [09]右足首ピッチ
-    10, // [10]右足首ロール
-    11, // [11]追加サーボ用
-    12, // [12]追加サーボ用
-    13, // [13]追加サーボ用
-    14  // [14]追加サーボ用
-};
-
-// L系統のサーボ回転方向補正(1:変更なし, -1:逆転)
-int IXL_CW[IXL_MAX] = {
-    1, // [00]頭ヨー
-    1, // [01]左肩ピッチ
-    1, // [02]左肩ロール
-    1, // [03]左肘ヨー
-    1, // [04]左肘ピッチ
-    1, // [05]左股ヨー
-    1, // [06]左股ロール
-    1, // [07]左股ピッチ
-    1, // [08]左膝ピッチ
-    1, // [09]左足首ピッチ
-    1, // [10]左足首ロール
-    1, // [11]追加サーボ用
-    1, // [12]追加サーボ用
-    1, // [13]追加サーボ用
-    1  // [14]追加サーボ用
-};
-
-// R系統のサーボ回転方向補正(1:変更なし, -1:逆転)
-int IXR_CW[IXR_MAX] = {
-    1, // [00]腰ヨー
-    1, // [01]右肩ピッチ
-    1, // [02]右肩ロール
-    1, // [03]右肘ヨー
-    1, // [04]右肘ピッチ
-    1, // [05]右股ヨー
-    1, // [06]右股ロール
-    1, // [07]右股ピッチ
-    1, // [08]右膝ピッチ
-    1, // [09]右足首ピッチ
-    1, // [10]右足首ロール
-    1, // [11]追加サーボ用
-    1, // [12]追加サーボ用
-    1, // [13]追加サーボ用
-    1  // [14]追加サーボ用
-};
-
-// L系統のトリム値(degree)
-float IXL_TRIM[IXL_MAX] = {
-    0.0,     // [00]頭ヨー
-    -20.42,  // [01]左肩ピッチ
-    -103.55, // [02]左肩ロール
-    0.85,    // [03]左肘ヨー
-    88.41,   // [04]左肘ピッチ
-    0.0,     // [05]左股ヨー
-    -2.0,    // [06]左股ロール
-    -17.12,  // [07]左股ピッチ
-    -68.54,  // [08]左膝ピッチ
-    -25.7,   // [09]左足首ピッチ
-    0.0,     // [10]左足首ロール
-    0.0,     // [11]追加サーボ用
-    0.0,     // [12]追加サーボ用
-    0.0,     // [13]追加サーボ用
-    0.0      // [14]追加サーボ用
-};
-
-// R系統のトリム値(degree)
-float IXR_TRIM[IXR_MAX] = {
-    -4.28,  // [00]腰ヨー
-    0.68,   // [01]右肩ピッチ
-    -89.41, // [02]右肩ロール
-    0.0,    // [03]右肘ヨー
-    91.83,  // [04]右肘ピッチ
-    0.0,    // [05]右股ヨー
-    1.0,    // [06]右股ロール
-    -21.42, // [07]右股ピッチ
-    -53.68, // [08]右膝ピッチ
-    -24.12, // [09]右足首ピッチ
-    0.0,    // [10]右足首ロール
-    0.0,    // [11]追加サーボ用
-    0.0,    // [12]追加サーボ用
-    0.0,    // [13]追加サーボ用
-    0.0     // [14]追加サーボ用
-};
-
-#endif // CONFIG_DEFINE_ARRAYS
 
 #endif // __MERIDIAN_CONFIG__
 `;
@@ -1279,12 +1490,12 @@ const CONFIG_DEFS = {
   ],
   hardwareMount: [
     { name: 'MOUNT_SD', type: 'bool', default: 1, desc: 'SD card reader' },
-    { name: 'MOUNT_IMUAHRS', type: 'enum', default: 'IMUAHRS_BNO055',
+    { name: 'MOUNT_IMUAHRS', type: 'enum', default: 'BNO055_AHRS',
       options: [
-        { value: 'IMUAHRS_NONE', label: 'None (0)' },
-        { value: 'IMUAHRS_MPU6050', label: 'MPU6050 (1)' },
-        { value: 'IMUAHRS_MPU9250', label: 'MPU9250 (2)' },
-        { value: 'IMUAHRS_BNO055', label: 'BNO055 (3)' }
+        { value: 'NO_IMU', label: 'None (0)' },
+        { value: 'MPU6050_IMU', label: 'MPU6050 (1)' },
+        { value: 'MPU9250_IMU', label: 'MPU9250 (2)' },
+        { value: 'BNO055_AHRS', label: 'BNO055 (3)' }
       ], desc: 'IMU/AHRS sensor type' },
     { name: 'MOUNT_PAD', type: 'enum', default: 'PC',
       options: [
@@ -1296,7 +1507,7 @@ const CONFIG_DEFS = {
       ], desc: 'Joypad type' },
   ],
   operationMode: [
-    { name: 'MODE_ESP32_STANDALONE', type: 'bool', default: 0, desc: 'Run without board connection (for testing)' },
+    { name: 'MODE_ESP32_STANDALONE', type: 'bool', default: 0, desc: 'Run without board connection (for testing)', warnWhenOn: true },
     { name: 'MODE_UDP_RECEIVE', type: 'bool', default: 1, desc: 'Receive data from PC' },
     { name: 'MODE_UDP_SEND', type: 'bool', default: 1, desc: 'Send data to PC' },
   ],
@@ -1344,31 +1555,44 @@ const CONFIG_DEFS = {
     { name: 'PAD_BUTTON_MARGE', type: 'bool', default: 1, descOff: 'AND with Meridim', descOn: 'OR with Meridim', desc: 'Button merge mode' },
     { name: 'PAD_GENERALIZE', type: 'bool', default: 1, desc: 'Normalize joypad input to PS format' },
   ],
-  servoSettings: [
-    { name: 'MOUNT_SERVO_TYPE_L', type: 'servo_type', default: 'SERVO_TYPE_KOICS3', desc: 'L system servo type' },
-    { name: 'MOUNT_SERVO_TYPE_R', type: 'servo_type', default: 'SERVO_TYPE_KOICS3', desc: 'R system servo type' },
+  servoSettingsL: [
+    { name: 'MOUNT_SERVO_TYPE_L', type: 'servo_type', default: '43', desc: 'L system servo type' },
     { name: 'SERVO_BAUDRATE_L', type: 'number', default: 1250000, min: 9600, max: 4000000, unit: 'bps', desc: 'L system baudrate' },
-    { name: 'SERVO_BAUDRATE_R', type: 'number', default: 1250000, min: 9600, max: 4000000, unit: 'bps', desc: 'R system baudrate' },
     { name: 'SERVO_TIMEOUT_L', type: 'number', default: 2, min: 1, max: 100, unit: 'ms', desc: 'L system response timeout' },
-    { name: 'SERVO_TIMEOUT_R', type: 'number', default: 2, min: 1, max: 100, unit: 'ms', desc: 'R system response timeout' },
-    { name: 'SERVO_LOST_ERR_WAIT', type: 'number', default: 6, min: 1, max: 100, desc: 'Frames before servo error' },
     { name: 'IXL_MAX', type: 'number', default: 15, min: 1, max: 30, desc: 'L system max servos' },
+  ],
+  servoSettingsR: [
+    { name: 'MOUNT_SERVO_TYPE_R', type: 'servo_type', default: '43', desc: 'R system servo type' },
+    { name: 'SERVO_BAUDRATE_R', type: 'number', default: 1250000, min: 9600, max: 4000000, unit: 'bps', desc: 'R system baudrate' },
+    { name: 'SERVO_TIMEOUT_R', type: 'number', default: 2, min: 1, max: 100, unit: 'ms', desc: 'R system response timeout' },
     { name: 'IXR_MAX', type: 'number', default: 15, min: 1, max: 30, desc: 'R system max servos' },
+  ],
+  servoSettingsCommon: [
+    { name: 'SERVO_LOST_ERR_WAIT', type: 'number', default: 6, min: 1, max: 100, desc: 'Frames before servo error' },
+  ],
+  servoSettingsMotion: [
+    { name: 'SERVO_STEP_MAX', type: 'number', default: 3, min: 1, max: 360, unit: 'deg', desc: 'Max change of the servo command per frame' },
+    { name: 'SERVO_UNMOUNT_REPLY', type: 'bool', default: 1, desc: 'Reply for unmounted servo slots (off: 0, on: the received value)' },
+    { name: 'PWM_PIN_MODE', type: 'enum', default: '0',
+      options: [
+        { value: '0', label: 'LED (0)' },
+        { value: '1', label: 'PWM servo 2ch (1)' },
+        { value: '2', label: 'I2C for PCA9685 (2)' }
+      ], desc: 'Use of pins 25/26' },
   ],
 };
 
 const SERVO_TYPES = [
-  { value: 'SERVO_TYPE_NONE', label: 'NONE (0)' },
-  { value: 'SERVO_TYPE_PWM_S', label: 'PWM_S (1)' },
-  { value: 'SERVO_TYPE_PCA9685', label: 'PCA9685 (11)' },
-  { value: 'SERVO_TYPE_FTBRSX', label: 'FTBRSX (21)' },
-  { value: 'SERVO_TYPE_DXL1', label: 'DXL1 (31)' },
-  { value: 'SERVO_TYPE_DXL2', label: 'DXL2 (32)' },
-  { value: 'SERVO_TYPE_KOICS3', label: 'KOICS3 (43)' },
-  { value: 'SERVO_TYPE_KOPMX', label: 'KOPMX (44)' },
-  { value: 'SERVO_TYPE_JRXBUS', label: 'JRXBUS (51)' },
-  { value: 'SERVO_TYPE_FTCSTS', label: 'FTCSTS (61)' },
-  { value: 'SERVO_TYPE_FTCSCS', label: 'FTCSCS (62)' },
+  { value: '0', label: 'NONE (0)' },
+  { value: '21', label: 'FTBRSX (21)' },
+  { value: '31', label: 'DXL1 (31)' },
+  { value: '32', label: 'DXL2 (32)' },
+  { value: '43', label: 'KOICS3 (43)' },
+  { value: '44', label: 'KOPMX (44)' },
+  { value: '51', label: 'JRXBUS (51)' },
+  { value: '61', label: 'FTCSTS (61)' },
+  { value: '62', label: 'FTCSCS (62)' },
+  { value: '71', label: 'HTCHSR (71)' },
 ];
 
 const SERVO_MT_OPTIONS = [
@@ -1383,6 +1607,7 @@ const SERVO_MT_OPTIONS = [
   { value: 51, label: '51: JRXBUS' },
   { value: 61, label: '61: FTCSTS' },
   { value: 62, label: '62: FTCSCS' },
+  { value: 71, label: '71: HTCHSR' },
 ];
 
 const SERVO_PARTS = {
@@ -1510,6 +1735,14 @@ function renderAllSections() {
   });
 }
 
+// Warning shown in place of the description (red)
+function itemWarning(def, value) {
+  if (def.type === 'servo_type' && !SERVO_TYPES.some(opt => opt.value === String(value))) {
+    return 'Not a servo type of a line: PWM (1 / 11) is set per slot (IXL_MT / IXR_MT)';
+  }
+  return '';
+}
+
 function renderConfigItem(def) {
   const value = configValues[def.name] ?? def.default;
   let inputHtml = '';
@@ -1525,17 +1758,25 @@ function renderConfigItem(def) {
         <span class="toggle-slider"></span>
       </label>`;
   } else if (def.type === 'enum') {
+    // A value of config.h that is not an option is kept as an extra option (shown as is)
+    const extra = !def.options.some(opt => opt.value === String(value))
+      ? `<option value="${value}" selected>${value} (current)</option>` : '';
     const options = def.options.map(opt =>
-      `<option value="${opt.value}" ${value === opt.value ? 'selected' : ''}>${opt.label}</option>`
-    ).join('');
+      `<option value="${opt.value}" ${String(value) === opt.value ? 'selected' : ''}>${opt.label}</option>`
+    ).join('') + extra;
     inputHtml = `<select id="${def.name}" onchange="updateValue('${def.name}', this.value)">${options}</select>`;
   } else if (def.type === 'servo_type') {
+    // e.g. a PWM type: shown, and the warning explains it
+    const extra = !SERVO_TYPES.some(opt => opt.value === String(value))
+      ? `<option value="${value}" selected>${value} (not allowed here)</option>` : '';
     const options = SERVO_TYPES.map(opt =>
-      `<option value="${opt.value}" ${value === opt.value ? 'selected' : ''}>${opt.label}</option>`
-    ).join('');
+      `<option value="${opt.value}" ${String(value) === opt.value ? 'selected' : ''}>${opt.label}</option>`
+    ).join('') + extra;
     inputHtml = `<select id="${def.name}" onchange="updateValue('${def.name}', this.value)">${options}</select>`;
   }
 
+  const warning = itemWarning(def, value);
+  const descClass = warning ? ' warn' : (def.type === 'bool' && value ? (def.warnWhenOn ? ' warn' : ' on') : '');
   return `
     <div class="config-item">
       <div class="config-item-header">
@@ -1543,12 +1784,12 @@ function renderConfigItem(def) {
         ${rangeHtml}
       </div>
       ${inputHtml}
-      <div class="config-desc">${def.desc}</div>
+      <div class="config-desc${descClass}" id="${def.name}_desc">${warning || def.desc}</div>
     </div>`;
 }
 
 function renderServoTables() {
-  ['L', 'R', 'C'].forEach(sys => {
+  ['L', 'R'].forEach(sys => {
     const container = document.getElementById(`tab${sys}`);
     container.innerHTML = renderServoTable(sys);
   });
@@ -1624,6 +1865,17 @@ function renderServoTable(sys) {
 function updateValue(name, value) {
   saveState();
   configValues[name] = value;
+  // Highlight descriptions of enabled toggles (red for risky settings, white otherwise)
+  const def = Object.values(CONFIG_DEFS).flat().find(d => d.name === name);
+  const desc = document.getElementById(`${name}_desc`);
+  if (def?.type === 'bool') {
+    desc?.classList.toggle(def.warnWhenOn ? 'warn' : 'on', !!value);
+  } else if (def && desc) {
+    // A chosen option clears the warning
+    const warning = itemWarning(def, value);
+    desc.textContent = warning || def.desc;
+    desc.classList.toggle('warn', !!warning);
+  }
 }
 
 function updateServoArray(arrayName, index, value) {
