@@ -1673,6 +1673,11 @@ let keysValues = {
 };
 let originalKeysContent = '';
 
+// keys.h values of each preset (same names as presets). Saved only in keys.h,
+// so WiFi passwords never go into config.h or browser storage
+let keysPresets = {};
+const KEYS_PRESETS_REGEX_G = /\n*\/\*MERIDIAN_KEYS_PRESETS_BEGIN\n[\s\S]*?\nMERIDIAN_KEYS_PRESETS_END\*\/\n*/g;
+
 // Undo history (max 100)
 const MAX_HISTORY = 100;
 let undoHistory = [];
@@ -2053,10 +2058,7 @@ async function loadKeysFile() {
         keysDirectoryHandle = null;
       }
 
-      originalKeysContent = content;
-      parseKeysFile(content);
-      renderKeysFields();
-      notify('Keys loaded successfully', 'success');
+      applyLoadedKeys(content);
     } catch (e) {
       if (e.name !== 'AbortError') {
         console.error('File System Access API error:', e);
@@ -2074,13 +2076,61 @@ function handleKeysFileSelect(event) {
 
   const reader = new FileReader();
   reader.onload = (e) => {
-    originalKeysContent = e.target.result;
-    parseKeysFile(originalKeysContent);
-    renderKeysFields();
-    notify('Keys loaded successfully', 'success');
+    applyLoadedKeys(e.target.result);
   };
   reader.readAsText(file);
   event.target.value = '';
+}
+
+function applyLoadedKeys(content) {
+  originalKeysContent = content;
+  parseKeysFile(content);
+  parseEmbeddedKeysPresets(content);
+  // The selected preset's WiFi settings are applied on top of the file values
+  const applied = applyKeysPreset(currentPreset);
+  renderKeysFields();
+  notify(`Keys loaded successfully.${applied ? ` Preset "${currentPreset}" applied.` : ''}`, 'success');
+}
+
+function parseEmbeddedKeysPresets(content) {
+  const match = content.match(/\/\*MERIDIAN_KEYS_PRESETS_BEGIN\n([\s\S]*?)\nMERIDIAN_KEYS_PRESETS_END\*\//);
+  if (!match) return;
+  try {
+    keysPresets = { ...keysPresets, ...JSON.parse(match[1]) };
+  } catch (e) {
+    console.error('Failed to parse embedded keys presets:', e);
+  }
+}
+
+// Empty fields in a preset mean "not set" and keep the current value
+function nonEmptyKeys(values) {
+  return Object.fromEntries(Object.entries(values || {}).filter(([name, value]) =>
+    keysValues.hasOwnProperty(name) && String(value).trim() !== ''));
+}
+
+function applyKeysPreset(name) {
+  if (!name || !keysPresets[name]) return false;
+  keysValues = { ...keysValues, ...nonEmptyKeys(keysPresets[name]) };
+  return true;
+}
+
+// Presets saved by an older editor carried keys.h values (and so wrote them into config.h)
+function extractKeysFromPresets() {
+  let moved = false;
+  for (const [name, preset] of Object.entries(presets)) {
+    if (!preset.keysValues) continue;
+    if (!keysPresets[name]) keysPresets[name] = nonEmptyKeys(preset.keysValues);
+    delete preset.keysValues;
+    moved = true;
+  }
+  return moved;
+}
+
+// Keys presets as a comment block at the end of keys.h (only for presets that still exist)
+function appendKeysPresetsToContent(content) {
+  const saved = Object.fromEntries(Object.entries(keysPresets).filter(([name]) => presets[name]));
+  if (Object.keys(saved).length === 0) return content;
+  return `${content.trimEnd()}\n\n/*MERIDIAN_KEYS_PRESETS_BEGIN\n${JSON.stringify(saved, null, 2)}\nMERIDIAN_KEYS_PRESETS_END*/\n`;
 }
 
 function parseKeysFile(content) {
@@ -2120,7 +2170,10 @@ function updateKeysValue(name, value) {
   keysValues[name] = value;
 }
 
+const KEYS_SAVED_MSG = 'Keys saved. keys.h holds WiFi passwords: do not commit it.';
+
 async function saveKeysFile() {
+  storeCurrentKeys();
   const content = generateKeysContent();
 
   if ('showSaveFilePicker' in window) {
@@ -2154,23 +2207,23 @@ async function saveKeysFile() {
       await writable.write(content);
       await writable.close();
 
-      notify('Keys saved', 'success');
+      notify(KEYS_SAVED_MSG, 'success');
     } catch (e) {
       if (e.name !== 'AbortError') {
         console.error('File System Access API error:', e);
         downloadFile('keys.h', content);
-        notify('Keys saved', 'success');
+        notify(KEYS_SAVED_MSG, 'success');
       }
     }
   } else {
     downloadFile('keys.h', content);
-    notify('Keys saved', 'success');
+    notify(KEYS_SAVED_MSG, 'success');
   }
 }
 
 function generateKeysContent() {
   if (originalKeysContent) {
-    let content = originalKeysContent;
+    let content = originalKeysContent.replace(KEYS_PRESETS_REGEX_G, '\n');
     for (const [key, value] of Object.entries(keysValues)) {
       const isNumeric = key === 'UDP_SEND_PORT' || key === 'UDP_RECV_PORT';
       const regex = new RegExp(`(#define\\s+${key}\\s+)("[^"]*"|\\S+)`);
@@ -2180,11 +2233,11 @@ function generateKeysContent() {
         content = content.replace(regex, `$1"${value}"`);
       }
     }
-    return content;
+    return appendKeysPresetsToContent(content);
   }
 
   // Generate new keys.h
-  return `#ifndef __MERIDIAN_KEYS_H__
+  return appendKeysPresetsToContent(`#ifndef __MERIDIAN_KEYS_H__
 #define __MERIDIAN_KEYS_H__
 
 // Wifiアクセスポイントの設定
@@ -2208,7 +2261,7 @@ function generateKeysContent() {
 #define ETHER_MAC      "${keysValues.ETHER_MAC}"
 
 #endif // __MERIDIAN_KEYS_H__
-`;
+`);
 }
 
 // Connection mode handling
@@ -2355,6 +2408,7 @@ function parseEmbeddedPresets(content) {
     try {
       const loadedPresets = JSON.parse(presetMatch[1]);
       presets = loadedPresets;
+      extractKeysFromPresets();
       savePresetsToStorage();
       updatePresetSelect();
       notify('Presets loaded from config.h', 'success');
@@ -2504,6 +2558,7 @@ function loadPresets() {
   const saved = localStorage.getItem('meridian_presets');
   if (saved) {
     presets = JSON.parse(saved);
+    if (extractKeysFromPresets()) savePresetsToStorage(); // remove old WiFi passwords from browser storage
     updatePresetSelect();
   }
 }
@@ -2534,9 +2589,7 @@ function loadPreset(name) {
   saveState();
   configValues = { ...preset.configValues };
   servoArrays = JSON.parse(JSON.stringify(preset.servoArrays));
-  if (preset.keysValues) {
-    keysValues = { ...preset.keysValues };
-  }
+  applyKeysPreset(name);
   currentPreset = name;
 
   renderAllSections();
@@ -2546,15 +2599,21 @@ function loadPreset(name) {
   notify(`Preset "${name}" loaded`, 'success');
 }
 
+// WiFi settings of the selected preset (kept in keys.h by Save Keys). Before keys.h is loaded
+// the fields hold defaults, so they are not stored
+function storeCurrentKeys() {
+  if (currentPreset && presets[currentPreset] && originalKeysContent) keysPresets[currentPreset] = { ...keysValues };
+}
+
 function savePreset() {
   if (currentPreset) {
     presets[currentPreset] = {
       configValues: { ...configValues },
-      servoArrays: JSON.parse(JSON.stringify(servoArrays)),
-      keysValues: { ...keysValues }
+      servoArrays: JSON.parse(JSON.stringify(servoArrays))
     };
+    storeCurrentKeys();
     savePresetsToStorage();
-    notify(`Preset "${currentPreset}" saved`, 'success');
+    notify(`Preset "${currentPreset}" saved` + (originalKeysContent ? '. Save Keys to keep its WiFi settings in keys.h' : ''), 'success');
   } else {
     addPreset();
   }
@@ -2567,15 +2626,16 @@ function addPreset() {
       if (currentPreset && presets[currentPreset]) {
         presets[name.trim()] = {
           configValues: { ...presets[currentPreset].configValues },
-          servoArrays: JSON.parse(JSON.stringify(presets[currentPreset].servoArrays)),
-          keysValues: presets[currentPreset].keysValues ? { ...presets[currentPreset].keysValues } : { ...keysValues }
+          servoArrays: JSON.parse(JSON.stringify(presets[currentPreset].servoArrays))
         };
+        if (keysPresets[currentPreset]) keysPresets[name.trim()] = { ...keysPresets[currentPreset] };
+        else if (originalKeysContent) keysPresets[name.trim()] = { ...keysValues };
       } else {
         presets[name.trim()] = {
           configValues: { ...configValues },
-          servoArrays: JSON.parse(JSON.stringify(servoArrays)),
-          keysValues: { ...keysValues }
+          servoArrays: JSON.parse(JSON.stringify(servoArrays))
         };
+        if (originalKeysContent) keysPresets[name.trim()] = { ...keysValues };
       }
       currentPreset = name.trim();
       savePresetsToStorage();
@@ -2594,6 +2654,10 @@ function renamePreset() {
     if (name && name.trim() && name !== currentPreset) {
       presets[name.trim()] = presets[currentPreset];
       delete presets[currentPreset];
+      if (keysPresets[currentPreset]) {
+        keysPresets[name.trim()] = keysPresets[currentPreset];
+        delete keysPresets[currentPreset];
+      }
       currentPreset = name.trim();
       savePresetsToStorage();
       updatePresetSelect();
@@ -2609,6 +2673,7 @@ function deletePreset() {
   }
   if (confirm(`Delete preset "${currentPreset}"?`)) {
     delete presets[currentPreset];
+    delete keysPresets[currentPreset];
     currentPreset = '';
     savePresetsToStorage();
     updatePresetSelect();

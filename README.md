@@ -112,8 +112,8 @@ config.h はテキストエディタで直接書き換えるほか, リポジト
   
 - MODE_ESP32_STANDALONE が ON のときは説明が赤く表示されます. ESP32 単体でのテスト用の設定なので, ボードに挿してサーボを動かすときは OFF にしてください.  
 - config.h の値が選択肢にない場合は「(current)」「(not allowed here)」として表示され, そのまま保存されます.  
-- WiFi / LAN Settings の「Load Keys」「Save Keys」で keys.h も読み書きできます.  
-- プリセット(Preset の Add / Save Preset)はブラウザに保存され, Save Config のときに config.h の末尾にも書き込まれます. プリセットには keys.h の値(WiFiのパスワード等)も含まれるため, config.h を公開する場合は末尾の MERIDIAN_PRESETS のブロックを削除してください.  
+- WiFi / LAN Settings の「Load Keys」「Save Keys」で keys.h も読み書きできます. keys.h には WiFi のパスワード等が入るため, 本物の値を書いた keys.h はコミット・公開しないでください.  
+- プリセット(Preset の Add / Save Preset)はブラウザに保存され, Save Config のときに config.h の末尾にも書き込まれます. プリセットには WiFi の設定は含まれません. プリセットごとの WiFi の設定は, keys.h を読み込んだ状態で Save Keys を押すと keys.h の末尾(MERIDIAN_KEYS_PRESETS)に保存され, プリセットを選ぶと切り替わります.  
   
 ## ビルドの確認とESP32-DevKitCへのアップロード（書き込み）  
 
