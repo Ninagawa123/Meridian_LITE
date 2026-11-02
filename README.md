@@ -359,7 +359,7 @@ config.hにて「#define MOUNT_PAD WIIMOTE」と設定してボードにアッ�
   
 # バージョン更新履歴  
 
-### 2026.11.03 v1.1.3  
+### 2026.11.03 v1.1.2  
 サーボとセンサを拡張しました.  
 - サーボ: KONDO ICS, FEETECH STS/SCS, DYNAMIXEL Protocol 1.0/2.0, FUTABA, XBUS, Hitec, PMX, PWM, PCA9685 に対応. L/R 系統ごとに1種類を config.h の MOUNT_SERVO_TYPE_L/R で選びます(1系統での混在は不可).  
 - 1フレームあたりのサーボ角度の変化量を SERVO_STEP_MAX(度) で制限します.  
