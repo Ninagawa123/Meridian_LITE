@@ -5,7 +5,16 @@
 			"path": "."
 		}
 	],
+	"extensions": {
+		"recommendations": [
+			"platformio.platformio-ide"
+		],
+		"unwantedRecommendations": [
+			"ms-vscode.cpptools-extension-pack"
+		]
+	},
 	"settings": {
+		"platformio-ide.autoOpenPlatformIOIniFile": true,
 		"files.encoding": "utf8",
 		"files.eol": "\n",
 		"editor.formatOnSave": true,
