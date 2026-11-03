@@ -4,6 +4,7 @@
 // ヘッダファイルの読み込み
 #include "config.h"
 #include "main.h"
+#include "mrd_servo.h" // ICSサーボ(KRR5FHの受信機はR系統のICSバスにつなぐ)
 
 // ライブラリ導入
 #include <ESP32Wiimote.h> // Wiiコントローラー
@@ -30,7 +31,7 @@ constexpr unsigned short PAD_TABLE_KRC5FH_TO_COMMON[16] = { //
 /// @brief KRC-5FHジョイパッドからデータを読み取り, 指定された間隔でデータを更新する.
 /// @param a_interval 読み取り間隔(ミリ秒).
 /// @return 更新されたジョイパッドの状態を64ビット整数で返す.
-uint64_t mrd_pad_read_krc(uint a_interval, IcsHardSerialClass &a_ics) {
+uint64_t mrd_pad_read_krc(uint a_interval, IcsBaseClass &a_ics) {
   static uint64_t pre_val_tmp = 0; // 前回の値を保持する静的変数
   int8_t pad_analog_tmp[4] = {0};  // アナログ入力のデータ組み立て用
   static int calib[4] = {0};       // アナログスティックのキャリブレーション値
@@ -43,7 +44,7 @@ uint64_t mrd_pad_read_krc(uint a_interval, IcsHardSerialClass &a_ics) {
     int krr_analog_tmp[4];             // krrからのアナログ入力データ
     unsigned short pad_common_tmp = 0; // PS準拠に変換後のボタンデータ
     bool rcvd_tmp;                     // 受信機がデータを受信成功したか
-    rcvd_tmp = ics_R.getKrrAllData(&krr_button_tmp, krr_analog_tmp);
+    rcvd_tmp = a_ics.getKrrAllData(&krr_button_tmp, krr_analog_tmp);
     delayMicroseconds(2);
 
     if (rcvd_tmp) // リモコンデータが受信できていたら
@@ -74,9 +75,8 @@ uint64_t mrd_pad_read_krc(uint a_interval, IcsHardSerialClass &a_ics) {
         // アナログ入力データの処理
         if (krr_analog_tmp[0] + krr_analog_tmp[1] + krr_analog_tmp[2] + krr_analog_tmp[3]) {
           for (int i = 0; i < 4; i++) {
-            pad_analog_tmp[i] = (krr_analog_tmp[i] - 62) << 2;
-            pad_analog_tmp[i] = (pad_analog_tmp[i] < -127) ? -127 : pad_analog_tmp[i];
-            pad_analog_tmp[i] = (pad_analog_tmp[i] > 127) ? 127 : pad_analog_tmp[i];
+            // intで計算して範囲内に収めてからint8_tにする(int8_tで計算すると最大値付近で桁あふれする)
+            pad_analog_tmp[i] = int8_t(constrain((int(krr_analog_tmp[i]) - 62) * 4, -127, 127));
           }
         } else
           for (int i = 0; i < 4; i++) {
@@ -162,8 +162,10 @@ uint64_t mrd_bt_read_wiimote() {
     }
 
     // ヌンチャクの値を組み入れ
-    new_pad_tmp[1] = ((nunchuk_tmp.xStick - calib_l1x - 127) * 256 //
-                      + (nunchuk_tmp.yStick - calib_l1y - 127));
+    // 上位バイトにx, 下位バイトにyを入れる(yが負のときにxへ繰り下がらないよう, それぞれ8bitで詰める)
+    const int stick_x_tmp = constrain(nunchuk_tmp.xStick - calib_l1x - 127, -127, 127);
+    const int stick_y_tmp = constrain(nunchuk_tmp.yStick - calib_l1y - 127, -127, 127);
+    new_pad_tmp[1] = ((stick_x_tmp & 0xFF) << 8) | (stick_y_tmp & 0xFF);
 
     // データの組み立て
     uint64_t new_val_tmp = 0; // 戻り値格納用
@@ -189,8 +191,8 @@ uint64_t mrd_bt_read_wiimote() {
 /// @note WIIMOTEの場合は, スレッドがpad_array.ui64valを自動更新.
 uint64_t mrd_pad_read(PadType a_pad_type, uint64_t a_pad_data) {
 
-  if (a_pad_type == KRR5FH) { // KRR5FH
-    return mrd_pad_read_krc(PAD_INTERVAL, ics_R);
+  if (a_pad_type == KRR5FH) { // KRR5FH. R系統がICSのときだけ(他のプロトコルのバスにICSのコマンドを流さない)
+    return (MOUNT_SERVO_TYPE_R == KOICS3) ? mrd_pad_read_krc(PAD_INTERVAL, ics_r) : 0;
   }
 
   if (a_pad_type == WIIMOTE) { // Wiimote
@@ -228,7 +230,7 @@ bool mrd_bt_settings(int a_mount_pad,
 
       // タイムアウトチェック
       if (millis() - start_time >= a_timeout) {
-        digitalWrite(a_led, LOW);
+        mrd_led_write(a_led, LOW);
         a_serial.println("Wiimote connection timed out.");
         return false;
       }
@@ -236,9 +238,9 @@ bool mrd_bt_settings(int a_mount_pad,
       // LEDの点滅
       count_tmp++;
       if (count_tmp < 500) {
-        digitalWrite(a_led, HIGH);
+        mrd_led_write(a_led, HIGH);
       } else {
-        digitalWrite(a_led, LOW);
+        mrd_led_write(a_led, LOW);
       }
       if (count_tmp > 1000) {
         a_serial.print(".");
@@ -247,11 +249,11 @@ bool mrd_bt_settings(int a_mount_pad,
 
       delay(1); // 1ms秒待機して再チェック
     }
-    digitalWrite(a_led, HIGH);
+    mrd_led_write(a_led, HIGH);
     a_serial.println("Wiimote successfully connected. ");
     return true;
   }
-  digitalWrite(a_led, LOW);
+  mrd_led_write(a_led, LOW);
   return false;
 }
 

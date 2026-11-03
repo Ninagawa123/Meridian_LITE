@@ -13,6 +13,36 @@
 //  コマンド処理
 //==================================================================================================
 
+/// @brief サーボのトリムと回転方向を変えても, いまの姿勢(サーボ側の角度)が変わらないように,
+///        指令値・前回の値・前回の指令値を新しいトリムと回転方向の角度に換算して設定する.
+///        サーボ側の角度 = トリム + 回転方向 × 角度(mrd_servo_deg2pos, mrd.Deg2Krs と同じ).
+/// @param a_tgt 指令値, a_tgt_past 前回の値, a_cmd_past 前回の指令値(degree. 書き換える).
+/// @param a_trim トリム(degree. 書き換える), a_cw 回転方向(書き換える).
+/// @param a_new_trim 新しいトリム(degree), a_new_cw 新しい回転方向.
+void mrd_servo_retrim(float &a_tgt, float &a_tgt_past, float &a_cmd_past, float &a_trim, int &a_cw, float a_new_trim,
+                      int a_new_cw) {
+  const int new_cw_tmp = (a_new_cw < 0) ? -1 : 1;
+  a_tgt = (a_trim + a_cw * a_tgt - a_new_trim) * new_cw_tmp;
+  a_tgt_past = (a_trim + a_cw * a_tgt_past - a_new_trim) * new_cw_tmp;
+  a_cmd_past = (a_trim + a_cw * a_cmd_past - a_new_trim) * new_cw_tmp;
+  a_trim = a_new_trim;
+  a_cw = new_cw_tmp;
+}
+
+/// @brief 全サーボの目標値を原点(角度0)にする. 前回の指令値も0にし, 次のフレームの変化量の制限で戻らないようにする.
+void mrd_servo_targets_home(Meridim90Union &a_meridim, ServoParam &a_sv) {
+  for (int i = 0; i < MRD_SERVO_SLOTS; i++) {
+    a_meridim.sval[MRD_L_ORIGIDX + 1 + i * 2] = 0; // L系統の目標値を原点に
+    a_meridim.sval[MRD_R_ORIGIDX + 1 + i * 2] = 0; // R系統の目標値を原点に
+    a_sv.ixl_tgt_past[i] = a_sv.ixl_tgt[i];        // 前回のdegreeをキープ
+    a_sv.ixr_tgt_past[i] = a_sv.ixr_tgt[i];
+    a_sv.ixl_tgt[i] = 0;
+    a_sv.ixr_tgt[i] = 0;
+    a_sv.ixl_cmd_past[i] = 0;
+    a_sv.ixr_cmd_past[i] = 0;
+  }
+}
+
 /// @brief Master Commandの第1群を実行する. 受信コマンドに基づき, 異なる処理を行う.
 /// @param a_meridim 実行したいコマンドの入ったMeridim配列.(参照渡し)
 /// @param a_flg_exe Meridimの受信成功判定フラグ.
@@ -57,8 +87,8 @@ bool execute_master_command_1(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
     String msg_tmp = "cmd: set EEPROM data from current trim.[" + String(MCMD_EEPROM_SAVE_TRIM) + "]";
     Serial.println(msg_tmp);
 
-    // 空のUnionEEPROM構造体を作成し初期化
-    UnionEEPROM array_tmp = {0};
+    // いまのEEPROMの内容を土台にする(サーボのスロット以外の語と, 使っていないスロットを消さないため)
+    UnionEEPROM array_tmp = mrd_eeprom_read();
 
     // a_serial.println("a_meridim:");
     // for (int i = 0; i < 90; i++) {
@@ -89,6 +119,11 @@ bool execute_master_command_1(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
       a_serial.println("write EEPROM failed.");
       return false;
     }
+
+    // 保存した設定(マウント, ID, 回転方向, トリム)をいまの設定にも反映する(10102 や再起動を待たずに使う).
+    // 保存したトリムの位置が新しい原点になるので, 目標値を原点にする(フレームのサーボのスロットは main.cpp で戻す)
+    mrd_eeprom_servo_words_apply(a_sv, array_tmp.saval[1]);
+    mrd_servo_targets_home(a_meridim, a_sv);
     return true;
   }
 
@@ -98,12 +133,7 @@ bool execute_master_command_1(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
     mrd_eeprom_load_servosettings(a_sv, true, Serial);
 
     // サーボをEEPROMのTRIM値で補正されたHOME(原点)に移動する
-    for (int i = 0; i < MRD_SERVO_SLOTS; i++) {
-      a_meridim.sval[MRD_L_ORIGIDX + 1 + i * 2] = 0; // L系統の目標値を原点に
-      a_meridim.sval[MRD_R_ORIGIDX + 1 + i * 2] = 0; // R系統の目標値を原点に
-      a_sv.ixl_tgt[i] = 0;                           //
-      a_sv.ixr_tgt[i] = 0;
-    }
+    mrd_servo_targets_home(a_meridim, a_sv);
 
     // サーボ動作を実行する
     if (!MODE_ESP32_STANDALONE) {
@@ -140,6 +170,16 @@ bool execute_master_command_2(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
   if (a_meridim.sval[MRD_MASTER] == MCMD_SENSOR_YAW_CALIB) {
     ahrs.yaw_origin = ahrs.yaw_source;
     String msg_tmp = "cmd: caliblate sensor's yaw.[" + String(MCMD_SENSOR_YAW_CALIB) + "]";
+    Serial.println(msg_tmp);
+    return true;
+  }
+
+  // コマンド:MCMD_SENSOR_ALL_CALIB(10003) IMU/AHRSのロール・ピッチ・ヨーを現在値を原点としてリセット
+  if (a_meridim.sval[MRD_MASTER] == MCMD_SENSOR_ALL_CALIB) {
+    ahrs.roll_origin = ahrs.roll_source;
+    ahrs.pitch_origin = ahrs.pitch_source;
+    ahrs.yaw_origin = ahrs.yaw_source;
+    String msg_tmp = "cmd: caliblate sensor's roll, pitch and yaw.[" + String(MCMD_SENSOR_ALL_CALIB) + "]";
     Serial.println(msg_tmp);
     return true;
   }
@@ -203,41 +243,24 @@ bool execute_master_command_3(Meridim90Union &a_meridim, bool a_flg_exe, ServoPa
     mrd_eeprom_load_servosettings(a_sv, true, Serial);
 
     // サーボをEEPROMのTRIM値で補正されたHOME(原点)に移動する
-    for (int i = 0; i < MRD_SERVO_SLOTS; i++) {
-      a_meridim.sval[MRD_L_ORIGIDX + 1 + i * 2] = 0; // L系統の目標値を原点に
-      a_meridim.sval[MRD_R_ORIGIDX + 1 + i * 2] = 0; // R系統の目標値を原点に
-      a_sv.ixl_tgt_past[i] = a_sv.ixl_tgt[i];        // 前回のdegreeをキープ
-      a_sv.ixr_tgt_past[i] = a_sv.ixr_tgt[i];
-      a_sv.ixl_tgt[i] = 0; //
-      a_sv.ixr_tgt[i] = 0;
-    }
+    mrd_servo_targets_home(a_meridim, a_sv);
 
     // サーボ動作を実行する
     if (!MODE_ESP32_STANDALONE) {
       mrd_servo_drive_lite(a_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, a_sv);
     }
 
-    // サーボの目標値として現在のTRIM値をセットする
+    // サーボのTRIM値をゼロリセットする. 指令値はいまの姿勢のまま, TRIM値0の角度(これまでのTRIM値の位置)に換算する
     for (int i = 0; i < MRD_SERVO_SLOTS; i++) {
-      a_meridim.sval[MRD_L_ORIGIDX + 1 + i * 2] = a_sv.ixl_trim[i];
-      a_meridim.sval[MRD_R_ORIGIDX + 1 + i * 2] = a_sv.ixr_trim[i];
-    }
-
-    // サーボのTRIM値をゼロリセットする
-    for (int i = 0; i < MRD_SERVO_SLOTS; i++) {
-      a_sv.ixl_trim[i] = 0;
-      a_sv.ixr_trim[i] = 0;
+      mrd_servo_retrim(a_sv.ixl_tgt[i], a_sv.ixl_tgt_past[i], a_sv.ixl_cmd_past[i], a_sv.ixl_trim[i], a_sv.ixl_cw[i], 0,
+                       a_sv.ixl_cw[i]);
+      mrd_servo_retrim(a_sv.ixr_tgt[i], a_sv.ixr_tgt_past[i], a_sv.ixr_cmd_past[i], a_sv.ixr_trim[i], a_sv.ixr_cw[i], 0,
+                       a_sv.ixr_cw[i]);
     }
 
     // サーボ動作を実行する. サーボはTRIM値を0としつつ, tgtとしてこれまでのTRIM値の角度をキープする
     if (!MODE_ESP32_STANDALONE) {
       mrd_servo_drive_lite(a_meridim, MOUNT_SERVO_TYPE_L, MOUNT_SERVO_TYPE_R, a_sv); // サーボ動作を実行する
-    }
-
-    // サーボ設定を格納する ####(おかしそう)
-    for (int i = 0; i < MRD_SERVO_SLOTS; i++) {
-      a_meridim.sval[MRD_L_ORIGIDX + i * 2] = a_sv.ixl_trim[i];
-      a_meridim.sval[MRD_R_ORIGIDX + i * 2] = a_sv.ixr_trim[i];
     }
 
     // サーボの設定値とTRIM値をPCに送信する

@@ -179,48 +179,95 @@
 #define PAD_GENERALIZE   1     // ジョイパッドの入力値をPS系に一般化する
 
 // ピンアサイン
+#define PWM_PIN_MODE       0  // ピン25/26の用途(0:LED(従来), 1:本体PWMサーボ2ch, 2:PCA9685用I2C(Wire1, SDA=25, SCL=26))
+                              // ※1/2の場合, エラーLED(25)とBT LED(26)は使えない
 #define PIN_ERR_LED        25 // LED用 処理が時間内に収まっていない場合に点灯
 #define PIN_EN_L           33 // サーボL系統のENピン
+#define PIN_TX_L           27 // サーボL系統のTXピン(Serial1)
+#define PIN_RX_L           32 // サーボL系統のRXピン(Serial1)
 #define PIN_EN_R           4  // サーボR系統のENピン
+#define PIN_TX_R           17 // サーボR系統のTXピン(Serial2)
+#define PIN_RX_R           16 // サーボR系統のRXピン(Serial2)
 #define PIN_CHIPSELECT_SD  15 // SDカード用のCSピン
 #define PIN_CHIPSELECT_LAN 5  // 有線LAN用のCSピン
 #define PIN_RESET_LAN      14 // W5500リセットピン(※ボード裏から半田付けにてフリーピンに配線)
 #define PIN_I2C0_SDA       22 // I2CのSDAピン
 #define PIN_I2C0_SCL       21 // I2CのSCLピン
 #define PIN_LED_BT         26 // Bluetooth接続確認用ピン(点滅はペアリング,点灯でリンク確立)
+#define PIN_PWM_0          25 // 本体PWMサーボ0 (PWM_PIN_MODE 1)
+#define PIN_PWM_1          26 // 本体PWMサーボ1 (PWM_PIN_MODE 1)
+#define PIN_I2C1_SDA       25 // I2C1(Wire1)のSDA (PCA9685 の PWM_PIN_MODE 2)
+#define PIN_I2C1_SCL       26 // I2C1(Wire1)のSCL (PCA9685 の PWM_PIN_MODE 2)
 
 //-------------------------------------------------------------------------
 // サーボ設定
 //-------------------------------------------------------------------------
 
 // コマンドサーボの種類
-// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
-// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
-// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
-// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
-// 51: JRXBUS (JRPROPO_XBUS)[WIP]
-// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
+// 00: NOSERVO (マウントなし),            01: PWM_S (本体ピンPWM)
+// 11: PCA9685 (I2C_PCA9685toPWM),      21: FTBRSX (FUTABA_RSxTTL, RS30x)
+// 31: DXL1 (DYNAMIXEL 1.0, AX/RX/MX), 32: DXL2 (DYNAMIXEL 2.0, Xシリーズ)
+// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX, RS-485変換経由)
+// 51: JRXBUS (JRPROPO_XBUS),          71: HTCHSR (Hitec_HSR)
+// 61: FTCSTS (FEETECH_STS),            62: FTCSCS (FEETECH_SCS) ※STSとSCSは別物. 同じ系統に両方あれば位置を交互に読む
 #define MOUNT_SERVO_TYPE_L 43 // L系統のコマンドサーボの種類
 #define MOUNT_SERVO_TYPE_R 43 // R系統のコマンドサーボの種類
 
 // サーボ関連設定
-#define SERVO_BAUDRATE_L    1250000 // L系統のICSサーボの通信速度bps
-#define SERVO_BAUDRATE_R    1250000 // R系統のICSサーボの通信速度bps
-#define SERVO_TIMEOUT_L     2       // L系統のICS返信待ちのタイムアウト時間
-#define SERVO_TIMEOUT_R     2       // R系統のICS返信待ちのタイムアウト時間
+#define SERVO_BAUDRATE_L    1250000 // L系統のサーボの通信速度bps(ICS:1250000, FEETECH:1000000, DXL:サーボの設定値(AXは1M, MX/RXは57600), FUTABA:460800推奨, XBUS:250000, HITEC:19200, PMX:3000000推奨)
+#define SERVO_BAUDRATE_R    1250000 // R系統のサーボの通信速度bps(ICS:1250000, FEETECH:1000000, DXL:サーボの設定値(AXは1M, MX/RXは57600), FUTABA:460800推奨, XBUS:250000, HITEC:19200, PMX:3000000推奨)
+#define SERVO_TIMEOUT_L     2       // L系統のサーボ返信待ちのタイムアウト時間(ms)
+#define SERVO_TIMEOUT_R     2       // R系統のサーボ返信待ちのタイムアウト時間(ms)
 #define SERVO_LOST_ERR_WAIT 6       // 連続何フレームサーボ信号をロストしたら異常とするか
+#define SERVO_STEP_MAX          3.0  // 1フレームあたりの指令値の最大変化量(degree)
+#define SERVO_UNMOUNT_REPLY     1    // マウントしていないサーボのスロットへの返信値(0:0を返す, 1:受信した値をそのまま返す)
+
+// FEETECH(STS/SCS)サーボ関連設定. 系列(STS/SCS)はスロットの種類(61/62)で決まる. 起動時にサーボの値と違えば警告を表示する
+#define SERVO_FTC_STS_RANGE        360.0 // STSの位置値0-4095に対応する角度範囲(degree)
+#define SERVO_FTC_SCS_RANGE        300.0 // SCSの位置値0-1023に対応する角度範囲(degree, SCS0009等. 機種により異なる)
+#define SERVO_FTC_SCS_SPEED        1500  // SCSの目標速度(位置値/秒). SCSは0だと駆動しない. 1500で約440deg/s(300deg機種)
+#define SERVO_FTC_FIX_RETURN_DELAY 1     // 起動時に応答遅延時間が0でなければ0に書き換える(0:しない, 1:する)
+                                         // ※サーボのEEPROMに保存される. 0でないと1系統15台で100Hzを維持できない
+
+// DYNAMIXEL Protocol 1.0/2.0 サーボ関連設定. 通信速度は事前にDYNAMIXEL Wizard等で1Mbps以上にしておく
+#define SERVO_DXL_FIX_RETURN_DELAY 1 // 起動時に応答遅延時間(初期値500us)が0でなければ0に書き換える(0:しない, 1:する)
+                                     // ※サーボのEEPROMに保存される. 書き換えの際は一度トルクOFFにする
+
+// JR XBUSサーボ関連設定. 通信速度は250000bps固定. 50Hzで全サーボへ送信(戻り値なし, 指令値を返す)
+#define SERVO_XBUS_ANGLE180 0 // サーボ側の180度モードに合わせる(0:通常 ±60deg=900-2100us, 1:180度モード ±90deg)
+
+// Hitec HSRサーボ関連設定. 通信速度は19200bps固定. 1台ずつ処理する
+//   動作中(トルクONのサーボあり): 位置を送るだけ(返信は待たず, 指令値を返す)
+//   脱力中(全サーボOFF): 現在位置を読むだけ(角度値は送らず, 読み取った角度を返す)
+#define SERVO_HTC_PER_FRAME  1    // 1フレームに位置を送る/読むサーボ数(1台約4.2ms). 送る場合は各サーボ50Hzまで
+                                  // 1なら2台まで各50Hz, 4台で各25Hz
+#define SERVO_HTC_US_PER_DEG 10.0 // 1degあたりのパルス幅(us). 1500us中心, 550-2450us
+#define SERVO_HTC_SPEED      0xFF // 現在位置の読み出し(0xE9)で同時に設定される速度(1-255. 0xFFはEEPROMの初期値)
+
+// PWMサーボ(本体ピン25/26, PCA9685)関連設定. 50Hz, 動作命令のみ(戻り値なし). ピンの用途は PWM_PIN_MODE で選ぶ
+// パルス幅と角度の範囲はスロットごと(IXL_PWM_CENTER などの配列)
+#define I2C1_SPEED     400000   // I2C1(Wire1. PCA9685)の速度
+#define PCA9685_NUM    1        // PCA9685の枚数(0-2). 1枚目は偶数フレーム, 2枚目は奇数フレームで更新(各50Hz)
+#define PCA9685_ADDR_0 0x40     // 1枚目のI2Cアドレス
+#define PCA9685_ADDR_1 0x41     // 2枚目のI2Cアドレス(A0をHIGHに)
+#define PCA9685_OSC_HZ 25000000 // 内蔵発振器の周波数. 個体差でパルス幅がずれる場合に実測値に合わせる
+
+// FUTABA RS30xサーボ関連設定. 通信速度は最大460800bps(初期値115200bps)
+#define SERVO_FTB_READ_PER_FRAME 8 // 1フレームに現在位置を読むサーボ数(超える分は次のフレームで順に読む)
+                                   // 460800bpsで1台あたり約0.5ms. 15台を毎フレーム読むと100Hzに収まらない
 
 // 各サーボ系統の最大サーボマウント数
 #define IXL_MAX 15 // L系統の最大サーボ数. 標準は15.
 #define IXR_MAX 15 // R系統の最大サーボ数. 標準は15.
 
 // L系統のサーボのマウントの設定
-// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
-// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
-// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
-// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
-// 51: JRXBUS (JRPROPO_XBUS)[WIP]
-// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
+// 00: NOSERVO (マウントなし),            01: PWM_S (本体ピンPWM)
+// 11: PCA9685 (I2C_PCA9685toPWM),      21: FTBRSX (FUTABA_RSxTTL, RS30x)
+// 31: DXL1 (DYNAMIXEL 1.0, AX/RX/MX), 32: DXL2 (DYNAMIXEL 2.0, Xシリーズ)
+// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX, RS-485変換経由)
+// 51: JRXBUS (JRPROPO_XBUS),          71: HTCHSR (Hitec_HSR)
+// 61: FTCSTS (FEETECH_STS),            62: FTCSCS (FEETECH_SCS) ※STSとSCSは別物. 同じ系統に両方あれば位置を交互に読む
+// ※UARTのサーボは系統の種類(MOUNT_SERVO_TYPE_L/R)と同じもの(FEETECHは61/62)にする. 1/11はPWMの対応表で使う
 int IXL_MT[IXL_MAX] = {
     // L系統のマウント状態
     43, // [00]頭ヨー
@@ -241,12 +288,13 @@ int IXL_MT[IXL_MAX] = {
 };
 
 // R系統のサーボのマウントの設定
-// 00: NOSERVO (マウントなし),            01: PWM_S1 (Single PWM)[WIP]
-// 11: PCA9685 (I2C_PCA9685toPWM)[WIP], 21: FTBRSX (FUTABA_RSxTTL)[WIP]
-// 31: DXL1 (DYNAMIXEL 1.0)[WIP],       32: DXL2 (DYNAMIXEL 2.0)[WIP]
-// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX)[WIP]
-// 51: JRXBUS (JRPROPO_XBUS)[WIP]
-// 61: FTCSTS (FEETECH_STS)[WIP],       62: FTCSCS (FEETECH_SCS)[WIP]
+// 00: NOSERVO (マウントなし),            01: PWM_S (本体ピンPWM)
+// 11: PCA9685 (I2C_PCA9685toPWM),      21: FTBRSX (FUTABA_RSxTTL, RS30x)
+// 31: DXL1 (DYNAMIXEL 1.0, AX/RX/MX), 32: DXL2 (DYNAMIXEL 2.0, Xシリーズ)
+// 43: KOICS3 (KONDO_ICS 3.5 / 3.6),    44: KOPMX (KONDO_PMX, RS-485変換経由)
+// 51: JRXBUS (JRPROPO_XBUS),          71: HTCHSR (Hitec_HSR)
+// 61: FTCSTS (FEETECH_STS),            62: FTCSCS (FEETECH_SCS) ※STSとSCSは別物. 同じ系統に両方あれば位置を交互に読む
+// ※UARTのサーボは系統の種類(MOUNT_SERVO_TYPE_L/R)と同じもの(FEETECHは61/62)にする. 1/11はPWMの対応表で使う
 int IXR_MT[IXR_MAX] = {
     // R系統のマウント状態
     43, // [00]腰ヨー
@@ -379,6 +427,181 @@ float IXR_TRIM[IXR_MAX] = {
     0.0,    // [12]追加サーボ用
     0.0,    // [13]追加サーボ用
     0.0,    // [14]追加サーボ用
+};
+
+// PWMサーボのスロットごとの設定(種類1/11のスロットと, PWM_PIN_SLOT/PCA9685_SLOT で指定したスロットで使う).
+// パルス幅 = 中央 + サーボ側の角度 × (+90°のパルス − 中央) / 90. −90°は中央に対して対称(2×中央 − +90°のパルス).
+// サーボ側の角度 = トリム + 指令の角度 × 回転方向. 上限/下限を超える指令は上限/下限で止める.
+
+// L系統: 0degのパルス幅(us)
+int IXL_PWM_CENTER[IXL_MAX] = {
+    1500, // [00]None
+    1500, // [01]None
+    1500, // [02]None
+    1500, // [03]None
+    1500, // [04]None
+    1500, // [05]None
+    1500, // [06]None
+    1500, // [07]None
+    1500, // [08]None
+    1500, // [09]None
+    1500, // [10]None
+    1500, // [11]None
+    1500, // [12]None
+    1500, // [13]None
+    1500  // [14]None
+};
+
+// L系統: +90degのパルス幅(us). 中央より小さくすると逆回転
+int IXL_PWM_P90[IXL_MAX] = {
+    2500, // [00]None
+    2500, // [01]None
+    2500, // [02]None
+    2500, // [03]None
+    2500, // [04]None
+    2500, // [05]None
+    2500, // [06]None
+    2500, // [07]None
+    2500, // [08]None
+    2500, // [09]None
+    2500, // [10]None
+    2500, // [11]None
+    2500, // [12]None
+    2500, // [13]None
+    2500  // [14]None
+};
+
+// L系統: サーボ側の角度の上限(degree)
+float IXL_PWM_MAX_DEG[IXL_MAX] = {
+    90.0, // [00]None
+    90.0, // [01]None
+    90.0, // [02]None
+    90.0, // [03]None
+    90.0, // [04]None
+    90.0, // [05]None
+    90.0, // [06]None
+    90.0, // [07]None
+    90.0, // [08]None
+    90.0, // [09]None
+    90.0, // [10]None
+    90.0, // [11]None
+    90.0, // [12]None
+    90.0, // [13]None
+    90.0  // [14]None
+};
+
+// L系統: サーボ側の角度の下限(degree)
+float IXL_PWM_MIN_DEG[IXL_MAX] = {
+    -90.0, // [00]None
+    -90.0, // [01]None
+    -90.0, // [02]None
+    -90.0, // [03]None
+    -90.0, // [04]None
+    -90.0, // [05]None
+    -90.0, // [06]None
+    -90.0, // [07]None
+    -90.0, // [08]None
+    -90.0, // [09]None
+    -90.0, // [10]None
+    -90.0, // [11]None
+    -90.0, // [12]None
+    -90.0, // [13]None
+    -90.0  // [14]None
+};
+
+// R系統: 0degのパルス幅(us)
+int IXR_PWM_CENTER[IXR_MAX] = {
+    1500, // [00]None
+    1500, // [01]None
+    1500, // [02]None
+    1500, // [03]None
+    1500, // [04]None
+    1500, // [05]None
+    1500, // [06]None
+    1500, // [07]None
+    1500, // [08]None
+    1500, // [09]None
+    1500, // [10]None
+    1500, // [11]None
+    1500, // [12]None
+    1500, // [13]None
+    1500  // [14]None
+};
+
+// R系統: +90degのパルス幅(us). 中央より小さくすると逆回転
+int IXR_PWM_P90[IXR_MAX] = {
+    2500, // [00]None
+    2500, // [01]None
+    2500, // [02]None
+    2500, // [03]None
+    2500, // [04]None
+    2500, // [05]None
+    2500, // [06]None
+    2500, // [07]None
+    2500, // [08]None
+    2500, // [09]None
+    2500, // [10]None
+    2500, // [11]None
+    2500, // [12]None
+    2500, // [13]None
+    2500  // [14]None
+};
+
+// R系統: サーボ側の角度の上限(degree)
+float IXR_PWM_MAX_DEG[IXR_MAX] = {
+    90.0, // [00]None
+    90.0, // [01]None
+    90.0, // [02]None
+    90.0, // [03]None
+    90.0, // [04]None
+    90.0, // [05]None
+    90.0, // [06]None
+    90.0, // [07]None
+    90.0, // [08]None
+    90.0, // [09]None
+    90.0, // [10]None
+    90.0, // [11]None
+    90.0, // [12]None
+    90.0, // [13]None
+    90.0  // [14]None
+};
+
+// R系統: サーボ側の角度の下限(degree)
+float IXR_PWM_MIN_DEG[IXR_MAX] = {
+    -90.0, // [00]None
+    -90.0, // [01]None
+    -90.0, // [02]None
+    -90.0, // [03]None
+    -90.0, // [04]None
+    -90.0, // [05]None
+    -90.0, // [06]None
+    -90.0, // [07]None
+    -90.0, // [08]None
+    -90.0, // [09]None
+    -90.0, // [10]None
+    -90.0, // [11]None
+    -90.0, // [12]None
+    -90.0, // [13]None
+    -90.0  // [14]None
+};
+
+// PWM出力とMeridimスロットの対応表. SV_L(n)/SV_R(n)でL/R系統のn番スロットの指令に従う. SV_NONEは未使用.
+// スロットのコマンドが1なら角度を出力, 0/2ならパルスを止める(通常以外のスロットは直前の出力を保持). トリムと回転方向はスロットの設定を使う.
+// UARTのサーボと共有しないスロットは, IXL_MT/IXR_MTの種類を1(本体PWM)/11(PCA9685)にする(指令値をそのまま返す).
+#define SV_L(n) (n)         // L系統のn番スロット
+#define SV_R(n) (100 + (n)) // R系統のn番スロット
+#define SV_NONE (-1)        // 未使用
+
+// 本体PWMサーボ [0]:ピン25, [1]:ピン26 (PWM_PIN_MODE 1)
+int PWM_PIN_SLOT[2] = {
+    SV_NONE, // [00]ピン25
+    SV_NONE  // [01]ピン26
+};
+
+// PCA9685 [枚][ch] (PWM_PIN_MODE 2)
+int PCA9685_SLOT[2][16] = {
+    {SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE}, // [0]1枚目 ch0-15
+    {SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE, SV_NONE}  // [1]2枚目 ch0-15
 };
 
 //-------------------------------------------------------------------------

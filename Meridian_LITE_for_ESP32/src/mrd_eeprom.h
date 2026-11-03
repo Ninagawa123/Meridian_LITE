@@ -9,9 +9,14 @@
 // ライブラリ導入
 #include <EEPROM.h>
 
+// EEPROMに読み書きするデータの大きさ(バイト). short型で3*90個.
+// EEPROM_SIZEを大きくしても読み書きはこの大きさだけ(共用体はスタックに置くため, 大きくするとスタックがあふれる)
+#define MRD_EEPROM_DATA_SIZE 540
+static_assert(EEPROM_SIZE >= MRD_EEPROM_DATA_SIZE, "EEPROM_SIZE must be 540 or more");
+
 // EEPROM読み書き用共用体
 typedef union {
-  uint8_t bval[EEPROM_SIZE]; // 1バイト単位で540個のデータを持つ
+  uint8_t bval[MRD_EEPROM_DATA_SIZE]; // 1バイト単位で540個のデータを持つ
   int16_t saval[3][90];      // short型で3*90個の配列データを持つ
   uint16_t usaval[3][90];    // unsigned short型で3*90個の配列データを持つ
   int16_t sval[270];         // short型で270個のデータを持つ
@@ -77,35 +82,67 @@ UnionEEPROM mrd_eeprom_make_data_from_config(const ServoParam &a_sv) {
 /// @return UnionEEPROM のフォーマットで配列を返す.
 UnionEEPROM mrd_eeprom_read() {
   UnionEEPROM read_data_tmp = {0};      // ゼロ初期化を明示的に行う
-  for (int i = 0; i < EEPROM_SIZE; i++) // データを読み込む時はbyte型
+  for (int i = 0; i < MRD_EEPROM_DATA_SIZE; i++) // データを読み込む時はbyte型
   {
     read_data_tmp.bval[i] = EEPROM.read(i);
   }
   return read_data_tmp;
 }
 
+/// @brief サーボ設定の90語(EEPROMの[1][*]と同じ並び. [20+i*2]:設定ワード, [21+i*2]:トリム. R系統は[50]から)に,
+///        サーボの設定が書かれているか. 未書き込み(マウントが1つもない)や消去状態(すべて0xFFFF)なら false.
+/// @param a_words サーボ設定の90語.
+/// @param a_num 調べるスロット数.
+bool mrd_eeprom_servo_words_valid(const int16_t *a_words, int a_num) {
+  bool mounted_tmp = false;
+  bool erased_tmp = true;
+  for (int i = 0; i < a_num; i++) {
+    const uint16_t l_tmp = uint16_t(a_words[20 + i * 2]);
+    const uint16_t r_tmp = uint16_t(a_words[50 + i * 2]);
+    mounted_tmp = mounted_tmp || (l_tmp & 0x0001) || (r_tmp & 0x0001);
+    erased_tmp = erased_tmp && l_tmp == 0xFFFF && r_tmp == 0xFFFF;
+  }
+  return mounted_tmp && !erased_tmp;
+}
+
+/// @brief サーボ設定の90語(EEPROMの[1][*]と同じ並び)をサーボ値構造体に反映する.
+///        マウントは config.h の IXL_MT/IXR_MT でUARTのサーボとしたスロットだけ有効で, この語で外すことだけできる.
+/// @param a_sv サーボ設定を保持する構造体.
+/// @param a_words サーボ設定の90語.
+void mrd_eeprom_servo_words_apply(ServoParam &a_sv, const int16_t *a_words) {
+  for (int i = 0; i < a_sv.num_max; i++) {
+    const uint16_t l_tmp = uint16_t(a_words[20 + i * 2]);
+    const uint16_t r_tmp = uint16_t(a_words[50 + i * 2]);
+    // 各サーボのマウント有無(bit0)
+    a_sv.ixl_mount[i] = (l_tmp & 0x0001) && IXL_MT[i] != NOSERVO && !mrd_servo_is_pwm_type(IXL_MT[i]);
+    a_sv.ixr_mount[i] = (r_tmp & 0x0001) && IXR_MT[i] != NOSERVO && !mrd_servo_is_pwm_type(IXR_MT[i]);
+    // 各サーボの実サーボ呼び出しID番号(bit1-7)
+    a_sv.ixl_id[i] = (l_tmp >> 1) & 0x007F;
+    a_sv.ixr_id[i] = (r_tmp >> 1) & 0x007F;
+    // 各サーボの回転方向(bit8)
+    a_sv.ixl_cw[i] = ((l_tmp >> 8) & 0x0001) ? 1 : -1;
+    a_sv.ixr_cw[i] = ((r_tmp >> 8) & 0x0001) ? 1 : -1;
+    // 各サーボの直立デフォルト角度,トリム値(degree小数2桁までを100倍した値で格納されているものを展開)
+    a_sv.ixl_trim[i] = a_words[21 + i * 2] / 100.0f;
+    a_sv.ixr_trim[i] = a_words[51 + i * 2] / 100.0f;
+  }
+}
+
 /// @brief EEPROMの内容を読み込みサーボ値構造体に反映する.
+///        EEPROMにサーボの設定が書かれていなければ(未書き込み, 消去状態)反映せず, いまの値(config)のままにする.
 /// @param a_sv サーボ設定を保持する構造体.
 /// @param a_monitor シリアルモニタへのデータ表示.
 /// @param a_serial 出力先シリアルの指定.
-/// @return 終了時にtrueを返す.
+/// @return 反映した場合はtrue, EEPROMにサーボの設定がなければfalseを返す.
 bool mrd_eeprom_load_servosettings(ServoParam &a_sv, bool a_monitor, HardwareSerial &a_serial) {
-  a_serial.println("Load and set servo settings from EEPROM.");
   UnionEEPROM array_tmp = mrd_eeprom_read();
+  if (!mrd_eeprom_servo_words_valid(array_tmp.saval[1], a_sv.num_max)) {
+    a_serial.println("No servo settings in EEPROM. Keep the servo settings of config.h.");
+    return false;
+  }
+  a_serial.println("Load and set servo settings from EEPROM.");
+  mrd_eeprom_servo_words_apply(a_sv, array_tmp.saval[1]);
   for (int i = 0; i < a_sv.num_max; i++) {
-    // 各サーボのマウント有無
-    a_sv.ixl_mount[i] = static_cast<bool>(array_tmp.saval[1][20 + i * 2] & 0x0001); // bit0:マウント有無
-    a_sv.ixr_mount[i] = static_cast<bool>(array_tmp.saval[1][50 + i * 2] & 0x0001); // bit0:マウント有無
-    // 各サーボの実サーボ呼び出しID番号
-    a_sv.ixl_id[i] = static_cast<uint8_t>(array_tmp.saval[1][20 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
-    a_sv.ixr_id[i] = static_cast<uint8_t>(array_tmp.saval[1][50 + i * 2] >> 1 & 0x007F); // bit1–7:サーボID
-    // 各サーボの回転方向(正転・逆転)
-    a_sv.ixl_cw[i] = static_cast<int8_t>((array_tmp.saval[1][20 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
-    a_sv.ixr_cw[i] = static_cast<int8_t>((array_tmp.saval[1][50 + i * 2] >> 8) & 0x0001) ? 1 : -1; // bit8:回転方向
-    // 各サーボの直立デフォルト角度,トリム値(degree小数2桁までを100倍した値で格納されているものを展開)
-    a_sv.ixl_trim[i] = array_tmp.saval[1][21 + i * 2] / 100.0f;
-    a_sv.ixr_trim[i] = array_tmp.saval[1][51 + i * 2] / 100.0f;
-
     if (a_monitor) {
       a_serial.print("L-idx:");
       a_serial.print(mrd_pddstr(i, 2, 0, false));
@@ -186,7 +223,7 @@ bool mrd_eeprom_dump_at_boot(bool a_do_dump, int a_bhd, HardwareSerial &a_serial
 /// @brief EEPROMにEEPROM格納用の配列データを書き込む.
 /// @param a_write_data EEPROM書き込み用の配列データ.
 /// @param a_flg_protect EEPROMの書き込み許可があるかどうかのブール値.
-/// @return EEPROMの書き込みと読み込みが成功した場合はtrueを, 書き込まなかった場合はfalseを返す.
+/// @return EEPROMにデータがある場合(書き込んだ, またはすでに同じ値)はtrueを, 書き込めなかった場合はfalseを返す.
 bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect, HardwareSerial &a_serial) {
   if (a_flg_protect) { // EEPROM書き込み実施フラグをチェック
     return false;
@@ -200,7 +237,7 @@ bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect, HardwareSeri
   // EEPROM書き込み
   byte old_value_tmp;                   // EEPROMにすでに書き込んであるデータ
   bool flg_renew_tmp = false;           // 書き込みコミットを実施するかのフラグ
-  for (int i = 0; i < EEPROM_SIZE; i++) // データを書き込む時はbyte型
+  for (int i = 0; i < MRD_EEPROM_DATA_SIZE; i++) // データを書き込む時はbyte型
   {
     if (i >= EEPROM.length()) // EEPROMのサイズを超えないようチェック
     {
@@ -248,7 +285,7 @@ bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect, HardwareSeri
   } else {
     Serial.println("Value not changed.(same value)");
   }
-  return false;
+  return true; // すでに同じ値なので書き込み済みとする
 }
 
 /// @brief EEPROMに設定値を書き込み, その後で読み込んで内容を確認し, シリアルポートに出力する.

@@ -5,7 +5,16 @@
 			"path": "."
 		}
 	],
+	"extensions": {
+		"recommendations": [
+			"platformio.platformio-ide"
+		],
+		"unwantedRecommendations": [
+			"ms-vscode.cpptools-extension-pack"
+		]
+	},
 	"settings": {
+		"platformio-ide.autoOpenPlatformIOIniFile": true,
 		"files.encoding": "utf8",
 		"files.eol": "\n",
 		"editor.formatOnSave": true,
@@ -35,6 +44,11 @@
 			"statusBar.background": "#61dafb",
 			"statusBar.foreground": "#15202b",
 			"statusBarItem.hoverBackground": "#2fcefa",
+			"statusBarItem.prominentBackground": "#93e6fc",
+			"statusBarItem.prominentForeground": "#c00000",
+			"statusBarItem.prominentHoverBackground": "#2fcefa",
+			"banner.foreground": "#c00000",
+			"banner.iconForeground": "#c00000",
 			"statusBarItem.remoteBackground": "#61dafb",
 			"statusBarItem.remoteForeground": "#15202b",
 			"titleBar.activeBackground": "#61dafb",
