@@ -9,9 +9,14 @@
 // ライブラリ導入
 #include <EEPROM.h>
 
+// EEPROMに読み書きするデータの大きさ(バイト). short型で3*90個.
+// EEPROM_SIZEを大きくしても読み書きはこの大きさだけ(共用体はスタックに置くため, 大きくするとスタックがあふれる)
+#define MRD_EEPROM_DATA_SIZE 540
+static_assert(EEPROM_SIZE >= MRD_EEPROM_DATA_SIZE, "EEPROM_SIZE must be 540 or more");
+
 // EEPROM読み書き用共用体
 typedef union {
-  uint8_t bval[EEPROM_SIZE]; // 1バイト単位で540個のデータを持つ
+  uint8_t bval[MRD_EEPROM_DATA_SIZE]; // 1バイト単位で540個のデータを持つ
   int16_t saval[3][90];      // short型で3*90個の配列データを持つ
   uint16_t usaval[3][90];    // unsigned short型で3*90個の配列データを持つ
   int16_t sval[270];         // short型で270個のデータを持つ
@@ -77,7 +82,7 @@ UnionEEPROM mrd_eeprom_make_data_from_config(const ServoParam &a_sv) {
 /// @return UnionEEPROM のフォーマットで配列を返す.
 UnionEEPROM mrd_eeprom_read() {
   UnionEEPROM read_data_tmp = {0};      // ゼロ初期化を明示的に行う
-  for (int i = 0; i < EEPROM_SIZE; i++) // データを読み込む時はbyte型
+  for (int i = 0; i < MRD_EEPROM_DATA_SIZE; i++) // データを読み込む時はbyte型
   {
     read_data_tmp.bval[i] = EEPROM.read(i);
   }
@@ -218,7 +223,7 @@ bool mrd_eeprom_dump_at_boot(bool a_do_dump, int a_bhd, HardwareSerial &a_serial
 /// @brief EEPROMにEEPROM格納用の配列データを書き込む.
 /// @param a_write_data EEPROM書き込み用の配列データ.
 /// @param a_flg_protect EEPROMの書き込み許可があるかどうかのブール値.
-/// @return EEPROMの書き込みと読み込みが成功した場合はtrueを, 書き込まなかった場合はfalseを返す.
+/// @return EEPROMにデータがある場合(書き込んだ, またはすでに同じ値)はtrueを, 書き込めなかった場合はfalseを返す.
 bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect, HardwareSerial &a_serial) {
   if (a_flg_protect) { // EEPROM書き込み実施フラグをチェック
     return false;
@@ -232,7 +237,7 @@ bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect, HardwareSeri
   // EEPROM書き込み
   byte old_value_tmp;                   // EEPROMにすでに書き込んであるデータ
   bool flg_renew_tmp = false;           // 書き込みコミットを実施するかのフラグ
-  for (int i = 0; i < EEPROM_SIZE; i++) // データを書き込む時はbyte型
+  for (int i = 0; i < MRD_EEPROM_DATA_SIZE; i++) // データを書き込む時はbyte型
   {
     if (i >= EEPROM.length()) // EEPROMのサイズを超えないようチェック
     {
@@ -280,7 +285,7 @@ bool mrd_eeprom_write(UnionEEPROM a_write_data, bool a_flg_protect, HardwareSeri
   } else {
     Serial.println("Value not changed.(same value)");
   }
-  return false;
+  return true; // すでに同じ値なので書き込み済みとする
 }
 
 /// @brief EEPROMに設定値を書き込み, その後で読み込んで内容を確認し, シリアルポートに出力する.
