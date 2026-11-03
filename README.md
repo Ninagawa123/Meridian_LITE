@@ -1,4 +1,4 @@
-# Meridian_LITE v1.1.2
+# Meridian_LITE v1.1.3
 
 Meridian_LITEは, ロボットのリアルタイムなデジタルツイン化を実現するMeridian(meridian flow system)の一部です.
 ESP32等のwifi付きマイコンボードに当リポジトリのファイルを書き込み, ロボットに搭載して使用します.
