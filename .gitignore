@@ -51,4 +51,6 @@
 doxygen
 
 # My Project
+# keys.h (WiFi SSID / password, WiFi settings of each editor preset).
+# keys.h with placeholder values is tracked, so this does not apply to it: do not commit real values.
 keys.h
