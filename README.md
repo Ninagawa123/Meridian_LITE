@@ -1,19 +1,22 @@
-# Meridian_LITE
+# Meridian_LITE v1.1.2
 
-Meridian_LITEは, ロボットのリアルタイムなデジタルツイン化を実現する**Meridian**(meridian flow system)の一部です.  
-ESP32等のwifi付きマイコンボードに当リポジトリのファイルを書き込み, ロボットに搭載して使用します.  
+Meridian_LITEは, ロボットのリアルタイムなデジタルツイン化を実現するMeridian(meridian flow system)の一部です.
+ESP32等のwifi付きマイコンボードに当リポジトリのファイルを書き込み, ロボットに搭載して使用します.
 センサーやサーボを制御しながら, PC等のデバイスとロボットの状態情報を100Hzの頻度で共有することができるようになります.  
-  
-<img width=100% alt="lite_pinassign" src="./docs/images/Meridian_flowsystem_lite.png">  
-  
-システムの中核は[Meridim90](https://ninagawa123.github.io/Meridian_info/#Protocol/Meridim90/overview90/)というコンパクトで汎用的なデータ配列です.  
-このデータ配列が中間プロトコルとしてデバイス間を高速に循環することで, リアルタイムな状態データの共有を実現します.  
-Meridim90の介在により, メーカーの異なる複数のコマンドサーボやセンサ, UnityやROSなど既存のさまざまな開発環境やシミュレータが共存, 連携できるようになるのが大きな強みです.    
-  
-[![sync](https://img.youtube.com/vi/4ymSV_Dot-U/0.jpg)](https://www.youtube.com/watch?v=4ymSV_Dot-U)  
-  
-Meridianはオープンソースプロジェクトとして2021年に開始し, 現在も様々なハードウェア, ソフトウェアへの対応を進めています.  
-  
+
+<img width="100%" alt="Meridian flow system lite" src="https://raw.githubusercontent.com/Ninagawa123/Meridian_LITE/main/docs/images/Meridian_flowsystem_lite.png">
+
+## Meridian とは
+
+システムの中核は[**Meridim90**](https://ninagawa123.github.io/Meridian_info/#Protocol/Meridim90/overview90/) というコンパクトで汎用的なデータ配列です.
+このデータ配列が中間プロトコルとしてデバイス間を高速に循環することで, リアルタイムな状態データの共有を実現します.
+Meridim90の介在により, メーカーの異なる複数のコマンドサーボやセンサ, UnityやROSなど既存のさまざまな開発環境やシミュレータが共存, 連携できるようになるのが大きな強みです.
+
+[![sync](https://img.youtube.com/vi/4ymSV_Dot-U/0.jpg)](https://www.youtube.com/watch?v=4ymSV_Dot-U)
+
+Meridian_LITE は、その ESP32（ESP32-DevKitC）版です。
+Meridianはオープンソースプロジェクトとして2021年に開始し, 現在も様々なハードウェア, ソフトウェアへの対応を進めています.
+
 <br><hr>  
 
 # Getting started 1
@@ -30,7 +33,7 @@ Meridian_LITEの動作確認にあたり,
 それ以外の部分はなるべく全て解説するようにします.  
     
 ## 動作テスト用の準備物
-- [ESP32-DevKitC](https://www.espressif.com/en/products/devkits/esp32-devkitc/overview) (マイコンボード, ([Espressifの正規品](https://www.espressif.com/en/products/devkits/esp32-devkitc/overview)を使用してください.　マイコンがESP32-WROOM-32のものはそのまま動作しますが, ESP32-WROVER-Eではトラブルシュートに記載している修正が必要です.)  
+- [ESP32-DevKitC](https://www.espressif.com/en/products/devkits/esp32-devkitc/overview) (マイコンボード, ([Espressifの正規品](https://www.espressif.com/en/products/devkits/esp32-devkitc/overview)を使用してください.　マイコンがESP32-WROOM-32のものはそのまま動作しますが, ESP32-WROVER-EではMeridian_LITEV1.2.0以上, もしくはトラブルシュートの修正が必要です. )  
 - WiFi付きPC (Windows, Mac, Ubuntu のいずれか)  
 - WiFiアクセスポイント (2.4Ghz通信対応)  
 - USBケーブル (ESP32devkitCとPCを接続するためのもの)
@@ -51,8 +54,8 @@ PlatformIOを起動し, 「Platformes」の検索窓で「ESP32」を検索し�
   
 <img width="300" alt="GettingStarted_1" src="./docs/images/GettingStarted_1.png">
   
-「Espressif 32」が見つかるので, バージョン「3.5.0」をインストールします.  
-新しいバージョン(4.x.x)だとwifi関連がうまく動かない可能性が高いです.  
+「Espressif 32」が見つかるので, バージョン「6.12.0」をインストールします.  
+古いバージョンではwifi関連がうまく動かない可能性が高いです.  
     
 ## ファイルをDLする  
 <img width="400" alt="GettingStarted_Download" src="./docs/images/GettingStarted_Download.png">
@@ -62,7 +65,8 @@ PlatformIOを起動し, 「Platformes」の検索窓で「ESP32」を検索し�
 ## ワークスペースを開く  
 VSCodeのファイルメニューから「ファイルでワークスペースをフォルダを開く...」を選択し, 先ほど準備したMeridian_LITE(Meridian_LITE-main)の中にある「Meridian_LITE_for_ESP32」→「Meridian_LITE_for_ESP32.code-workspace」を開きます.  
 必要なライブラリはファイルを開く際にVSCode上で自動でインストールされます.  
-  
+制限モード(VSCodeの画面上部に注意書きとリンクが現れる)の場合は「Manage」リンクから制限を解除することでPlatfromIOが導入されます.  
+    
 ### keys.hの修正  
 keys.h内の  
 
@@ -134,6 +138,18 @@ ESP32's IP address => 192.168.xx.xx
 ここで**ESP32's IP address**の番号を書き留めておきます.  
 (見逃した場合はESP32をリセットすればまた表示されます.)  
   
+## htmlファイルによるConfig.hの設定  
+  
+「meridian_config_editor.html」をChromeブラウザで開くことでも, 各種設定が可能です.  
+  
+<img width="600" alt="GettingStarted_Download" src="./docs/images/GettingStarted_html1.png">  
+1. 画面上部の「Load Config」ボタンを押し, ファイルの選択からMeridian_LITE(等) > Meridian_LITE_for_ESP32 > config.h を開く.<br>  
+2. 画面上部の「Preset:」で「ESP32_TEST」等を選択.　サーボは動作せず,ダミー信号を送信するテストモードです.  <br>  
+3. 「keys.h Settings」に現在のPCのIPアドレスを入力. (MyIPボタンで, ターミナルでのIPの調べ方が示されます.)<br>  
+4. その他,必要な項目があれば設定をします.<br>  
+5. 画面上部の「Save Config」ボタンを押すことでconfig.hが上書きされます.<br>  
+6. VS CODEに戻り, ESP32-DevKitCへアップロードします.<br>  
+
 ## Meridian consoleの導入と起動
 ### Meridian consoleの導入  
 PC側のMeridain通信ソフトの一つである[Meridian console](https://github.com/Ninagawa123/Meridian_console)を起動します.    
@@ -145,7 +161,8 @@ https://github.com/Ninagawa123/Meridian_console
 ### Meridian consoleの起動  
 Meridian consoleを起動し, ESP32DevKitCの電源が入っていると自動的に通信が始まります.  
 通信が成功すると, Meridian consoleが動きはじめます.  
-画面下部の **PCframe**と**BOARDframe**がカウントアップされ, **99~100Hz**の表記があれば通信成功です.  
+画面下部の **PCframe**と**BOARDframe**がカウントアップされ, **99~100Hz**の表記があれば通信成功です.
+Preset:ESP32_TESTが選択されていれば, Left系ID0番のサーボに, サインカーブの値がダミー値として送信されます.  
   
 <img width="600" alt="GettingStarted_Download" src="./docs/images/GettingStarted_12.png">
 
@@ -189,20 +206,20 @@ Meridian consoleを起動し, ESP32DevKitCの電源が入っていると自動�
 ## ピンアサイン    
 <img width="800" alt="lite_pinassign" src="./docs/Meridian_Board_LITE_pinassign_20250407.png">
 ピンアサインは上記の通りです. <br>
-IOがESP32DevkitCのピン番号に該当しています.  
-またSPIやSDカードを使用しない場合は, アサインされたピンをGNDと組み合わせるなどで他の役割を与えることもできます.   
-Fとなっている箇所は未接続のピンとなっています. ESP32DevkitCのデータシート等を参考に背面で好きな箇所と導線をはんだ付けすることで自由に機能を与えることができます.  
-  
-特にサーボコネクタを逆やズラして刺すと半二重回路に負荷がかかりボード上のICが一発で壊れます. 接続は十分ご注意ください.  
+IOがESP32DevkitCのピン番号に該当しています.<br>  
+またSPIやSDカードを使用しない場合は, アサインされたピンをGNDと組み合わせるなどで他の役割を与えることもできます.<br>   
+Fとなっている箇所は未接続のピンとなっています. ESP32DevkitCのデータシート等を参考に背面で好きな箇所と導線をはんだ付けすることで自由に機能を与えることができます.<br>  
+<br>  
+特にサーボコネクタを逆やズラして刺すと半二重回路に負荷がかかりボード上のICが一発で壊れます. 接続は十分ご注意ください.<br>  
     
 ## KHR-3HVへのマウントと機能拡張  
 <img width="400" alt="Mount_KHR37" src="./docs/images/Meridian_LITE_Mount_KHR3.png">
 
-上図のようにKHR-3HVのランドセルに本体無改造で固定することができます.  
-ランドセルとボードの間に1~2mm程度のスペーサーを入れると, ボード底面の干渉を回避できます.  
-ピンアサイン図を参考に, サーボコネクタを接続してください.  
-サーボの信号線（コネクタの羽）が内側を向くように接続してください.  
-電源ケーブルについては, 初回のテスト時は接続不要です.(USB経由の5Vで動作します)  
+上図のようにKHR-3HVのランドセルに本体無改造で固定することができます.<br>  
+ランドセルとボードの間に1~2mm程度のスペーサーを入れると, ボード底面の干渉を回避できます.<br>  
+ピンアサイン図を参考に, サーボコネクタを接続してください.<br>  
+サーボの信号線（コネクタの羽）が内側を向くように接続してください.<br>  
+電源ケーブルについては, 初回のテスト時は接続不要です.(USB経由の5Vで動作します)<br>  
   
 <details>
 <summary>周辺機器の拡張について</summary>
@@ -220,9 +237,11 @@ Wiiリモコンにも対応しており, config.hの#define MOUNT_PAD WIIMOTEと
 
 ### config.hの修正  
 config.hの内容について, お手持ちのKHR-3HVの状況にあわせ適度に更新してください.  
-設定の内容については, コード内にコメントを記しています.  
+meridian_config_editor.htmlのPreset:KHR-3HVにはき22軸版の基本的な値が設定されています.  
+  
+また, 設定の内容については, コード内にコメントを記しています.  
 主な修正点は下記の通りです.  
-
+  
 ```  
 ...
 // 各種ハードウェアのマウント有無
@@ -317,14 +336,7 @@ ID紐付け, 回転方向・トリム調整は[Meridan_console](https://github.c
 [![dance](https://img.youtube.com/vi/Wfc9j4Pmr3E/0.jpg)](https://www.youtube.com/watch?v=Wfc9j4Pmr3E)  
   
 サーボ設定が済んだ上で, ボードに電源を接続し, Meridian consoleからdemoを実行すると, 100Hz更新のヌルヌルとしたダンスを披露します.  
-  
-# Unity版デモを実行する  
-Meridian_LITEとUnityを連携させることができます.  
-下記のリポジトリの内容をお試しください.  
-[https://github.com/Ninagawa123/Meridian_Unity/tree/main](https://github.com/Ninagawa123/Meridian_Unity/tree/main)  
     
-<img width="400" alt="Meridian_Unity" src="./docs/images/Meridian_unity.png">
-  
 # ROS版デモを実行する  
 Meridian_TWINとUnityを連携させることができます.  
 下記のリポジトリより「ROS版デモを実行する」をお試しください.  
@@ -343,6 +355,11 @@ config.hにて「#define MOUNT_PAD WIIMOTE」と設定してボードにアッ�
 また, HOMEボタンがアナログスティックのキャリブレーション（リセット）として機能します.  
   
 # バージョン更新履歴  
+
+### 2026.11.03 v1.1.2  
+htmlでのConfig.h編集に対応.  
+各メーカーのサーボに対応.  
+その他, v1.2.0の要素を導入.  
 
 ### 2026.04.26 v1.1.1  
 Hotfixをマージ.  
@@ -454,3 +471,8 @@ ESP32DevKitCをボードを装着し, コードをを書き込みます.
 <summary>フローチャート</summary>
 <img width="600" alt="Meridian_Unity" src="./docs/images/Meridian_Lite_flowchart_20240721.png">
 </details>
+
+
+## ライセンス
+
+MIT License（[LICENSE](LICENSE)）. `Meridian_LITE_for_ESP32/lib/` の各ライブラリは, それぞれのライセンスに従います. 
